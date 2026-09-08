@@ -20,6 +20,7 @@ import {
 import { contentSha256 } from "../lib/documentVersions";
 import { sendInternalError } from "../lib/httpError";
 import { convertedPdfKey } from "../lib/convert";
+import { routeParams } from "../lib/routeParams";
 import {
   loadDocumentDisplay,
   prepareDocumentDisplay,
@@ -94,7 +95,7 @@ workflowAddonsRouter.get(
     const { data: addon, error: addonError } = await db
       .from("mike_workflows")
       .select("id, type")
-      .eq("id", req.params.addonId)
+      .eq("id", routeParams(req).addonId)
       .eq("distribution", "addon")
       .eq("active", true)
       .maybeSingle();
@@ -106,7 +107,7 @@ workflowAddonsRouter.get(
     const { data: asset, error: assetError } = await db
       .from("mike_workflow_assets")
       .select("id, filename, file_type, storage_path")
-      .eq("id", req.params.assetId)
+      .eq("id", routeParams(req).assetId)
       .eq("mike_workflow_id", addon.id)
       .maybeSingle();
     if (assetError) return void sendInternalError(res, assetError);
@@ -140,7 +141,7 @@ workflowAddonsRouter.get(
     const { data, error } = await db
       .from("mike_workflows")
       .select("*")
-      .eq("id", req.params.addonId)
+      .eq("id", routeParams(req).addonId)
       .eq("distribution", "addon")
       .eq("active", true)
       .maybeSingle();
@@ -177,7 +178,7 @@ workflowAddonsRouter.post(
     const { data: addon } = await db
       .from("mike_workflows")
       .select("*")
-      .eq("id", req.params.addonId)
+      .eq("id", routeParams(req).addonId)
       .eq("distribution", "addon")
       .eq("active", true)
       .maybeSingle();

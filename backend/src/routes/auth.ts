@@ -10,6 +10,7 @@ import { consumeAuthHandoff, issueAuthHandoff } from "../lib/authHandoff";
 import { requestOriginIsWordAddin } from "../lib/origins";
 import { requireAuth } from "../middleware/auth";
 import { requireTrustedOrigin } from "../middleware/trustedOrigin";
+import { routeParams } from "../lib/routeParams";
 
 export const authRouter = Router();
 
@@ -436,7 +437,7 @@ authRouter.post("/mfa/challenge-and-verify", requireAuth, async (req, res) => {
 });
 
 authRouter.delete("/mfa/factors/:factorId", requireAuth, async (req, res) => {
-  const parsed = factorSchema.safeParse({ factorId: req.params.factorId });
+  const parsed = factorSchema.safeParse({ factorId: routeParams(req).factorId });
   if (!parsed.success) return invalidBody(res);
   const client = cookieClient(req, res);
   if (!client) return;

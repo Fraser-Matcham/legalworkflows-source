@@ -49,6 +49,7 @@ import {
   attachLatestVersionNumbers,
 } from "../lib/documentVersions";
 import { ensureResourceAccessSummaries } from "../lib/resourceAccessSummary";
+import { routeParams } from "../lib/routeParams";
 
 export const workflowsRouter = Router();
 
@@ -731,7 +732,7 @@ workflowsRouter.post(
 async function handleWorkflowUpdate(req: Request, res: Response) {
   const userId = res.locals.userId as string;
   const userEmail = res.locals.userEmail as string | undefined;
-  const { workflowId } = req.params;
+  const { workflowId } = routeParams(req);
   const updates: Record<string, unknown> = {};
   const metadata = req.body.metadata as Partial<WorkflowMetadata> | undefined;
   if (metadata?.title != null) updates.title = metadata.title;
@@ -792,7 +793,7 @@ workflowsRouter.delete(
   asyncRoute(async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { workflowId } = req.params;
+    const { workflowId } = routeParams(req);
     const db = createServerSupabase();
     const catalogWorkflow = await findCatalogWorkflow(workflowId, db);
     if (catalogWorkflow) {
@@ -890,7 +891,7 @@ workflowsRouter.delete(
   requireAuth,
   asyncRoute(async (req, res) => {
     const userId = res.locals.userId as string;
-    const { workflowId } = req.params;
+    const { workflowId } = routeParams(req);
     const db = createServerSupabase();
     const { error } = await db
       .from("hidden_workflows")
@@ -915,7 +916,7 @@ workflowsRouter.post(
 
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { workflowId } = req.params;
+    const { workflowId } = routeParams(req);
     const openSourceBody = req.body as {
       contributor_mode?: unknown;
       contributor?: unknown;
@@ -1044,7 +1045,7 @@ workflowsRouter.get(
     const userEmail = res.locals.userEmail as string | undefined;
     const db = createServerSupabase();
     const access = await resolveWorkflowAccess(
-      req.params.workflowId,
+      routeParams(req).workflowId,
       userId,
       userEmail,
       db,
@@ -1056,7 +1057,7 @@ workflowsRouter.get(
     const { data, error } = await db
       .from("documents")
       .select("*")
-      .eq("workflow_id", req.params.workflowId)
+      .eq("workflow_id", routeParams(req).workflowId)
       .order("created_at", { ascending: true });
     if (error) return void sendInternalError(res, error);
     const assets = (data ?? []) as Array<{
@@ -1099,7 +1100,7 @@ workflowsRouter.post(
 
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const workflowId = req.params.workflowId;
+    const workflowId = routeParams(req).workflowId;
     const db = createServerSupabase();
     const access = await resolveWorkflowAccess(
       workflowId,
@@ -1301,7 +1302,7 @@ workflowsRouter.delete(
     const userEmail = res.locals.userEmail as string | undefined;
     const db = createServerSupabase();
     const access = await resolveWorkflowAccess(
-      req.params.workflowId,
+      routeParams(req).workflowId,
       userId,
       userEmail,
       db,
@@ -1315,8 +1316,8 @@ workflowsRouter.delete(
     const { data: asset } = await db
       .from("documents")
       .select("id")
-      .eq("id", req.params.assetId)
-      .eq("workflow_id", req.params.workflowId)
+      .eq("id", routeParams(req).assetId)
+      .eq("workflow_id", routeParams(req).workflowId)
       .maybeSingle();
     if (!asset) {
       return void res.status(404).json({ detail: "Asset not found" });
@@ -1330,7 +1331,7 @@ workflowsRouter.delete(
       .from("documents")
       .delete()
       .eq("id", asset.id)
-      .eq("workflow_id", req.params.workflowId);
+      .eq("workflow_id", routeParams(req).workflowId);
     if (error) return void sendInternalError(res, error);
     // Row first, file second (durable): a failed row delete leaves the file
     // referenced and intact; a crash after it still cleans the file up.
@@ -1353,7 +1354,7 @@ workflowsRouter.get(
   asyncRoute(async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { workflowId } = req.params;
+    const { workflowId } = routeParams(req);
     const db = createServerSupabase();
     const catalogWorkflow = await findCatalogWorkflow(workflowId, db);
     if (catalogWorkflow) {
@@ -1402,7 +1403,7 @@ workflowsRouter.get(
   asyncRoute(async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { workflowId } = req.params;
+    const { workflowId } = routeParams(req);
     const db = createServerSupabase();
     const access = await resolveWorkflowAccess(
       workflowId,
@@ -1482,7 +1483,7 @@ workflowsRouter.get(
   asyncRoute(async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { workflowId } = req.params;
+    const { workflowId } = routeParams(req);
     const db = createServerSupabase();
 
     const wf = await resolveCreatorScopedWorkflow(
@@ -1538,7 +1539,7 @@ workflowsRouter.delete(
   asyncRoute(async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { workflowId, shareId } = req.params;
+    const { workflowId, shareId } = routeParams(req);
     const db = createServerSupabase();
 
     const wf = await resolveCreatorScopedWorkflow(
@@ -1575,7 +1576,7 @@ workflowsRouter.post(
   asyncRoute(async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { workflowId } = req.params;
+    const { workflowId } = routeParams(req);
     const { emails, role } = req.body as {
       emails: string[];
       role: unknown;

@@ -31,6 +31,7 @@ import {
   withoutEmptyAssistantReservations,
 } from "../lib/chat";
 import { enqueueChatTurnAudit } from "../lib/audit";
+import { routeParams } from "../lib/routeParams";
 import {
   getUserModelSettings,
   persistLastSelectedChatModel,
@@ -347,7 +348,7 @@ wordChatRouter.get("/:chatId", requireAuth, async (req, res) => {
   if (!parsedDocumentId.ok) {
     return void res.status(400).json({ detail: parsedDocumentId.detail });
   }
-  if (!isUuid(req.params.chatId)) {
+  if (!isUuid(routeParams(req).chatId)) {
     return void res.status(404).json({ detail: "Chat not found" });
   }
   const db = createServerSupabase();
@@ -368,7 +369,7 @@ wordChatRouter.get("/:chatId", requireAuth, async (req, res) => {
     return void res.status(404).json({ detail: "Chat not found" });
   }
   const chatLookup = await getAccessibleWordChat(
-    req.params.chatId,
+    routeParams(req).chatId,
     wordDocumentRowId,
     userId,
     db,
@@ -383,7 +384,7 @@ wordChatRouter.get("/:chatId", requireAuth, async (req, res) => {
   const { data: messages, error } = await db
     .from("word_chat_messages")
     .select("*")
-    .eq("chat_id", req.params.chatId)
+    .eq("chat_id", routeParams(req).chatId)
     .order("created_at", { ascending: true });
   if (error) {
     console.error("[word-chat] failed to load messages", error);
@@ -433,7 +434,7 @@ wordChatRouter.patch("/:chatId/model", requireAuth, async (req, res) => {
   if (!parsedDocumentId.ok) {
     return void res.status(400).json({ detail: parsedDocumentId.detail });
   }
-  if (!isUuid(req.params.chatId)) {
+  if (!isUuid(routeParams(req).chatId)) {
     return void res.status(404).json({ detail: "Chat not found" });
   }
   const parsedModel = parseOptionalModel(req.body?.model);
@@ -460,7 +461,7 @@ wordChatRouter.patch("/:chatId/model", requireAuth, async (req, res) => {
     return void res.status(404).json({ detail: "Chat not found" });
   }
   const chatLookup = await getAccessibleWordChat(
-    req.params.chatId,
+    routeParams(req).chatId,
     documentLookup.value,
     userId,
     db,
@@ -498,7 +499,7 @@ wordChatRouter.patch("/:chatId/model", requireAuth, async (req, res) => {
       model: resolution.model,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", req.params.chatId)
+    .eq("id", routeParams(req).chatId)
     .eq("user_id", userId);
   if (error) {
     console.error("[word-chat] failed to save selected chat model", error);
@@ -516,7 +517,7 @@ wordChatRouter.patch("/:chatId/model", requireAuth, async (req, res) => {
     );
     return void res.status(500).json({ detail: "Failed to save chat model" });
   }
-  res.json({ id: req.params.chatId, model: resolution.model });
+  res.json({ id: routeParams(req).chatId, model: resolution.model });
 });
 
 // PATCH /word-chat/:chatId/reasoning?document_id=<embedded document UUID>
@@ -528,7 +529,7 @@ wordChatRouter.patch("/:chatId/reasoning", requireAuth, async (req, res) => {
   }
   const parsedReasoning = parseOptionalReasoning(req.body?.reasoningLevel);
   if (
-    !isUuid(req.params.chatId) ||
+    !isUuid(routeParams(req).chatId) ||
     !parsedReasoning.ok ||
     !parsedReasoning.value
   ) {
@@ -548,7 +549,7 @@ wordChatRouter.patch("/:chatId/reasoning", requireAuth, async (req, res) => {
     return void res.status(404).json({ detail: "Chat not found" });
   }
   const chatLookup = await getAccessibleWordChat(
-    req.params.chatId,
+    routeParams(req).chatId,
     documentLookup.value,
     userId,
     db,
@@ -562,7 +563,7 @@ wordChatRouter.patch("/:chatId/reasoning", requireAuth, async (req, res) => {
       reasoning_level: parsedReasoning.value,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", req.params.chatId)
+    .eq("id", routeParams(req).chatId)
     .eq("user_id", userId);
   if (error)
     return void res.status(500).json({ detail: "Failed to save reasoning" });
@@ -575,7 +576,7 @@ wordChatRouter.patch("/:chatId/reasoning", requireAuth, async (req, res) => {
     return void res.status(500).json({ detail: "Failed to save reasoning" });
   }
   res.json({
-    id: req.params.chatId,
+    id: routeParams(req).chatId,
     reasoning_level: parsedReasoning.value,
   });
 });
@@ -593,10 +594,10 @@ wordChatRouter.put(
     if (!parsedDocumentId.ok) {
       return void res.status(400).json({ detail: parsedDocumentId.detail });
     }
-    if (!isUuid(req.params.messageId)) {
+    if (!isUuid(routeParams(req).messageId)) {
       return void res.status(404).json({ detail: "Message not found" });
     }
-    const parsedBlockIndex = parseBlockIndex(req.params.blockIndex);
+    const parsedBlockIndex = parseBlockIndex(routeParams(req).blockIndex);
     if (!parsedBlockIndex.ok) {
       return void res.status(400).json({ detail: parsedBlockIndex.detail });
     }
@@ -606,7 +607,7 @@ wordChatRouter.put(
     }
     const db = createServerSupabase();
     const messageLookup = await getAccessibleWordMessage({
-      messageId: req.params.messageId,
+      messageId: routeParams(req).messageId,
       clientDocumentId: parsedDocumentId.value,
       userId,
       db,
@@ -625,7 +626,7 @@ wordChatRouter.put(
       .from("word_document_edits")
       .upsert(
         {
-          word_chat_message_id: req.params.messageId,
+          word_chat_message_id: routeParams(req).messageId,
           block_index: parsedBlockIndex.value,
           ...parsedEdit.value,
         },
@@ -644,7 +645,7 @@ wordChatRouter.put(
     const { data, error } = await db
       .from("word_document_edits")
       .select("*")
-      .eq("word_chat_message_id", req.params.messageId)
+      .eq("word_chat_message_id", routeParams(req).messageId)
       .eq("block_index", parsedBlockIndex.value)
       .maybeSingle();
     if (error || !data) {
@@ -667,10 +668,10 @@ wordChatRouter.patch(
     if (!parsedDocumentId.ok) {
       return void res.status(400).json({ detail: parsedDocumentId.detail });
     }
-    if (!isUuid(req.params.messageId)) {
+    if (!isUuid(routeParams(req).messageId)) {
       return void res.status(404).json({ detail: "Message not found" });
     }
-    const parsedBlockIndex = parseBlockIndex(req.params.blockIndex);
+    const parsedBlockIndex = parseBlockIndex(routeParams(req).blockIndex);
     if (!parsedBlockIndex.ok) {
       return void res.status(400).json({ detail: parsedBlockIndex.detail });
     }
@@ -735,7 +736,7 @@ wordChatRouter.patch(
     }
     const db = createServerSupabase();
     const messageLookup = await getAccessibleWordMessage({
-      messageId: req.params.messageId,
+      messageId: routeParams(req).messageId,
       clientDocumentId: parsedDocumentId.value,
       userId,
       db,
@@ -751,7 +752,7 @@ wordChatRouter.patch(
     const { data, error } = await db
       .from("word_document_edits")
       .update(patch)
-      .eq("word_chat_message_id", req.params.messageId)
+      .eq("word_chat_message_id", routeParams(req).messageId)
       .eq("block_index", parsedBlockIndex.value)
       .select("*")
       .maybeSingle();

@@ -62,6 +62,7 @@ import {
 } from "../lib/userDataExport";
 import { findProfileUserByEmail } from "../lib/userLookup";
 import { configuredApiPublicUrl } from "../lib/runtimeConfig";
+import { routeParams } from "../lib/routeParams";
 import {
     getAllUserRouterModels,
     replaceUserRouterModels,
@@ -1191,7 +1192,7 @@ userRouter.post(
         const result = await acceptInvitation(db, {
             userId,
             userEmail,
-            invitationId: req.params.invitationId,
+            invitationId: routeParams(req).invitationId,
         });
         if (!result.ok) return sendOrgFailure(res, result);
         res.json({ org_id: result.org_id, role: result.role });
@@ -1209,7 +1210,7 @@ userRouter.post(
         const result = await declineInvitation(db, {
             userId,
             userEmail,
-            invitationId: req.params.invitationId,
+            invitationId: routeParams(req).invitationId,
         });
         if (!result.ok) return sendOrgFailure(res, result);
         res.status(204).send();
@@ -1408,7 +1409,7 @@ userRouter.put(
     requireMfaIfEnrolled,
     async (req, res) => {
         const userId = res.locals.userId as string;
-        const provider = normalizeApiKeyProvider(req.params.provider);
+        const provider = normalizeApiKeyProvider(routeParams(req).provider);
         if (!provider)
             return void res
                 .status(400)
@@ -1464,13 +1465,13 @@ userRouter.get(
         const db = createServerSupabase();
         try {
             res.json(
-                await getUserMcpConnector(userId, req.params.connectorId, db),
+                await getUserMcpConnector(userId, routeParams(req).connectorId, db),
             );
         } catch (err) {
             const detail = errorMessage(err);
             console.error("[user/mcp-connectors] get failed", {
                 userId,
-                connectorId: req.params.connectorId,
+                connectorId: routeParams(req).connectorId,
                 error: detail,
             });
             res.status(404).json({ detail: "Connector not found" });
@@ -1531,7 +1532,7 @@ userRouter.patch(
         try {
             const connector = await updateUserMcpConnector(
                 userId,
-                req.params.connectorId,
+                routeParams(req).connectorId,
                 {
                     ...(typeof body.name === "string"
                         ? { name: body.name }
@@ -1571,7 +1572,7 @@ userRouter.patch(
             const detail = errorMessage(err);
             console.error("[user/mcp-connectors] update failed", {
                 userId,
-                connectorId: req.params.connectorId,
+                connectorId: routeParams(req).connectorId,
                 error: detail,
             });
             res.status(400).json({
@@ -1590,13 +1591,13 @@ userRouter.delete(
         const userId = res.locals.userId as string;
         const db = createServerSupabase();
         try {
-            await deleteUserMcpConnector(userId, req.params.connectorId, db);
+            await deleteUserMcpConnector(userId, routeParams(req).connectorId, db);
             res.status(204).send();
         } catch (err) {
             const detail = errorMessage(err);
             console.error("[user/mcp-connectors] delete failed", {
                 userId,
-                connectorId: req.params.connectorId,
+                connectorId: routeParams(req).connectorId,
                 error: detail,
             });
             sendInternalError(res, err);
@@ -1616,7 +1617,7 @@ userRouter.post(
             const redirectUri = `${backendPublicUrl(req)}/user/mcp-connectors/oauth/callback`;
             const result = await startUserMcpConnectorOAuth(
                 userId,
-                req.params.connectorId,
+                routeParams(req).connectorId,
                 redirectUri,
                 db,
             );
@@ -1628,7 +1629,7 @@ userRouter.post(
             const detail = errorMessage(err);
             console.error("[user/mcp-connectors] oauth start failed", {
                 userId,
-                connectorId: req.params.connectorId,
+                connectorId: routeParams(req).connectorId,
                 error: detail,
             });
             res.status(400).json({
@@ -1702,7 +1703,7 @@ userRouter.post(
         try {
             const connector = await refreshUserMcpConnectorTools(
                 userId,
-                req.params.connectorId,
+                routeParams(req).connectorId,
                 db,
             );
             res.json(connector);
@@ -1710,7 +1711,7 @@ userRouter.post(
             const detail = errorMessage(err);
             console.error("[user/mcp-connectors] refresh failed", {
                 userId,
-                connectorId: req.params.connectorId,
+                connectorId: routeParams(req).connectorId,
                 error: detail,
             });
             if (err instanceof McpOAuthRequiredError) {
@@ -1741,8 +1742,8 @@ userRouter.patch(
         try {
             const connector = await setUserMcpToolEnabled(
                 userId,
-                req.params.connectorId,
-                req.params.toolId,
+                routeParams(req).connectorId,
+                routeParams(req).toolId,
                 parsed.value,
                 db,
             );
@@ -1751,8 +1752,8 @@ userRouter.patch(
             const detail = errorMessage(err);
             console.error("[user/mcp-connectors] tool toggle failed", {
                 userId,
-                connectorId: req.params.connectorId,
-                toolId: req.params.toolId,
+                connectorId: routeParams(req).connectorId,
+                toolId: routeParams(req).toolId,
                 error: detail,
             });
             res.status(400).json({
@@ -2139,7 +2140,7 @@ userRouter.get(
     async (req, res) => {
         const userId = res.locals.userId as string;
         const db = createServerSupabase();
-        const row = await loadOwnExportJob(db, req.params.exportId, userId);
+        const row = await loadOwnExportJob(db, routeParams(req).exportId, userId);
         if (!row)
             return void res.status(404).json({ detail: "Export not found" });
         if (row.status === "done" && row.result) {
@@ -2165,7 +2166,7 @@ userRouter.get(
     async (req, res) => {
         const userId = res.locals.userId as string;
         const db = createServerSupabase();
-        const row = await loadOwnExportJob(db, req.params.exportId, userId);
+        const row = await loadOwnExportJob(db, routeParams(req).exportId, userId);
         if (!row || row.status !== "done" || !row.result)
             return void res.status(404).json({ detail: "Export not found" });
         const storagePath = row.result.storage_path as string | undefined;

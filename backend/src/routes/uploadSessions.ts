@@ -37,6 +37,7 @@ import {
   type UploadSessionFile,
 } from "../lib/uploadSessions";
 import { requireAuth } from "../middleware/auth";
+import { routeParams } from "../lib/routeParams";
 
 export const uploadSessionsRouter = Router();
 
@@ -748,7 +749,7 @@ uploadSessionsRouter.get(
   asyncRoute(async (req, res) => {
     const userId = res.locals.userId as string;
     const db = createServerSupabase();
-    const session = await loadOwnedSession(db, req.params.sessionId, userId);
+    const session = await loadOwnedSession(db, routeParams(req).sessionId, userId);
     if (!session) {
       return void res.status(404).json({ detail: "Upload session not found" });
     }
@@ -767,7 +768,7 @@ uploadSessionsRouter.post(
     }
     const userId = res.locals.userId as string;
     const db = createServerSupabase();
-    const session = await loadOwnedSession(db, req.params.sessionId, userId);
+    const session = await loadOwnedSession(db, routeParams(req).sessionId, userId);
     if (!session) {
       return void res.status(404).json({ detail: "Upload session not found" });
     }
@@ -838,7 +839,7 @@ uploadSessionsRouter.post(
     }
     const userId = res.locals.userId as string;
     const db = createServerSupabase();
-    const session = await loadOwnedSession(db, req.params.sessionId, userId);
+    const session = await loadOwnedSession(db, routeParams(req).sessionId, userId);
     if (!session) {
       return void res.status(404).json({ detail: "Upload session not found" });
     }
@@ -859,7 +860,7 @@ uploadSessionsRouter.post(
       return void res.status(410).json({ detail: "Upload session expired" });
     }
     const files = await loadSessionFiles(db, session.id);
-    const file = files.find((candidate) => candidate.id === req.params.fileId);
+    const file = files.find((candidate) => candidate.id === routeParams(req).fileId);
     if (!file) {
       return void res.status(404).json({ detail: "Upload file not found" });
     }
@@ -902,7 +903,7 @@ uploadSessionsRouter.delete(
   asyncRoute(async (req, res) => {
     const userId = res.locals.userId as string;
     const db = createServerSupabase();
-    const session = await loadOwnedSession(db, req.params.sessionId, userId);
+    const session = await loadOwnedSession(db, routeParams(req).sessionId, userId);
     if (!session) {
       return void res.status(404).json({ detail: "Upload session not found" });
     }
