@@ -42,6 +42,19 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 10
+    # Majors that take a whole grouped update down with them. Without these,
+    # one incompatible package blocks fifteen routine bumps every week and the
+    # group is never mergeable. Ignoring only the MAJOR means patches and
+    # minors still flow, and the major arrives as its own reviewable pull
+    # request instead. Remove an entry once its migration has landed.
+    ignore:
+      # Express 5 widens req.params to `string | string[]` and changes async
+      # error propagation, route-pattern syntax and req.body defaults. See
+      # docs/delivery-plan/dependency-upgrade-plan.md.
+      - dependency-name: "express"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/express"
+        update-types: ["version-update:semver-major"]
     groups:
       # One PR per batch of CVE fixes instead of one PR per advisory
       security-fixes:
@@ -64,6 +77,15 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 10
+    ignore:
+      # pdfjs-dist 4 -> 6 must move in lockstep with STANDARD_FONT_DATA_URL in
+      # highlightQuote.ts, which pins the version into a CDN path.
+      - dependency-name: "pdfjs-dist"
+        update-types: ["version-update:semver-major"]
+      # eslint 10 is blocked upstream: typescript-eslint refuses to load
+      # against this repo's TypeScript 7. Nothing to fix on this side.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
     groups:
       security-fixes:
         applies-to: security-updates
@@ -83,6 +105,14 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 10
+    ignore:
+      # office-addin-debugging 6 replaces @microsoft/teamsapp-cli with
+      # @microsoft/m365agentstoolkit-cli and drags ~200 transitive changes
+      # (inquirer 7->12, glob 7->13, msal 2->5) into what reads as a
+      # three-package security patch. It is a toolchain migration and wants
+      # its own change.
+      - dependency-name: "office-addin-debugging"
+        update-types: ["version-update:semver-major"]
     groups:
       security-fixes:
         applies-to: security-updates
