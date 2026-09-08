@@ -118,7 +118,7 @@ and a cross-tenant disclosure.
 | --- | --- |
 | `e2e / playwright` | The strongest gate and the slowest — it boots Supabase, RustFS, the backend and Next.js on the runner. Add it after a sprint of living with the feedback loop. |
 | `security / dependency-audit (…)` | Fails on any high or critical advisory. With 2 high advisories open on the inherited tree, requiring it today blocks every pull request on debt that predates you. Clear them first. |
-| `CodeQL / Analyze (javascript-typescript)` | Code scanning on a private organisation repository needs a paid GitHub security plan. Requiring a check that never reports blocks all merges. Confirm the entitlement first (ticket 2022). |
+| `CodeQL / Analyze (javascript-typescript)` | Add it once it has been green for a few runs. Code scanning is available here — see below — but give it a settling period before it can block a merge. |
 | `Mutation testing`, `Scorecard`, `SSE load test`, `Word add-in` | Not pull-request gates by design — monthly, manual, impossible on a private repo, and path-filtered respectively. |
 
 ### Actions secrets
@@ -127,6 +127,31 @@ and a cross-tenant disclosure.
 | --- | --- | --- |
 | `ANTHROPIC_API_KEY` | The 4 LLM-dependent e2e specs | **Optional.** `e2e.yml` is green without it: 27 of 31 specs run and the other 4 self-skip via `e2e/llm.ts`. Set it — spend-capped, CI-scoped — only to enforce those 4. The plan treats it as required for a green e2e run; it is not. See [`e2e-ci.md`](e2e-ci.md). |
 | `LOADTEST_AUTH_TOKEN` | `loadtest.yml` | Only if the k6 job is kept. `workflow_dispatch` only, so it never gates a merge. |
+
+## CodeQL on a private repository — ticket 2022, answered
+
+The risk register expected code scanning to be unavailable on a private
+organisation repository without a paid plan. That is not what happened. CodeQL
+runs here; it failed for a different and much cheaper reason.
+
+The first run failed during `init` with:
+
+```
+Setting overlay database mode to overlay with caching because we are analyzing a pull request.
+Checking cache for overlay-base database
+##[error]Resource not accessible by integration - https://docs.github.com/rest/actions/workflow-runs#get-a-workflow-run
+```
+
+When analysing a pull request the action uses overlay database mode and looks
+up the base database from a previous workflow run — an Actions REST call. The
+job granted `contents: read` and `security-events: write` and nothing else. On a
+public repository the default token can already read workflow runs, so upstream
+never hit this; on a private one it cannot. Adding `actions: read` to the job's
+permissions block fixes it, and least privilege still holds — read, not write.
+
+So the answer to ticket 2022 is that the capability is there and the ticket is a
+one-line permissions change, not a purchasing decision. Confirm it stays green
+over a few runs before making it a required check.
 
 ## Known state of the inherited tree
 
