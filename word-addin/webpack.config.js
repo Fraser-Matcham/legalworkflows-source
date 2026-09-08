@@ -145,8 +145,17 @@ module.exports = async (_env, options) => {
         "react$": require.resolve("react"),
         "react/jsx-runtime$": require.resolve("react/jsx-runtime"),
         "react-dom$": require.resolve("react-dom"),
-        "lucide-react$": require.resolve(
-          "lucide-react/dist/esm/lucide-react.js",
+        // Follow the package's own declared ESM entry rather than hardcoding a
+        // file inside dist/, which is not a public API. lucide-react moved that
+        // file between 0.x (dist/esm/lucide-react.js) and 1.x
+        // (dist/esm/lucide-react.mjs); the hardcoded path makes the v1 bump
+        // fail as MODULE_NOT_FOUND here, webpack exits 2, and the whole add-in
+        // Playwright suite reports as fixture errors rather than assertions.
+        // Reading "module" resolves correctly on both, and survives the next
+        // reorganisation.
+        "lucide-react$": path.join(
+          path.dirname(require.resolve("lucide-react/package.json")),
+          require("lucide-react/package.json").module,
         ),
         // The frontend's public icon set is canonical. Webpack imports those
         // same SVGs and emits content-hashed copies for the add-in bundle.

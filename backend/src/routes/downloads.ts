@@ -5,6 +5,7 @@ import { buildContentDisposition, downloadFile } from "../lib/storage";
 import { verifyDownload } from "../lib/downloadTokens";
 import { ensureDocAccess } from "../lib/access";
 import { contentTypeForDocumentType } from "../lib/documentTypes";
+import { routeParams } from "../lib/routeParams";
 
 export const downloadsRouter = Router();
 
@@ -19,7 +20,7 @@ function contentTypeFor(filename: string): string {
 downloadsRouter.get("/:token", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const info = verifyDownload(req.params.token);
+    const info = verifyDownload(routeParams(req).token);
     if (!info) return void res.status(404).json({ detail: "Invalid link" });
 
     const db = createServerSupabase();

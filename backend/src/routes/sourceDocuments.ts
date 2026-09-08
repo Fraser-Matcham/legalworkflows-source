@@ -5,6 +5,7 @@ import { createServerSupabase } from "../lib/supabase";
 import { getUserModelSettings } from "../lib/userSettings";
 import { caseClusterId, normalizeCaseDocument } from "../lib/sourceDocuments";
 import { sendInternalError } from "../lib/httpError";
+import { routeParams } from "../lib/routeParams";
 
 export const sourceDocumentsRouter = Router();
 
@@ -16,7 +17,7 @@ const documentFetches = new Map<string, Promise<unknown>>();
 // documents use the existing single-document viewer endpoints; `case:*` is the
 // first provider implemented behind this normalized contract.
 sourceDocumentsRouter.get("/:documentId", async (req, res) => {
-  const documentId = String(req.params.documentId ?? "");
+  const documentId = String(routeParams(req).documentId ?? "");
   const clusterId = caseClusterId(documentId);
   if (!clusterId) {
     return res.status(404).json({ detail: "Document not found" });

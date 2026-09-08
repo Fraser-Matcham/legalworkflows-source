@@ -9,6 +9,7 @@ import {
 import { parsePaginationQuery, type PaginationParams } from "../lib/pagination";
 import { normalizeSearchTerm } from "../lib/search";
 import { sendInternalError } from "../lib/httpError";
+import { routeParams } from "../lib/routeParams";
 
 export const libraryRouter = Router();
 
@@ -232,7 +233,7 @@ async function loadLibraryLevel(
 // level, or view=search for flat search/filter/sort results.
 libraryRouter.get("/:kind", requireAuth, async (req, res) => {
   const userId = res.locals.userId as string;
-  const kind = normalizeLibraryKind(req.params.kind);
+  const kind = normalizeLibraryKind(routeParams(req).kind);
   if (!kind) return void res.status(404).json({ detail: "Library not found" });
 
   const db = createServerSupabase();
@@ -288,7 +289,7 @@ libraryRouter.get("/:kind", requireAuth, async (req, res) => {
 // Refresh several already-open directory levels through one bounded API call.
 libraryRouter.post("/:kind/levels", requireAuth, async (req, res) => {
   const userId = res.locals.userId as string;
-  const kind = normalizeLibraryKind(req.params.kind);
+  const kind = normalizeLibraryKind(routeParams(req).kind);
   if (!kind) return void res.status(404).json({ detail: "Library not found" });
   const rawLevels: unknown[] = Array.isArray(req.body?.levels)
     ? req.body.levels
@@ -355,7 +356,7 @@ libraryRouter.post("/:kind/levels", requireAuth, async (req, res) => {
 // GET /library/:kind/filter-options
 libraryRouter.get("/:kind/filter-options", requireAuth, async (req, res) => {
   const userId = res.locals.userId as string;
-  const kind = normalizeLibraryKind(req.params.kind);
+  const kind = normalizeLibraryKind(routeParams(req).kind);
   if (!kind) return void res.status(404).json({ detail: "Library not found" });
 
   const db = createServerSupabase();
@@ -378,7 +379,7 @@ libraryRouter.get("/:kind/filter-options", requireAuth, async (req, res) => {
 // Complete ID-only result set for select-all across unloaded pages/folders.
 libraryRouter.get("/:kind/ids", requireAuth, async (req, res) => {
   const userId = res.locals.userId as string;
-  const kind = normalizeLibraryKind(req.params.kind);
+  const kind = normalizeLibraryKind(routeParams(req).kind);
   if (!kind) return void res.status(404).json({ detail: "Library not found" });
 
   const db = createServerSupabase();
@@ -411,7 +412,7 @@ libraryRouter.post(
   requireAuth,
   async (req, res) => {
     const userId = res.locals.userId as string;
-    const kind = normalizeLibraryKind(req.params.kind);
+    const kind = normalizeLibraryKind(routeParams(req).kind);
     if (!kind)
       return void res.status(404).json({ detail: "Library not found" });
     const ids: string[] = Array.from(
@@ -452,7 +453,7 @@ libraryRouter.get(
   requireAuth,
   async (req, res) => {
     const userId = res.locals.userId as string;
-    const kind = normalizeLibraryKind(req.params.kind);
+    const kind = normalizeLibraryKind(routeParams(req).kind);
     if (!kind)
       return void res.status(404).json({ detail: "Library not found" });
 
@@ -470,7 +471,7 @@ libraryRouter.get(
     );
     const path: typeof folders = [];
     const visited = new Set<string>();
-    let current = foldersById.get(req.params.folderId);
+    let current = foldersById.get(routeParams(req).folderId);
     if (!current)
       return void res.status(404).json({ detail: "Folder not found" });
 
@@ -492,7 +493,7 @@ libraryRouter.post(
   requireAuth,
   async (req, res) => {
     const userId = res.locals.userId as string;
-    const kind = normalizeLibraryKind(req.params.kind);
+    const kind = normalizeLibraryKind(routeParams(req).kind);
     if (!kind)
       return void res.status(404).json({ detail: "Library not found" });
     const body = req.body as {
@@ -546,7 +547,7 @@ libraryRouter.post(
 // POST /library/:kind/folders
 libraryRouter.post("/:kind/folders", requireAuth, async (req, res) => {
   const userId = res.locals.userId as string;
-  const kind = normalizeLibraryKind(req.params.kind);
+  const kind = normalizeLibraryKind(routeParams(req).kind);
   if (!kind) return void res.status(404).json({ detail: "Library not found" });
 
   const { name, parent_folder_id } = req.body as {
@@ -583,11 +584,11 @@ libraryRouter.patch(
   requireAuth,
   async (req, res) => {
   const userId = res.locals.userId as string;
-  const kind = normalizeLibraryKind(req.params.kind);
+  const kind = normalizeLibraryKind(routeParams(req).kind);
     if (!kind)
       return void res.status(404).json({ detail: "Library not found" });
 
-  const { folderId } = req.params;
+  const { folderId } = routeParams(req);
     const body = req.body as {
       name?: string;
       parent_folder_id?: string | null;
@@ -646,11 +647,11 @@ libraryRouter.delete(
   requireAuth,
   async (req, res) => {
   const userId = res.locals.userId as string;
-  const kind = normalizeLibraryKind(req.params.kind);
+  const kind = normalizeLibraryKind(routeParams(req).kind);
     if (!kind)
       return void res.status(404).json({ detail: "Library not found" });
 
-  const { folderId } = req.params;
+  const { folderId } = routeParams(req);
   const db = createServerSupabase();
   const { data: allFolders, error: foldersError } = await db
     .from("library_folders")
@@ -724,11 +725,11 @@ libraryRouter.patch(
   requireAuth,
   async (req, res) => {
     const userId = res.locals.userId as string;
-    const kind = normalizeLibraryKind(req.params.kind);
+    const kind = normalizeLibraryKind(routeParams(req).kind);
     if (!kind)
       return void res.status(404).json({ detail: "Library not found" });
 
-    const { documentId } = req.params;
+    const { documentId } = routeParams(req);
     const { folder_id } = req.body as { folder_id: string | null };
     const db = createServerSupabase();
 
@@ -764,11 +765,11 @@ libraryRouter.patch(
   requireAuth,
   async (req, res) => {
     const userId = res.locals.userId as string;
-    const kind = normalizeLibraryKind(req.params.kind);
+    const kind = normalizeLibraryKind(routeParams(req).kind);
     if (!kind)
       return void res.status(404).json({ detail: "Library not found" });
 
-    const { documentId } = req.params;
+    const { documentId } = routeParams(req);
     const db = createServerSupabase();
     let docQuery = db
       .from("documents")

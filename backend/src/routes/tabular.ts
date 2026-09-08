@@ -90,6 +90,7 @@ import {
 import { parsePaginationQuery } from "../lib/pagination";
 import { normalizeSearchTerm } from "../lib/search";
 import { parseTabularReviewSort } from "../lib/sort";
+import { routeParams } from "../lib/routeParams";
 
 export const tabularRouter = Router();
 const TABULAR_GENERATION_CONCURRENCY = 3;
@@ -666,7 +667,7 @@ tabularRouter.post("/prompt", requireAuth, async (req, res) => {
 tabularRouter.get("/:reviewId", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { reviewId } = req.params;
+    const { reviewId } = routeParams(req);
     const db = createServerSupabase();
 
     const { data: review, error } = await db
@@ -726,7 +727,7 @@ tabularRouter.get("/:reviewId", requireAuth, async (req, res) => {
 tabularRouter.get("/:reviewId/people", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { reviewId } = req.params;
+    const { reviewId } = routeParams(req);
     const db = createServerSupabase();
 
     const { data: review } = await db
@@ -758,7 +759,7 @@ tabularRouter.get("/:reviewId/people", requireAuth, async (req, res) => {
 tabularRouter.get("/:reviewId/access", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { reviewId } = req.params;
+    const { reviewId } = routeParams(req);
     const db = createServerSupabase();
     const { data: review } = await db
         .from("tabular_reviews")
@@ -796,7 +797,7 @@ tabularRouter.get("/:reviewId/access", requireAuth, async (req, res) => {
 tabularRouter.post("/:reviewId/access", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { reviewId } = req.params;
+    const { reviewId } = routeParams(req);
     const db = createServerSupabase();
     const { data: review } = await db
         .from("tabular_reviews")
@@ -854,7 +855,7 @@ tabularRouter.delete(
     async (req, res) => {
         const userId = res.locals.userId as string;
         const userEmail = res.locals.userEmail as string | undefined;
-        const { reviewId } = req.params;
+        const { reviewId } = routeParams(req);
         const db = createServerSupabase();
         const { data: review } = await db
             .from("tabular_reviews")
@@ -878,7 +879,7 @@ tabularRouter.delete(
         const result = await deleteContentGrant(db, {
             kind: "tabular_review",
             resourceId: reviewId,
-            email: decodeURIComponent(req.params.email),
+            email: decodeURIComponent(routeParams(req).email),
         });
         if (!result.ok) return void sendInternalError(res, result.detail);
         if (!result.removed)
@@ -893,7 +894,7 @@ tabularRouter.delete(
 tabularRouter.patch("/:reviewId", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { reviewId } = req.params;
+    const { reviewId } = routeParams(req);
     if (
         req.body &&
         typeof req.body === "object" &&
@@ -1077,7 +1078,7 @@ tabularRouter.patch("/:reviewId", requireAuth, async (req, res) => {
 tabularRouter.delete("/:reviewId", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { reviewId } = req.params;
+    const { reviewId } = routeParams(req);
     const db = createServerSupabase();
     // container.delete keeps review deletion at the top of the ladder: the
     // review's own creator, or an admin of the project it lives in (who could
@@ -1115,7 +1116,7 @@ tabularRouter.delete("/:reviewId", requireAuth, async (req, res) => {
 tabularRouter.post("/:reviewId/clear-cells", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { reviewId } = req.params;
+    const { reviewId } = routeParams(req);
     const { row_ids } = req.body as { row_ids?: string[] };
 
     if (!Array.isArray(row_ids) || row_ids.length === 0)
@@ -1242,7 +1243,7 @@ tabularRouter.post(
     async (req, res) => {
         const userId = res.locals.userId as string;
         const userEmail = res.locals.userEmail as string | undefined;
-        const { reviewId } = req.params;
+        const { reviewId } = routeParams(req);
         const { row_id, column_index } = req.body as {
             row_id?: string;
             column_index: number;
@@ -1547,7 +1548,7 @@ tabularRouter.post(
 tabularRouter.post("/:reviewId/generate", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { reviewId } = req.params;
+    const { reviewId } = routeParams(req);
     const db = createServerSupabase();
     const generationAbort = new AbortController();
     const generationId = randomUUID();
@@ -1880,7 +1881,7 @@ tabularRouter.get(
     async (req, res) => {
         const userId = res.locals.userId as string;
         const userEmail = res.locals.userEmail as string | undefined;
-        const { reviewId } = req.params;
+        const { reviewId } = routeParams(req);
         const db = createServerSupabase();
 
         const prepared = await prepareTabularGenerate(db, {
@@ -1923,7 +1924,7 @@ tabularRouter.get(
 tabularRouter.get("/:reviewId/chats", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { reviewId } = req.params;
+    const { reviewId } = routeParams(req);
     const db = createServerSupabase();
 
     // Verify access (creator, direct grant, project access, or org).
@@ -2020,7 +2021,7 @@ tabularRouter.delete(
     async (req, res) => {
         const userId = res.locals.userId as string;
         const userEmail = res.locals.userEmail as string | undefined;
-        const { reviewId, chatId } = req.params;
+        const { reviewId, chatId } = routeParams(req);
         const db = createServerSupabase();
         const gate = await ensureReviewChatWriteAccess(
             reviewId,
@@ -2054,7 +2055,7 @@ tabularRouter.patch(
     async (req, res) => {
         const userId = res.locals.userId as string;
         const userEmail = res.locals.userEmail as string | undefined;
-        const { reviewId, chatId } = req.params;
+        const { reviewId, chatId } = routeParams(req);
         const body =
             req.body && typeof req.body === "object" && !Array.isArray(req.body)
                 ? (req.body as Record<string, unknown>)
@@ -2184,7 +2185,7 @@ tabularRouter.get(
     async (req, res) => {
         const userId = res.locals.userId as string;
         const userEmail = res.locals.userEmail as string | undefined;
-        const { reviewId, chatId } = req.params;
+        const { reviewId, chatId } = routeParams(req);
         const db = createServerSupabase();
 
         const { data: review } = await db
@@ -2319,7 +2320,7 @@ Rules:
 tabularRouter.post("/:reviewId/chat", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { reviewId } = req.params;
+    const { reviewId } = routeParams(req);
     const {
         messages,
         chat_id: existingChatId,

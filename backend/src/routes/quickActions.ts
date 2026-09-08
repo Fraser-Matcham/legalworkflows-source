@@ -9,6 +9,7 @@ import { createServerSupabase } from "../lib/supabase";
 import { ensureDefaultWorkflows } from "../lib/workflowCatalog";
 import { sendInternalError } from "../lib/httpError";
 import { checkWorkflowAccess } from "../lib/access";
+import { routeParams } from "../lib/routeParams";
 
 export const quickActionsRouter = Router();
 
@@ -229,7 +230,7 @@ quickActionsRouter.patch(
   asyncRoute(async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { quickActionId } = req.params;
+    const { quickActionId } = routeParams(req);
     const updates: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     };
@@ -315,7 +316,7 @@ quickActionsRouter.delete(
     const { error } = await db
       .from("quick_actions")
       .delete()
-      .eq("id", req.params.quickActionId)
+      .eq("id", routeParams(req).quickActionId)
       .eq("user_id", userId);
     if (error) return void sendInternalError(res, error);
     res.status(204).send();

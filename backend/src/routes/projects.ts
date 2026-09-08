@@ -53,6 +53,7 @@ import {
   parseProjectScope,
 } from "../lib/projectsOverview";
 import { ensureResourceAccessSummaries } from "../lib/resourceAccessSummary";
+import { routeParams } from "../lib/routeParams";
 
 export const projectsRouter = Router();
 
@@ -563,7 +564,7 @@ async function handleProjectDirectorySearch(req: Request, res: Response) {
 projectsRouter.get("/:projectId/directory", requireAuth, async (req, res) => {
   const userId = res.locals.userId as string;
   const userEmail = res.locals.userEmail as string | undefined;
-  const { projectId } = req.params;
+  const { projectId } = routeParams(req);
   const db = createServerSupabase();
   const access = await checkProjectAccess(projectId, userId, userEmail, db);
   if (!access.ok)
@@ -670,7 +671,7 @@ projectsRouter.get("/ids", requireAuth, async (req, res) => {
 projectsRouter.get("/:projectId", requireAuth, async (req, res) => {
   const userId = res.locals.userId as string;
   const userEmail = res.locals.userEmail as string;
-  const { projectId } = req.params;
+  const { projectId } = routeParams(req);
   const db = createServerSupabase();
 
   const access = await checkProjectAccess(projectId, userId, userEmail, db);
@@ -731,7 +732,7 @@ projectsRouter.get("/:projectId", requireAuth, async (req, res) => {
 projectsRouter.get("/:projectId/people", requireAuth, async (req, res) => {
   const userId = res.locals.userId as string;
   const userEmail = res.locals.userEmail as string | undefined;
-  const { projectId } = req.params;
+  const { projectId } = routeParams(req);
   const db = createServerSupabase();
 
   // Visible to anyone who can see the project, at every tier. "Who else is on
@@ -827,7 +828,7 @@ projectsRouter.get("/:projectId/people", requireAuth, async (req, res) => {
 projectsRouter.get("/:projectId/access", requireAuth, async (req, res) => {
   const userId = res.locals.userId as string;
   const userEmail = res.locals.userEmail as string | undefined;
-  const { projectId } = req.params;
+  const { projectId } = routeParams(req);
   const db = createServerSupabase();
 
   const access = await checkProjectAccess(projectId, userId, userEmail, db);
@@ -869,7 +870,7 @@ projectsRouter.get("/:projectId/access", requireAuth, async (req, res) => {
 projectsRouter.post("/:projectId/access", requireAuth, async (req, res) => {
   const userId = res.locals.userId as string;
   const userEmail = res.locals.userEmail as string | undefined;
-  const { projectId } = req.params;
+  const { projectId } = routeParams(req);
   const db = createServerSupabase();
 
   const access = await checkProjectAccess(projectId, userId, userEmail, db);
@@ -958,7 +959,7 @@ projectsRouter.delete(
   async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { projectId } = req.params;
+    const { projectId } = routeParams(req);
     const db = createServerSupabase();
 
     const access = await checkProjectAccess(projectId, userId, userEmail, db);
@@ -970,7 +971,7 @@ projectsRouter.delete(
         .json({ detail: "Only a project owner can change who has access." });
 
     if (access.project.org_id) {
-      const email = normalizeEmail(decodeURIComponent(req.params.email));
+      const email = normalizeEmail(decodeURIComponent(routeParams(req).email));
       if (!email)
         return void res.status(404).json({ detail: "Access override not found" });
       const target = await findOrgMemberByEmail(
@@ -996,7 +997,7 @@ projectsRouter.delete(
 
     const result = await deleteProjectGrant(db, {
       projectId,
-      email: decodeURIComponent(req.params.email),
+      email: decodeURIComponent(routeParams(req).email),
     });
     if (!result.ok) return void sendInternalError(res, result.detail);
     if (!result.removed)
@@ -1009,7 +1010,7 @@ projectsRouter.delete(
 projectsRouter.patch("/:projectId", requireAuth, async (req, res) => {
   const userId = res.locals.userId as string;
   const userEmail = res.locals.userEmail as string | undefined;
-  const { projectId } = req.params;
+  const { projectId } = routeParams(req);
   if (
     req.body &&
     typeof req.body === "object" &&
@@ -1073,7 +1074,7 @@ projectsRouter.patch("/:projectId", requireAuth, async (req, res) => {
 projectsRouter.delete("/:projectId", requireAuth, async (req, res) => {
   const userId = res.locals.userId as string;
   const userEmail = res.locals.userEmail as string | undefined;
-  const { projectId } = req.params;
+  const { projectId } = routeParams(req);
   const db = createServerSupabase();
   // Deleting a project is the destructive end of the ladder, so it declares
   // `container.delete` like every other gate on this branch instead of
@@ -1106,7 +1107,7 @@ projectsRouter.delete("/:projectId", requireAuth, async (req, res) => {
 projectsRouter.get("/:projectId/documents", requireAuth, async (req, res) => {
   const userId = res.locals.userId as string;
   const userEmail = res.locals.userEmail as string | undefined;
-  const { projectId } = req.params;
+  const { projectId } = routeParams(req);
   const db = createServerSupabase();
 
   const access = await checkProjectAccess(projectId, userId, userEmail, db);
@@ -1139,7 +1140,7 @@ projectsRouter.get(
   async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { projectId } = req.params;
+    const { projectId } = routeParams(req);
     const db = createServerSupabase();
 
     const access = await checkProjectAccess(projectId, userId, userEmail, db);
@@ -1173,7 +1174,7 @@ projectsRouter.post(
   async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { projectId, documentId } = req.params;
+    const { projectId, documentId } = routeParams(req);
     const db = createServerSupabase();
 
     const access = await checkProjectAccess(projectId, userId, userEmail, db);
@@ -1363,7 +1364,7 @@ projectsRouter.patch(
   async (req, res) => {
   const userId = res.locals.userId as string;
   const userEmail = res.locals.userEmail as string | undefined;
-  const { projectId, documentId } = req.params;
+  const { projectId, documentId } = routeParams(req);
   const db = createServerSupabase();
 
   const access = await checkProjectAccess(projectId, userId, userEmail, db);
@@ -1428,7 +1429,7 @@ projectsRouter.patch(
 projectsRouter.get("/:projectId/chats", requireAuth, async (req, res) => {
   const userId = res.locals.userId as string;
   const userEmail = res.locals.userEmail as string | undefined;
-  const { projectId } = req.params;
+  const { projectId } = routeParams(req);
   const db = createServerSupabase();
 
   const access = await checkProjectAccess(projectId, userId, userEmail, db);
@@ -1472,7 +1473,7 @@ projectsRouter.post(
   async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { projectId } = req.params;
+    const { projectId } = routeParams(req);
     const body = req.body as {
       base_folder_id?: string | null;
       segments?: unknown;
@@ -1542,7 +1543,7 @@ projectsRouter.post(
 projectsRouter.post("/:projectId/folders", requireAuth, async (req, res) => {
   const userId = res.locals.userId as string;
   const userEmail = res.locals.userEmail as string | undefined;
-  const { projectId } = req.params;
+  const { projectId } = routeParams(req);
   const { name, parent_folder_id } = req.body as {
     name: string;
     parent_folder_id?: string | null;
@@ -1588,7 +1589,7 @@ projectsRouter.patch(
   async (req, res) => {
   const userId = res.locals.userId as string;
   const userEmail = res.locals.userEmail as string | undefined;
-  const { projectId, folderId } = req.params;
+  const { projectId, folderId } = routeParams(req);
     const body = req.body as {
       name?: string;
       parent_folder_id?: string | null;
@@ -1655,7 +1656,7 @@ projectsRouter.delete(
   async (req, res) => {
   const userId = res.locals.userId as string;
   const userEmail = res.locals.userEmail as string | undefined;
-  const { projectId, folderId } = req.params;
+  const { projectId, folderId } = routeParams(req);
   const db = createServerSupabase();
 
   // Folder deletion cascades into every nested document and its storage
@@ -1727,7 +1728,7 @@ projectsRouter.patch(
   async (req, res) => {
   const userId = res.locals.userId as string;
   const userEmail = res.locals.userEmail as string | undefined;
-  const { projectId, documentId } = req.params;
+  const { projectId, documentId } = routeParams(req);
   const { folder_id } = req.body as { folder_id: string | null };
 
   const db = createServerSupabase();

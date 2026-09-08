@@ -51,6 +51,7 @@ import { can, type ProjectRole } from "../lib/permissions";
 import { listContentPeople } from "../lib/resourcePeople";
 import { generateAssistantChatTitle } from "../lib/chatTitle";
 import { sendInternalError } from "../lib/httpError";
+import { routeParams } from "../lib/routeParams";
 import {
     resolveEffectiveChatModel,
     resolveEffectiveReasoningLevel,
@@ -206,7 +207,7 @@ chatRouter.post("/create", requireAuth, async (req, res) => {
 chatRouter.get("/:chatId", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { chatId } = req.params;
+    const { chatId } = routeParams(req);
     const db = createServerSupabase();
 
     // Reading a chat only needs visibility (project.view) — org viewers
@@ -245,7 +246,7 @@ chatRouter.get("/:chatId", requireAuth, async (req, res) => {
 chatRouter.get("/:chatId/people", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { chatId } = req.params;
+    const { chatId } = routeParams(req);
     const db = createServerSupabase();
 
     const access = await getAccessibleChat(chatId, userId, userEmail, db);
@@ -262,7 +263,7 @@ chatRouter.get("/:chatId/people", requireAuth, async (req, res) => {
 chatRouter.get("/:chatId/access", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { chatId } = req.params;
+    const { chatId } = routeParams(req);
     const db = createServerSupabase();
     const access = await getAccessibleChat(chatId, userId, userEmail, db);
     if (!access.ok)
@@ -293,7 +294,7 @@ chatRouter.get("/:chatId/access", requireAuth, async (req, res) => {
 chatRouter.post("/:chatId/access", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { chatId } = req.params;
+    const { chatId } = routeParams(req);
     const db = createServerSupabase();
     const access = await getAccessibleChat(chatId, userId, userEmail, db);
     if (!access.ok)
@@ -341,7 +342,7 @@ chatRouter.post("/:chatId/access", requireAuth, async (req, res) => {
 chatRouter.delete("/:chatId/access/:email", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { chatId } = req.params;
+    const { chatId } = routeParams(req);
     const db = createServerSupabase();
     const access = await getAccessibleChat(chatId, userId, userEmail, db);
     if (!access.ok)
@@ -358,7 +359,7 @@ chatRouter.delete("/:chatId/access/:email", requireAuth, async (req, res) => {
     const result = await deleteContentGrant(db, {
         kind: "chat",
         resourceId: chatId,
-        email: decodeURIComponent(req.params.email),
+        email: decodeURIComponent(routeParams(req).email),
     });
     if (!result.ok) return void sendInternalError(res, result.detail);
     if (!result.removed)
@@ -483,7 +484,7 @@ async function hydrateEditStatuses(
 chatRouter.patch("/:chatId", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { chatId } = req.params;
+    const { chatId } = routeParams(req);
     const updates: Record<string, unknown> = {};
     const body =
         req.body && typeof req.body === "object" && !Array.isArray(req.body)
@@ -606,7 +607,7 @@ chatRouter.patch("/:chatId", requireAuth, async (req, res) => {
 chatRouter.delete("/:chatId", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { chatId } = req.params;
+    const { chatId } = routeParams(req);
     const db = createServerSupabase();
     // container.delete keeps chat deletion at the top of the ladder: the
     // chat's creator, or an admin of the project it lives in (who could
@@ -628,7 +629,7 @@ chatRouter.delete("/:chatId", requireAuth, async (req, res) => {
 chatRouter.post("/:chatId/generate-title", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { chatId } = req.params;
+    const { chatId } = routeParams(req);
     const message =
         typeof req.body?.message === "string" ? req.body.message.trim() : "";
     const requestedModel =

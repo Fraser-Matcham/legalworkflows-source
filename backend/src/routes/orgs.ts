@@ -14,6 +14,7 @@ import { Router, type Response } from "express";
 import { requireAuth } from "../middleware/auth";
 import { createServerSupabase } from "../lib/supabase";
 import { sendInternalError } from "../lib/httpError";
+import { routeParams } from "../lib/routeParams";
 import {
     listMyOrgs,
     createOrg,
@@ -101,7 +102,7 @@ orgsRouter.post("/", requireAuth, async (req, res) => {
 orgsRouter.get("/:orgId", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const db = createServerSupabase();
-    const result = await getOrg(db, { userId, orgId: req.params.orgId });
+    const result = await getOrg(db, { userId, orgId: routeParams(req).orgId });
     if (!result.ok) return sendOrgFailure(res, result);
     res.json(result.org);
 });
@@ -112,7 +113,7 @@ orgsRouter.patch("/:orgId", requireAuth, async (req, res) => {
     const db = createServerSupabase();
     const result = await updateOrg(db, {
         userId,
-        orgId: req.params.orgId,
+        orgId: routeParams(req).orgId,
         name: req.body?.name,
     });
     if (!result.ok) return sendOrgFailure(res, result);
@@ -127,7 +128,7 @@ orgsRouter.delete("/:orgId", requireAuth, async (req, res) => {
     const result = await deleteOrg(db, {
         userId,
         userEmail: res.locals.userEmail as string | undefined,
-        orgId: req.params.orgId,
+        orgId: routeParams(req).orgId,
     });
     if (!result.ok) return sendOrgFailure(res, result);
     res.status(204).send();
@@ -141,7 +142,7 @@ orgsRouter.get("/:orgId/resources", requireAuth, async (req, res) => {
     const db = createServerSupabase();
     const result = await listOrgResources(db, {
         userId,
-        orgId: req.params.orgId,
+        orgId: routeParams(req).orgId,
     });
     if (!result.ok) return sendOrgFailure(res, result);
     res.json({
@@ -154,7 +155,7 @@ orgsRouter.get("/:orgId/resources", requireAuth, async (req, res) => {
 orgsRouter.get("/:orgId/members", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const db = createServerSupabase();
-    const result = await listMembers(db, { userId, orgId: req.params.orgId });
+    const result = await listMembers(db, { userId, orgId: routeParams(req).orgId });
     if (!result.ok) return sendOrgFailure(res, result);
     res.json(result.members);
 });
@@ -166,8 +167,8 @@ orgsRouter.patch("/:orgId/members/:userId", requireAuth, async (req, res) => {
     const result = await updateMember(db, {
         actorId: userId,
         actorEmail: res.locals.userEmail as string | undefined,
-        orgId: req.params.orgId,
-        targetUserId: req.params.userId,
+        orgId: routeParams(req).orgId,
+        targetUserId: routeParams(req).userId,
         role: req.body?.role,
     });
     if (!result.ok) return sendOrgFailure(res, result);
@@ -181,8 +182,8 @@ orgsRouter.delete("/:orgId/members/:userId", requireAuth, async (req, res) => {
     const result = await removeMember(db, {
         actorId: userId,
         actorEmail: res.locals.userEmail as string | undefined,
-        orgId: req.params.orgId,
-        targetUserId: req.params.userId,
+        orgId: routeParams(req).orgId,
+        targetUserId: routeParams(req).userId,
     });
     if (!result.ok) return sendOrgFailure(res, result);
     res.status(204).send();
@@ -200,7 +201,7 @@ orgsRouter.post("/:orgId/invitations", requireAuth, async (req, res) => {
     const result = await createInvitation(db, {
         actorId: userId,
         actorEmail: userEmail,
-        orgId: req.params.orgId,
+        orgId: routeParams(req).orgId,
         email: req.body?.email,
         role: req.body?.role,
     });
@@ -214,7 +215,7 @@ orgsRouter.get("/:orgId/invitations", requireAuth, async (req, res) => {
     const db = createServerSupabase();
     const result = await listInvitations(db, {
         userId,
-        orgId: req.params.orgId,
+        orgId: routeParams(req).orgId,
     });
     if (!result.ok) return sendOrgFailure(res, result);
     res.json(result.invitations);
@@ -231,8 +232,8 @@ orgsRouter.delete(
         const result = await cancelInvitation(db, {
             actorId: userId,
             actorEmail: userEmail,
-            orgId: req.params.orgId,
-            invitationId: req.params.invitationId,
+            orgId: routeParams(req).orgId,
+            invitationId: routeParams(req).invitationId,
         });
         if (!result.ok) return sendOrgFailure(res, result);
         res.status(204).send();
@@ -255,8 +256,8 @@ orgsRouter.post(
         const result = await resendInvitation(db, {
             actorId: userId,
             actorEmail: userEmail,
-            orgId: req.params.orgId,
-            invitationId: req.params.invitationId,
+            orgId: routeParams(req).orgId,
+            invitationId: routeParams(req).invitationId,
         });
         if (!result.ok) return sendOrgFailure(res, result);
         res.json(result.invitation);

@@ -37,6 +37,7 @@ import {
 } from "../lib/access";
 import { can, type ProjectRole } from "../lib/permissions";
 import { generateAssistantChatTitle } from "../lib/chatTitle";
+import { routeParams } from "../lib/routeParams";
 import {
     resolveEffectiveChatModel,
     resolveEffectiveReasoningLevel,
@@ -57,7 +58,7 @@ export const projectChatRouter = Router({ mergeParams: true });
 projectChatRouter.post("/", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const userEmail = res.locals.userEmail as string | undefined;
-    const { projectId } = req.params;
+    const { projectId } = routeParams(req);
     const body =
         req.body && typeof req.body === "object" && !Array.isArray(req.body)
             ? (req.body as Record<string, unknown>)
