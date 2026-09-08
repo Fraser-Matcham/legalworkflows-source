@@ -31,59 +31,101 @@ judgement calls I would change. None of it moves a phase boundary.
 - **Sprints 1–2 deliberately light** at 26 and 32 points against a 41-point
   average. That is where the external blockers sit, and the plan says so.
 
-## Blocking finding: ticket 2012 cannot meet its acceptance criteria
+## Ticket 2012: the acceptance criteria could not be met as written — resolved
 
-Ticket 2012 replaces `xlsx` with `exceljs` in
-`backend/src/lib/spreadsheet.ts`, with the acceptance criterion that *"a sample
-.xlsx, .xlsm and legacy .xls each produce identical output to the previous
-implementation."*
+Ticket 2012 replaces `xlsx` with `exceljs` in `backend/src/lib/spreadsheet.ts`,
+with the acceptance criterion that *"a sample .xlsx, .xlsm and legacy .xls each
+produce identical output to the previous implementation."*
 
 **ExcelJS cannot read legacy `.xls`.** It reads XLSX and CSV; the BIFF binary
 format has no support in it. SheetJS reads all three, which is exactly why the
 current code uses it — `spreadsheet.ts:7` says so in its own header comment.
 
-And `.xls` is not incidental here. It is a first-class document type across the
-backend:
+And `.xls` is not incidental. It is a first-class document type across the
+backend: `documentTypes.ts` lists it and maps it to
+`application/vnd.ms-excel`; `sourceDocuments.ts:253` routes `xlsx`/`xlsm`/`xls`
+to the spreadsheet reader; `documentOps.ts:1654` and `tabular.extract.ts:241`
+both note that SheetJS reads `.xls` directly, "no PDF detour"; and
+`documentTypes.test.ts` asserts `xls` is recognised and *not* converted to PDF.
 
-- `backend/src/lib/documentTypes.ts` lists `xls` in the supported set and maps
-  it to `application/vnd.ms-excel`.
-- `backend/src/lib/sourceDocuments.ts:253` routes `xlsx`/`xlsm`/`xls` to the
-  spreadsheet reader.
-- `backend/src/lib/chat/tools/documentOps.ts:1654` and
-  `backend/src/lib/tabular/tabular.extract.ts:241` both note that SheetJS reads
-  `.xls` directly, "no PDF detour".
-- `documentTypes.test.ts` asserts `xls` is recognised and that it is *not*
-  converted to PDF.
+There is a second problem the ticket does not mention, and it is the one that
+makes it an 8-point ticket rather than a 2-point one. The reader depends on
+`cell.w`, the Excel-*formatted* display string, so that `1200` reaches the model
+as `$1,200` and a date serial reaches it as `3/1/26`. **SheetJS computes that
+string; ExcelJS does not.** Swapping the library means re-implementing Excel's
+number-format rendering, which is where "identical output" would actually have
+been lost. The ticket's own note that "exceljs is already a frontend dependency,
+so it is a known quantity" is weaker than it reads: the frontend uses ExcelJS
+only in `exportToExcel.ts`, as a *writer*. Nothing in this repository reads a
+workbook with it. The frontend's spreadsheet *viewer* uses LuckyExcel, which is
+also `.xlsx`-only.
 
-So the swap as written silently drops a supported format, and the tests that
-would have caught it are in the 31 backend files that cannot currently run.
+### What was done instead
 
-Four ways forward, best first:
+The premise behind the ticket is that `xlsx` must be replaced because it is
+pinned to a vendor CDN. It does not have to be. SheetJS 0.20.3 — the exact
+version pinned — is on the public npm registry, republished as
+`@e965/xlsx`, Apache-2.0. So the dependency is now an npm alias:
 
-1. **Host the patched tarball yourself.** Publish `xlsx@0.20.3` to GitHub
-   Packages or vendor it, and install from there. `npm ci` stops reaching a
-   vendor CDN, behaviour is bit-identical, and you keep the patched version.
-   This is the cheapest fix and the plan does not consider it. Roughly 3 points,
-   not 8.
-2. **`exceljs` for `.xlsx`/`.xlsm`, LibreOffice for `.xls`.** LibreOffice is
-   already going onto the backend image in Sprint 3 (ticket 2049); convert
-   `.xls` to `.xlsx` on ingest and read it with ExcelJS. Clean, but it adds a
-   subprocess to a read path and the output will not be byte-identical.
-3. **Pin `xlsx@0.18.5` from the npm registry.** One line, unblocks `npm ci`
-   today, keeps `.xls`. But 0.18.5 carries known advisories (prototype
-   pollution, ReDoS) — which is precisely why upstream moved to the 0.20.3
-   CDN tarball. For a product handling privileged legal material this is the
-   wrong trade.
-4. **Drop `.xls` support** as a product decision, and remove it from
-   `documentTypes.ts` and its tests. Legitimate, but it is a scope change that
-   belongs to the product owner, not to a dependency ticket.
+```json
+"xlsx": "npm:@e965/xlsx@0.20.3"
+```
 
-Whichever is chosen, rewrite 2012's acceptance criteria to name the decision.
-As written it will be marked done while `.xls` is broken.
+One line. No source changes at all: the import specifier is still `"xlsx"`, so
+`spreadsheet.ts` — a file upstream actively maintains — carries no conflict
+surface from this change, which is what fork rule 3 asks for. The whole diff is
+5 insertions and 4 deletions across `package.json` and `package-lock.json`.
 
-**Reproduced:** `npm ci` in `backend/` fails here with
-`npm error code E403 … 403 Forbidden - GET https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`.
-The plan's headline blocker is real.
+Output is identical to the previous implementation *by construction*, because it
+is the same code at the same version, and the lockfile records the integrity
+hash. Verified end to end:
+
+- `npm ci` succeeds behind the egress filter that returned 403 before.
+- `npm run build` passes.
+- `npm test` passes: **117 test files** (111 passed, 6 skipped), 1,422 tests,
+  1,383 passed, 39 skipped. The ticket 2013 criterion was "117, not 80".
+- Round-tripping a workbook with a currency and a date format through all three
+  formats returns the formatted display strings intact:
+
+  | Format | Bytes | `B2` (`"$"#,##0`) | `C2` (`m/d/yy`) |
+  | --- | --- | --- | --- |
+  | `.xlsx` | 16,251 | `$1,200` | `3/1/26` |
+  | `.xlsm` | 16,229 | `$1,200` | `3/1/26` |
+  | `.xls` | 4,096 | `$1,200` | `3/1/26` |
+
+- `npm audit` on the backend: 0 high, 0 critical, 4 moderate. `security.yml`
+  gates on high and critical, so the backend passes its own audit gate. (The 2
+  high advisories GitHub reports are elsewhere in the tree.)
+
+### The trade-off, stated plainly
+
+This swaps a vendor-hosted tarball for a **single-maintainer community
+republish**. That is a real supply-chain consideration for a product handling
+privileged legal material, and it should be a conscious choice rather than a
+convenience.
+
+What was checked before adopting it: the tarball's SHA-512 matches the registry
+metadata (`sha512-703RN/3Ods…`) and is pinned in the lockfile; the archive
+carries the genuine SheetJS layout and the `xlsx.js (C) 2013-present SheetJS`
+header with `XLSX.version = '0.20.3'`; the licence is Apache-2.0; there is **no
+`postinstall` script**; and the code contains no `eval`, no `Function()`, no
+`child_process`, no `http`/`https`/`fetch`/`XMLHttpRequest`, and no
+`process.env` access. `npm audit` reports nothing against it.
+
+The strictly better long-term answer is to **mirror the official 0.20.3 tarball
+into GitHub Packages** and depend on that, which removes the third party
+entirely. It could not be done from this environment — `cdn.sheetjs.com` is
+blocked at the egress proxy, so the original tarball cannot be fetched here. Do
+it from a machine with egress when convenient; it is then another one-line
+change to the same `"xlsx"` key, with no source impact either.
+
+Two options that were considered and rejected: pinning `xlsx@0.18.5`, the last
+version SheetJS published to npm, carries known prototype-pollution and ReDoS
+advisories and is exactly what upstream moved away from; and dropping `.xls`
+support is a product decision, not a dependency ticket's to take.
+
+**Re-point ticket 2012 at this change and re-score it.** It was 8 points and is
+now closer to 2, and the sprint has that capacity back.
 
 ## Factual corrections
 

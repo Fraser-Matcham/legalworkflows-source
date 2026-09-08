@@ -55,12 +55,13 @@ boundaries.
 
 ## Blockers to clear before, or early in, Sprint 1
 
-**The build does not install.** `backend/package.json` pins `xlsx` to a
-SheetJS CDN tarball rather than a registry package. `npm ci` returns 403 behind
-any egress filter, so no CI runner can build the backend and 31 of the 117
-backend test files cannot run. First ticket in the plan (2012) — but read the
-blocking finding in [`plan-review.md`](plan-review.md) first: the proposed fix
-drops legacy `.xls` support.
+**~~The build does not install.~~ Fixed.** `backend/package.json` pinned
+`xlsx` to a SheetJS CDN tarball rather than a registry package, so `npm ci`
+returned 403 behind any egress filter and 31 of the 117 backend test files could
+not run. It is now an npm alias to the same version on the public registry. The
+fix is not the one ticket 2012 proposes — that one would have dropped legacy
+`.xls` support and lost the Excel display-string formatting the reader depends
+on. See [`plan-review.md`](plan-review.md) and re-score the ticket.
 
 **The licence enquiry costs a week and can delete an epic.** Approach Open Legal
 Products about a commercial licence *before* Sprint 1. If it lands, the entire

@@ -133,14 +133,20 @@ and a cross-tenant disclosure.
 Verified against this repository at the seeded commit, not read from its CI
 configuration:
 
-- **`npm ci` fails in `backend/`.** `backend/package.json` pins `xlsx` to
-  `https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz` — a vendor tarball, not
-  a registry package. Reproduced here: `npm error code E403 … 403 Forbidden -
-  GET https://cdn.sheetjs.com/…`. No filtered runner can build or test the
-  backend until this is replaced, and Dependabot cannot see the dependency at
-  all. It is the first ticket in the plan (2012) for good reason.
+- **`npm ci` in `backend/` — fixed.** It failed with
+  `403 Forbidden - GET https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`,
+  reproduced here rather than quoted: `backend/package.json` pinned `xlsx` to a
+  vendor tarball rather than a registry package. It is now an npm alias to the
+  same SheetJS version on the public registry,
+  `"xlsx": "npm:@e965/xlsx@0.20.3"` — one line, no source changes, `.xls`
+  support and `cell.w` formatting intact. `npm ci`, `npm run build` and
+  `npm test` all pass, with all **117** backend test files running rather than
+  80. The supply-chain review behind that choice, and the strictly better
+  long-term option, are in
+  [`delivery-plan/plan-review.md`](delivery-plan/plan-review.md).
 - **288 test files**: 117 backend, 141 frontend, the rest in `e2e/` and
-  `word-addin/`. 31 of the backend files cannot run while the install fails.
+  `word-addin/`. The backend suite now runs in full — 1,383 tests passed, 39
+  skipped, across 117 files.
 - **11 workflows** in `.github/workflows/`. `scorecard.yml` sets
   `publish_results: true` against the OpenSSF API, which only accepts public
   repositories — it cannot work here and should be deleted (ticket 2019).
