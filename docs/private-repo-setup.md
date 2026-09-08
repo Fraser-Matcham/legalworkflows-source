@@ -51,8 +51,30 @@ depends on the number.
   additive-changes rule, and the rule that `LICENSE` is never altered.
 - The sync routine documented in [`upstream-sync.md`](upstream-sync.md) and
   scripted in [`scripts/upstream-sync.sh`](../scripts/upstream-sync.sh).
-- Dependabot **alerts** are already on: the seeding push reported 12 open
-  advisories (2 high, 9 moderate, 1 low) against the default branch.
+- Dependabot is **already running**, and more of it than the plan assumes.
+  Alerts are on — the seeding push reported 12 open advisories (2 high, 9
+  moderate, 1 low) — and version updates fired immediately on `.github/dependabot.yml`,
+  opening 11 pull requests within minutes of the seed. Ticket 2021's acceptance
+  criterion ("Dependabot opens a PR against a seeded outdated dependency") is
+  met on arrival; what remains of that ticket is confirming the **security
+  updates** toggle, which is separate and which
+  [`scripts/configure-repo.sh`](../scripts/configure-repo.sh) sets.
+
+  Two things follow from that queue, and both land in Sprint 1 rather than
+  Sprint 2:
+
+  - **None of the 11 can go green until the install is fixed.** Every one of
+    them has to pass `CI / Backend build and tests`, and `npm ci` fails on the
+    backend today. Ticket 2012 gates the dependency queue as well as the
+    build.
+  - **Four of them bump GitHub Actions across major versions** —
+    `actions/checkout` 4→7, `actions/setup-node` 4→7, and `codeql-action`
+    3.37.4→4.37.9 twice. This repository pins actions to 40-character commit
+    SHAs on purpose (a tag is mutable, so a compromised action repository can
+    silently swap what `v4` points at). Dependabot preserves the SHA pin when
+    it bumps, but a major-version jump across four workflows is a review, not
+    a rubber stamp. Take the `codeql-action` ones only after ticket 2022
+    settles whether CodeQL runs here at all.
 
 ## Needs an organisation owner
 
