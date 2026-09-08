@@ -95,8 +95,19 @@ updates:
       # highlightQuote.ts, which pins the version into a CDN path.
       - dependency-name: "pdfjs-dist"
         update-types: ["version-update:semver-major"]
-      # eslint 10 is blocked upstream: typescript-eslint refuses to load
-      # against this repo's TypeScript 7. Nothing to fix on this side.
+      # TypeScript 7 is what actually breaks `npm run lint` here, not eslint.
+      # The frontend is on TS 5.9.3; bumping it to 7 makes typescript-eslint
+      # (nested under eslint-config-next) refuse to load at all:
+      #
+      #   Error: typescript-eslint does not support TS 7.0.
+      #
+      # eslint itself stays on 9.39.5 through that failure, so this is a
+      # TypeScript constraint. Reverse it when typescript-eslint ships TS >=7
+      # support — https://github.com/typescript-eslint/typescript-eslint/issues/10940
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      # eslint 10 pairs with a typescript-eslint generation this tree does not
+      # have yet either; taken separately once the TypeScript constraint lifts.
       - dependency-name: "eslint"
         update-types: ["version-update:semver-major"]
     groups:
@@ -125,6 +136,10 @@ updates:
       # three-package security patch. It is a toolchain migration and wants
       # its own change.
       - dependency-name: "office-addin-debugging"
+        update-types: ["version-update:semver-major"]
+      # The add-in is on TS 5.9.3 and its typecheck fails on 7, the same
+      # constraint as the frontend. Both move together when it lifts.
+      - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
     groups:
       security-fixes:

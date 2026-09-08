@@ -177,7 +177,7 @@ removed from the backend, and it will fail the same way on a restricted
 network. Worth fixing regardless of the version bump: serve the fonts from the
 application's own origin.
 
-## Frontend — PR #7
+## Frontend — PR #7 (and its successor #22)
 
 `Frontend build and tests` fails at lint:
 
@@ -185,10 +185,34 @@ application's own origin.
 Error: typescript-eslint does not support TS 7.0.
 ```
 
-The group pulls `eslint` into 10.x while `eslint-plugin-import`,
-`eslint-plugin-jsx-a11y` and `typescript-eslint` are all still on the `^9`
-generation. **Nothing to fix on this side** — it clears when
-`eslint-config-next` ships a `typescript-eslint` that supports TS 7.
+**Corrected after reproducing it.** The first reading of this blamed `eslint`
+being pulled into 10.x. That was wrong on both counts, and the `ignore` entry it
+produced was aimed at the wrong package.
+
+Reproduced locally against #22: **eslint is 9.39.5 through the failure**, so its
+major version is not involved. The actual trigger is `typescript`
+**5.9.3 → 7.0.2**, and the copy of `typescript-eslint` that refuses to load is
+the one nested under `eslint-config-next`.
+
+The mistaken premise underneath was that the whole repository was already on
+TS 7 and the add-in was the odd one out. Measured on `main`:
+
+| Workspace | `typescript` | Resolved |
+| --- | --- | --- |
+| repo root | `^7.0.2` | 7.0.2 |
+| `backend/` | `^7.0.2` | 7.0.2 |
+| **`frontend/`** | **`^5`** | **5.9.3** |
+| **`word-addin/`** | **`^5.4.5`** | **5.9.3** |
+
+**Two** workspaces are on TS 5, not one, and the TS 7 that breaks lint is one
+the pull request *introduces* rather than one already present. #17 fails
+identically for the same reason — it bumps the add-in's `typescript`
+`^5.4.5 → ^7.0.2` and `npm run typecheck` fails.
+
+So `typescript` now carries a major-version `ignore` in both `frontend/` and
+`word-addin/`. It lifts when `typescript-eslint` ships TS >= 7 support
+([tracking issue](https://github.com/typescript-eslint/typescript-eslint/issues/10940)),
+and both workspaces should move together at that point.
 
 ## The plan
 
@@ -230,6 +254,26 @@ wave 4.
   is not deployed in these 24 weeks (assumption 15) and the advisories are
   build-host only.
 - `eslint` 10 — blocked upstream. Nothing to do but wait.
+
+### An `ignore` on a major does not stop a security update
+
+`office-addin-debugging` carries a `version-update:semver-major` ignore, and
+#13 was closed on the understanding that this would stop the group
+regenerating in that shape. It did not: **#16 reopened it with the same
+`^5.0.12 → ^6.1.2` bump and the same ~239 transitive changes.**
+
+The reason is that `update-types: ["version-update:semver-major"]` filters
+*version* updates only. The `security-fixes` group is declared
+`applies-to: security-updates`, which is a different update type, and Dependabot
+will still reach for a major when that is the only version resolving the
+advisory.
+
+Silencing it would need a `dependency-name` ignore with no `update-types`,
+which suppresses the security update too — and hiding an advisory is worse than
+carrying a red pull request. So #16 stays open and visible. The real fix is
+either the `overrides` route for `tmp` and `@xmldom/xmldom`, or taking the
+`office-addin-debugging` v6 migration deliberately; both are wave 4, and both
+affect build-host tooling rather than shipped code.
 
 ### Configuration change that stops this recurring
 
