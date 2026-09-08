@@ -152,7 +152,7 @@ describe("NewProjectModal sharing", () => {
         expect(onCreated).toHaveBeenCalled();
     });
 
-    it("does not add an email that has no Mike account", async () => {
+    it("does not add an email that has no LWF account", async () => {
         vi.mocked(lookupUserByEmail).mockResolvedValueOnce({
             exists: false,
             email: "future@firm.test",
@@ -165,7 +165,7 @@ describe("NewProjectModal sharing", () => {
 
         expect(
             await screen.findByText(
-                "future@firm.test does not belong to a Mike user.",
+                "future@firm.test does not belong to an LWF user.",
             ),
         ).toBeInTheDocument();
         expect(grantProjectAccess).not.toHaveBeenCalled();

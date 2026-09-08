@@ -123,7 +123,7 @@ type OpenSourceSubmissionSummary = Pick<
 };
 
 const DEFAULT_WORKFLOW_CONTRIBUTOR: WorkflowContributor = {
-  name: "Mike",
+  name: "legalworkflows",
   organisation: null,
   role: null,
   linkedin: null,
@@ -1661,7 +1661,7 @@ workflowsRouter.post(
     }
     if (missingEmails.length > 0)
       return void res.status(400).json({
-        detail: `${missingEmails[0]} does not belong to a Mike user.`,
+        detail: `${missingEmails[0]} does not belong to an LWF user.`,
       });
 
     const rows = normalizedEmails.map((email: string) => ({

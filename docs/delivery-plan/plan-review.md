@@ -26,8 +26,12 @@ judgement calls I would change. None of it moves a phase boundary.
 - **Not squashing history.** It is what makes upstream merges possible and it
   is the cleanest evidence of what changed and when, which AGPL section 5(a)
   asks you to state.
-- **Deleting `scorecard.yml`.** Confirmed: it sets `publish_results: true`
-  against the OpenSSF API, which accepts public repositories only.
+- **Deleting `scorecard.yml`.** Confirmed twice over: it sets
+  `publish_results: true` against the OpenSSF API, which accepts public
+  repositories only, and its analysis failed outright on this repository's
+  default branch with `githubv4.Query: Resource not accessible by integration`.
+  Done — and worth pulling forward out of Sprint 2, because until it is deleted
+  it is a red check on `main` on every push.
 - **Sprints 1–2 deliberately light** at 26 and 32 points against a 41-point
   average. That is where the external blockers sit, and the plan says so.
 
@@ -168,6 +172,59 @@ protection once, in Sprint 1, with the checks named.
 criterion *"full backend and frontend suites green afterwards"*. The backend
 suite cannot run until the install is fixed. Sequence 2009 after 2012–2013, or
 relax its criterion to the frontend suite and a clean merge.
+
+## The debranding epic is scoped to the wrong half of the codebase
+
+Tickets 2028–2033 name frontend and Word add-in files only. Working through it,
+the frontend was the smaller half. The upstream brand also reaches users
+through the **backend**, in places the epic does not mention and a reviewer
+would not think to check:
+
+- **The system prompts.** `chat/prompts.ts`, `chat/wordPrompt.ts` and
+  `routes/tabular.ts` all begin "You are Mike, an AI legal assistant…". Ask the
+  assistant what it is called and it tells you the upstream name. This is the
+  single most visible instance in the product and no ticket covers it.
+- **Tracked-change authorship.** `docxTrackedChanges.ts` defaults the author to
+  `"Mike"`, and `documentOps.ts` passes it explicitly. Every AI edit shows that
+  name in Word's review pane, and it is written into the `.docx` itself — so it
+  travels to opposing counsel, to the client, into the file's permanent record.
+- **Generated document properties.** `documentOps.ts` writes `<dc:creator>`,
+  `<cp:lastModifiedBy>` and `<Application>` into every generated file. Word
+  surfaces those under File → Info.
+- **The OAuth consent screen.** `mcp/oauth.ts` registers `client_name: "Mike"`,
+  which is the name a third-party MCP server shows the user when asking them to
+  authorise this application.
+- **API error copy.** `projectAccess.ts`, `contentAccess.ts` and
+  `routes/workflows.ts` each return "does not belong to a Mike user", rendered
+  verbatim by the client — three separate copies of a string the frontend
+  ticket (2031) treats as frontend-only.
+- **Workflow attribution.** `routes/workflows.ts` sets the default contributor
+  name shown on catalogue cards.
+- **The link preview image.** `link-image.jpg` — referenced by `layout.tsx` as
+  the Open Graph image, so it renders on every shared link — was the upstream
+  wordmark set over a Monet painting. Ticket 2032 mentions "marketing images
+  under docs/assets" but not that the same file ships from `frontend/public/`
+  and is the product's link preview.
+
+None of this is invisible plumbing; it is the product speaking its own name.
+Re-scope 2031 to cover the backend explicitly, and add the system prompts and
+the tracked-change author as their own ticket — the author name in particular
+should be settled before any real client document is edited, for the same
+reason ticket 2030 says the MFA issuer must be right before the first account
+exists.
+
+### What is deliberately left
+
+- **`MikeIconUI.tsx`** — 385 lines of layered, animated SVG gradients rendering
+  an abstract orb, not a wordmark. It carries no upstream name and replacing it
+  is a design commission, not a find-and-replace. The component name stays
+  either way, per ticket 2032's own advice about tracking upstream.
+- **Comments and log lines.** `worker.ts`, `index.ts` and `syncWorkflows.ts`
+  write "Mike" to stdout, and a number of source comments mention it. No user
+  sees either, and leaving them is the rename rule working as intended: every
+  line not touched is a merge conflict not created.
+- **`mike_workflows` tables, `MIKE_WORKFLOWS_*` variables, `mikeApi.ts`** — per
+  the do-not-rename table in `AGENTS.md`.
 
 ## Two things to add to the risk register
 

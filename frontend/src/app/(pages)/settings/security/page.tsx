@@ -256,13 +256,13 @@ export default function SecurityPage() {
 
             let data;
             try {
-                data = await enrollMfa("Mike");
+                data = await enrollMfa("legalworkflows");
             } catch (error) {
                 if (!isDuplicateFriendlyNameError(error)) throw error;
                 traceMfa("[security/mfa] retrying enrollment with unique name", {
                     error: error instanceof Error ? error.message : String(error),
                 });
-                data = await enrollMfa(`Mike ${Date.now()}`);
+                data = await enrollMfa(`legalworkflows ${Date.now()}`);
             }
             traceMfa("[security/mfa] enrollment created", {
                 factorId: data.id,

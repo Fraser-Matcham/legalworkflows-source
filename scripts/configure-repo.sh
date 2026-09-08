@@ -56,15 +56,18 @@ REQUIRED_CHECKS=(
 #       the four contexts here.
 #
 #   "CodeQL / Analyze (javascript-typescript)"
-#       Code scanning on a private repository owned by an organisation needs a
-#       paid GitHub security plan. Confirm the entitlement first (ticket 2022);
-#       requiring a check that never reports blocks all merges.
+#       The workflow is disabled (ticket 2022). The analysis runs fine, but the
+#       upload is rejected with "Code Security must be enabled for this
+#       repository to use code scanning" — a private-repo entitlement, not a
+#       code problem. Enable Code Security under Settings > Advanced Security,
+#       uncomment the triggers in codeql.yml, and add this context here once it
+#       has been green for a few runs.
 #
-#   "Mutation testing", "Scorecard", "SSE load test", "Word add-in"
+#   "Mutation testing", "SSE load test", "Word add-in"
 #       Not pull-request gates by design. Mutation testing is a monthly drift
-#       check, the load test is manual, Scorecard cannot run on a private
-#       repository at all, and the Word add-in job is path-filtered to
-#       word-addin/** so it does not report on most pull requests.
+#       check, the load test is manual, and the Word add-in job is
+#       path-filtered to word-addin/** so it does not report on most pull
+#       requests.
 
 # ---------------------------------------------------------------------------
 echo "==> Repository merge settings on ${REPO}"

@@ -118,8 +118,8 @@ and a cross-tenant disclosure.
 | --- | --- |
 | `e2e / playwright` | The strongest gate and the slowest — it boots Supabase, RustFS, the backend and Next.js on the runner. Add it after a sprint of living with the feedback loop. |
 | `security / dependency-audit (…)` | Fails on any high or critical advisory. With 2 high advisories open on the inherited tree, requiring it today blocks every pull request on debt that predates you. Clear them first. |
-| `CodeQL / Analyze (javascript-typescript)` | Add it once it has been green for a few runs. Code scanning is available here — see below — but give it a settling period before it can block a merge. |
-| `Mutation testing`, `Scorecard`, `SSE load test`, `Word add-in` | Not pull-request gates by design — monthly, manual, impossible on a private repo, and path-filtered respectively. |
+| `CodeQL / Analyze (javascript-typescript)` | The workflow is disabled — Code Security is not enabled for this repository, so the analysis runs and the upload is rejected. See below. Add the context once the workflow is re-enabled and green. |
+| `Mutation testing`, `SSE load test`, `Word add-in` | Not pull-request gates by design — monthly, manual, and path-filtered respectively. |
 
 ### Actions secrets
 
@@ -128,13 +128,12 @@ and a cross-tenant disclosure.
 | `ANTHROPIC_API_KEY` | The 4 LLM-dependent e2e specs | **Optional.** `e2e.yml` is green without it: 27 of 31 specs run and the other 4 self-skip via `e2e/llm.ts`. Set it — spend-capped, CI-scoped — only to enforce those 4. The plan treats it as required for a green e2e run; it is not. See [`e2e-ci.md`](e2e-ci.md). |
 | `LOADTEST_AUTH_TOKEN` | `loadtest.yml` | Only if the k6 job is kept. `workflow_dispatch` only, so it never gates a merge. |
 
-## CodeQL on a private repository — ticket 2022, answered
+## CodeQL on a private repository — ticket 2022
 
-The risk register expected code scanning to be unavailable on a private
-organisation repository without a paid plan. That is not what happened. CodeQL
-runs here; it failed for a different and much cheaper reason.
+Two separate blockers, one fixed here and one that needs a decision.
 
-The first run failed during `init` with:
+**Fixed: a missing token permission.** The first run failed during `init`, before
+producing any database:
 
 ```
 Setting overlay database mode to overlay with caching because we are analyzing a pull request.
@@ -142,16 +141,51 @@ Checking cache for overlay-base database
 ##[error]Resource not accessible by integration - https://docs.github.com/rest/actions/workflow-runs#get-a-workflow-run
 ```
 
-When analysing a pull request the action uses overlay database mode and looks
+Analysing a pull request puts the action in overlay database mode, which looks
 up the base database from a previous workflow run — an Actions REST call. The
 job granted `contents: read` and `security-events: write` and nothing else. On a
-public repository the default token can already read workflow runs, so upstream
-never hit this; on a private one it cannot. Adding `actions: read` to the job's
-permissions block fixes it, and least privilege still holds — read, not write.
+public repository the default token can already read workflow runs; on a private
+one it cannot. `actions: read` was added to the job's permissions block, and
+least privilege still holds: read, not write.
 
-So the answer to ticket 2022 is that the capability is there and the ticket is a
-one-line permissions change, not a purchasing decision. Confirm it stays green
-over a few runs before making it a required check.
+**Not fixed: the entitlement.** With that permission in place the job now gets
+much further — it checks out, builds the database and runs the full analysis —
+and then fails at the upload step:
+
+```
+##[warning]Code Security must be enabled for this repository to use code scanning.
+##[error]Please verify that the necessary features are enabled: Code Security must
+be enabled for this repository to use code scanning.
+CodeQL job status was configuration error.
+```
+
+This is the risk the register anticipated (item 10). Code scanning on a private
+repository needs GitHub Code Security enabled for the repository, which on this
+organisation's plan may be a paid add-on. The analysis itself is fine; there is
+simply nowhere to publish the results.
+
+**Decision taken: the workflow is disabled.** Ticket 2022's acceptance criterion
+is that `codeql.yml` either runs green or is disabled with a documented
+decision, and enabling Code Security is a spend decision that needs an
+organisation owner. Leaving it red was the worse option: a default branch that
+is red for a reason no commit can fix teaches people to ignore red, which is the
+same argument that justified deleting `scorecard.yml`.
+
+The `push`, `pull_request` and `schedule` triggers are commented out;
+`workflow_dispatch` is left live so the entitlement can be retested on demand
+without editing the file. Disabled rather than deleted, unlike `scorecard.yml`:
+Scorecard can never work on a private repository, whereas CodeQL starts working
+the moment Code Security is switched on.
+
+**To re-enable:** turn on Code Security under Settings → Advanced Security, then
+delete the four comment markers in `.github/workflows/codeql.yml`. Nothing else
+changes — the `actions: read` permission is already in place. Confirm the cost
+first; it is billed per active committer on some plans.
+
+**What is lost meanwhile:** static analysis of the whole tree. The other
+security gates are unaffected — `gitleaks` scans full history, `security.yml`
+audits all four lockfiles, `stack-tests` asserts the RLS firewall, and Stryker
+still runs monthly against the security libraries.
 
 ## Known state of the inherited tree
 
@@ -172,9 +206,12 @@ configuration:
 - **288 test files**: 117 backend, 141 frontend, the rest in `e2e/` and
   `word-addin/`. The backend suite now runs in full — 1,383 tests passed, 39
   skipped, across 117 files.
-- **11 workflows** in `.github/workflows/`. `scorecard.yml` sets
-  `publish_results: true` against the OpenSSF API, which only accepts public
-  repositories — it cannot work here and should be deleted (ticket 2019).
+- **10 workflows** in `.github/workflows/`, of which `codeql.yml` is disabled (ticket 2022, above) and `word-addin.yml` is path-filtered to `word-addin/**`. There were 11; `scorecard.yml` has
+  been deleted (ticket 2019). OpenSSF Scorecard rates public repositories: it
+  sets `publish_results: true` against an API that only accepts them, and its
+  own analysis failed on the default branch here with
+  `githubv4.Query: Resource not accessible by integration`. It could never have
+  gone green, and it ran on every push to `main`.
 - **The workflow catalogue is fetched from a third party at runtime.**
   `backend/src/lib/workflowCatalogSource.ts` defaults
   `MIKE_WORKFLOWS_REPOSITORY` to `Open-Legal-Products/mike-workflows`. That
