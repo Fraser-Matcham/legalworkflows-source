@@ -67,6 +67,39 @@ are the gate that matters here and they run on every pull request.
 
 **Effort: ~half a day**, most of it re-reading the diff rather than writing it.
 
+### Correction, found while executing this
+
+The group is bigger than the headline packages suggest. Alongside Express it
+also bundles `zod` 3 → **4**, `undici` 6 → **8**, `resend` 4 → **6** and
+`pdfjs-dist` 4 → **6** — four more majors in a pull request whose title
+mentions none of them. The first reading of this PR missed them by looking only
+at what broke the build.
+
+Backend exposure, measured: `zod` 3 files, `undici` 2, `bullmq` 8, `ioredis` 6,
+`html-to-text` 1.
+
+**`pdfjs-dist` needs particular care.** A naive grep says it is unused in the
+backend. It is not: three files do
+`await import("pdfjs-dist/legacy/build/pdf.mjs")`, and `chat/types.ts` does
+`require.resolve("pdfjs-dist/package.json")`. Those are **deep paths into the
+package rather than its public entry point** — exactly the fragility that broke
+lucide-react, where a major silently moved the file being reached for. Any
+`pdfjs-dist` bump must check that path still exists, in the backend as well as
+the frontend.
+
+**`resend` genuinely is unused.** Nothing imports the package anywhere, and
+`routes/orgs.ts` says outright that the repository has no outbound email
+infrastructure. The distinction worth keeping straight: `supabase/config.toml`
+*does* use Resend, as an **SMTP provider** via `env(RESEND_API_KEY)`, and that
+is unaffected by removing the npm SDK. Removing it also drops `react`,
+`react-dom` and `@react-email/render` from the backend, which were present only
+as its transitive dependencies.
+
+Express, `zod`, `undici` and `pdfjs-dist` now carry major-version `ignore`
+entries, so the routine `@ai-sdk/*` and `@aws-sdk/*` bumps in this group can
+flow on their own. `bullmq` 6 and `ioredis` 6 came through the Express
+verification run without failures.
+
 ## Word add-in — PR #8
 
 ### `lucide-react` 0.553 → 1.41
@@ -162,20 +195,27 @@ generation. **Nothing to fix on this side** — it clears when
 Four waves. Each is independently mergeable and independently revertible, and
 nothing in wave 1 or 2 blocks the delivery plan's own tickets.
 
-### Wave 1 — free wins (done, or ~1 hour)
+### Wave 1 — free wins ✅ done
 
 - ✅ `codeql-action` 3 → 4 (#5, #10), `setup-node` 4 → 7 (#2), root dev deps (#3)
-- `actions/checkout` 4 → 7 (#1) — merge on green
-- **Remove `@openrouter/sdk`** from `frontend/package.json`. Zero imports; this
-  deletes a major-version problem rather than solving it.
+- ✅ `actions/checkout` 4 → 7 (#1)
+- ✅ **Removed `@openrouter/sdk`** (frontend) and **`resend`** (backend). Zero
+  imports each, so these delete two major-version problems rather than solving
+  them.
+- ✅ `ignore` entries added for the majors that take whole groups down.
 
-### Wave 2 — the two verified migrations (~1 day)
+### Wave 2 — the two verified migrations ✅ done
 
-- **Express 5 + backend group (#9).** Land the `routeParams` helper and the
-  rename as one reviewable change, then the dependency bump on top. Already
-  verified green locally.
-- **Word add-in group (#8).** One-line `webpack.config.js` alias fix, which also
-  unblocks the `@tiptap/*` family and closes the TipTap half of #13.
+- ✅ **Express 5.** `routeParams` helper plus the mechanical rename; express and
+  `@types/express` only, not the other fifteen bumps #9 grouped with them.
+  Build clean, 117 test files / 1,383 tests pass.
+- ✅ **Word add-in group (#8).** The `webpack.config.js` alias fix landed first,
+  then the `@tiptap/*` family, lucide-react 1.x, React 19.2.8 and Radix.
+  `npm ci` clean, typecheck clean, 166/166 Playwright.
+
+**#8 and #13 can now be closed** — #8's content is merged, and #13's TipTap half
+is superseded by it. What remains of #13 is `office-addin-debugging`, which is
+wave 4.
 
 ### Wave 3 — deliberate, individually ticketed (~2–3 days, not urgent)
 
