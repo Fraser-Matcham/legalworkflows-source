@@ -26,8 +26,12 @@ judgement calls I would change. None of it moves a phase boundary.
 - **Not squashing history.** It is what makes upstream merges possible and it
   is the cleanest evidence of what changed and when, which AGPL section 5(a)
   asks you to state.
-- **Deleting `scorecard.yml`.** Confirmed: it sets `publish_results: true`
-  against the OpenSSF API, which accepts public repositories only.
+- **Deleting `scorecard.yml`.** Confirmed twice over: it sets
+  `publish_results: true` against the OpenSSF API, which accepts public
+  repositories only, and its analysis failed outright on this repository's
+  default branch with `githubv4.Query: Resource not accessible by integration`.
+  Done — and worth pulling forward out of Sprint 2, because until it is deleted
+  it is a red check on `main` on every push.
 - **Sprints 1–2 deliberately light** at 26 and 32 points against a 41-point
   average. That is where the external blockers sit, and the plan says so.
 

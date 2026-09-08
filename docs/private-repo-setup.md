@@ -119,7 +119,7 @@ and a cross-tenant disclosure.
 | `e2e / playwright` | The strongest gate and the slowest — it boots Supabase, RustFS, the backend and Next.js on the runner. Add it after a sprint of living with the feedback loop. |
 | `security / dependency-audit (…)` | Fails on any high or critical advisory. With 2 high advisories open on the inherited tree, requiring it today blocks every pull request on debt that predates you. Clear them first. |
 | `CodeQL / Analyze (javascript-typescript)` | Add it once it has been green for a few runs. Code scanning is available here — see below — but give it a settling period before it can block a merge. |
-| `Mutation testing`, `Scorecard`, `SSE load test`, `Word add-in` | Not pull-request gates by design — monthly, manual, impossible on a private repo, and path-filtered respectively. |
+| `Mutation testing`, `SSE load test`, `Word add-in` | Not pull-request gates by design — monthly, manual, and path-filtered respectively. |
 
 ### Actions secrets
 
@@ -172,9 +172,12 @@ configuration:
 - **288 test files**: 117 backend, 141 frontend, the rest in `e2e/` and
   `word-addin/`. The backend suite now runs in full — 1,383 tests passed, 39
   skipped, across 117 files.
-- **11 workflows** in `.github/workflows/`. `scorecard.yml` sets
-  `publish_results: true` against the OpenSSF API, which only accepts public
-  repositories — it cannot work here and should be deleted (ticket 2019).
+- **10 workflows** in `.github/workflows/`. There were 11; `scorecard.yml` has
+  been deleted (ticket 2019). OpenSSF Scorecard rates public repositories: it
+  sets `publish_results: true` against an API that only accepts them, and its
+  own analysis failed on the default branch here with
+  `githubv4.Query: Resource not accessible by integration`. It could never have
+  gone green, and it ran on every push to `main`.
 - **The workflow catalogue is fetched from a third party at runtime.**
   `backend/src/lib/workflowCatalogSource.ts` defaults
   `MIKE_WORKFLOWS_REPOSITORY` to `Open-Legal-Products/mike-workflows`. That

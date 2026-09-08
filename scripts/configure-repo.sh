@@ -60,11 +60,11 @@ REQUIRED_CHECKS=(
 #       paid GitHub security plan. Confirm the entitlement first (ticket 2022);
 #       requiring a check that never reports blocks all merges.
 #
-#   "Mutation testing", "Scorecard", "SSE load test", "Word add-in"
+#   "Mutation testing", "SSE load test", "Word add-in"
 #       Not pull-request gates by design. Mutation testing is a monthly drift
-#       check, the load test is manual, Scorecard cannot run on a private
-#       repository at all, and the Word add-in job is path-filtered to
-#       word-addin/** so it does not report on most pull requests.
+#       check, the load test is manual, and the Word add-in job is
+#       path-filtered to word-addin/** so it does not report on most pull
+#       requests.
 
 # ---------------------------------------------------------------------------
 echo "==> Repository merge settings on ${REPO}"
