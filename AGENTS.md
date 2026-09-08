@@ -1,5 +1,86 @@
 # Repository Instructions
 
+## Fork Rules
+
+This repository is a private extraction of the AGPL-3.0 upstream
+`open-legal-products/mike`, run as a standalone HTTP service that the Juralio
+matter-management platform consumes. Four rules constrain every change made
+here. They come before everything else in this file, and they override the
+general guidance below wherever the two disagree. They exist to keep upstream
+security fixes cheap to take and to keep the licence boundary intact.
+
+### 1. The boundary to Juralio is HTTP, and only HTTP
+
+Juralio reaches this service over HTTP and by no other means. Never introduce,
+in either direction:
+
+- an `import` or `require` that crosses the two repositories;
+- a git submodule, npm workspace link, `file:` dependency, or path alias;
+- a copied source file, type declaration, schema, or migration.
+
+Re-declare shared types on each side rather than importing them; a duplicated
+interface is the cost of the boundary, not a smell.
+
+This is a licensing boundary as much as an architectural one. AGPL-3.0
+section 5(c) applies its terms to the work *as a whole* once the parts are
+combined, and that combination cannot be undone afterwards. Juralio is
+Apache-2.0 and must stay Apache-2.0. A single stray import relicenses it.
+
+### 2. Rename what users can see, and nothing else
+
+Debranding covers what a person or a link preview can see: rendered copy, the
+wordmark, icon artwork, Open Graph metadata, the MFA issuer name, marketing
+images.
+
+Do **not** rename anything in the table below. Each is invisible to users, and
+changing it costs either a migration against live data or a conflict on every
+future upstream merge — for no user benefit.
+
+| Do not rename | Reason |
+| --- | --- |
+| The `mike_workflows` and `mike_workflow_assets` tables — their indexes, unique and check constraints, the `replace_mike_workflows` function, and the `revoke`/`grant` statements in `backend/schema.sql` that keep them off `anon` and `authenticated` | A rename is a migration against live client data with real data-loss risk on rollback, and it touches the privilege grants the deny-all RLS posture depends on. |
+| `MIKE_WORKFLOWS_REPOSITORY`, `MIKE_WORKFLOWS_REF`, `MIKE_WORKFLOWS_TOKEN`, `MIKE_WORKFLOWS_GITHUB_TOKEN` | Deployment configuration read by `backend/src/lib/workflowCatalogSource.ts`. Renaming breaks every environment simultaneously, and upstream keeps editing the file that reads them. |
+| `frontend/src/app/lib/mikeApi.ts` (2,837 lines) and `word-addin/src/taskpane/api/mikeApi.ts`, and the symbols they export | Imported across the whole frontend and add-in. The rename is pure churn and conflicts with every upstream change to the API client. |
+| The private package names in each `package.json` | Not published to any registry, never shown to a user. |
+
+Point `MIKE_WORKFLOWS_REPOSITORY` at your own catalogue fork rather than
+renaming the variable. The variable name is configuration; the value is
+ownership.
+
+A find-and-replace across this repository is always wrong. Over 300 files
+mention the upstream name and only a few dozen of them are user-visible.
+
+### 3. Make changes additively, in new files, wherever you can
+
+Upstream is active — 631 commits in its first four months — and this repository
+tracks it. Every line changed inside an inherited file is a future merge
+conflict; every new file is not.
+
+Prefer, in this order: a new module beside the inherited one; a new exported
+function in a new file that the inherited file calls once; a small, contained
+edit. Reach for a rewrite of an inherited file only when there is no other way,
+and say so in the pull request.
+
+`upstream-main` is a pristine mirror of upstream's `main`. Nothing is ever
+committed to it. See [docs/upstream-sync.md](docs/upstream-sync.md) for the
+merge routine and the `package-lock.json` conflict convention.
+
+### 4. `LICENSE` is never deleted, altered, or relicensed
+
+The file at the repository root is the GNU Affero General Public License v3.0
+and it stays exactly as it is. Do not remove it, do not edit it, do not add a
+second licence file at the root that contradicts it, and do not add a header to
+any inherited source file claiming different terms.
+
+Removing or altering it does not change your obligations; it only removes the
+evidence that you met them. AGPL section 2 lets you modify this code privately
+for as long as you like, but section 13 obliges you to offer the Corresponding
+Source to anyone who interacts with the running service over a network. Plan on
+the basis that the source is reachable by every customer.
+
+Adding your own copyright notice for your own new files is fine and expected.
+Changing the terms is not.
+
 ## Scope
 
 These instructions apply to the entire repository. Keep changes focused,

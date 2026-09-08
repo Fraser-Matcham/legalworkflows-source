@@ -1,5 +1,17 @@
 # Documentation
 
+## This fork
+
+- [Delivery plan](delivery-plan/README.md) — phases, sprints, blockers, and the
+  [review](delivery-plan/plan-review.md) of the plan against this tree
+- [Private repository setup](private-repo-setup.md) — remote topology, branch
+  protection, required checks, and what still needs an organisation owner
+- [Upstream sync](upstream-sync.md) — the routine for taking upstream fixes and
+  the lockfile conflict convention
+
+The fork rules that constrain every change here are at the top of
+[AGENTS.md](../AGENTS.md).
+
 ## Run and deploy Mike
 
 - [Local development](local-development.md) — Docker Compose, local services,
