@@ -8,14 +8,41 @@
 # Findings land in the Security tab (code scanning), not as CI noise.
 name: CodeQL
 
+# DISABLED — ticket 2022. Re-enable by deleting the four comment markers below.
+#
+# Not a code problem, and not a defect in this workflow. The analysis itself is
+# healthy: with `actions: read` granted (see the permissions block), CodeQL
+# checks out, builds the database and runs the full javascript-typescript
+# analysis. It then fails at the very last step, publishing the results:
+#
+#   ##[error]Please verify that the necessary features are enabled: Code
+#   Security must be enabled for this repository to use code scanning.
+#   CodeQL job status was configuration error.
+#
+# Code scanning on a PRIVATE repository requires GitHub Code Security to be
+# enabled for it, which on this organisation's plan is a paid add-on. There is
+# nowhere to publish the findings, so every run is a configuration error — on
+# every pull request and every push to main, forever, until that setting
+# changes. A default branch that is red for a reason no commit can fix teaches
+# people to ignore red, which costs more than the analysis is worth while it
+# cannot run.
+#
+# Disabled rather than deleted, unlike scorecard.yml: Scorecard can never work
+# on a private repository, whereas this one starts working the moment Code
+# Security is switched on under Settings > Advanced Security. At that point
+# uncomment the triggers below and the workflow resumes with no other change.
+#
+# `workflow_dispatch` is deliberately left live so the entitlement can be
+# retested on demand without editing this file.
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  schedule:
-    # Mondays 04:30 UTC.
-    - cron: "30 4 * * 1"
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+  # pull_request:
+  #   branches: [main]
+  # schedule:
+  #   # Mondays 04:30 UTC.
+  #   - cron: "30 4 * * 1"
 
 permissions:
   contents: read

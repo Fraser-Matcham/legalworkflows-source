@@ -56,12 +56,12 @@ REQUIRED_CHECKS=(
 #       the four contexts here.
 #
 #   "CodeQL / Analyze (javascript-typescript)"
-#       Cannot pass on this repository today. The analysis runs, but the upload
-#       is rejected with "Code Security must be enabled for this repository to
-#       use code scanning" — it is a private-repo entitlement, not a code
-#       problem. Enable Code Security under Settings > Advanced Security, or
-#       disable the workflow (ticket 2022). Requiring a check that can never
-#       report blocks all merges.
+#       The workflow is disabled (ticket 2022). The analysis runs fine, but the
+#       upload is rejected with "Code Security must be enabled for this
+#       repository to use code scanning" — a private-repo entitlement, not a
+#       code problem. Enable Code Security under Settings > Advanced Security,
+#       uncomment the triggers in codeql.yml, and add this context here once it
+#       has been green for a few runs.
 #
 #   "Mutation testing", "SSE load test", "Word add-in"
 #       Not pull-request gates by design. Mutation testing is a monthly drift

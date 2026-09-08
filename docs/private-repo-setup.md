@@ -118,7 +118,7 @@ and a cross-tenant disclosure.
 | --- | --- |
 | `e2e / playwright` | The strongest gate and the slowest — it boots Supabase, RustFS, the backend and Next.js on the runner. Add it after a sprint of living with the feedback loop. |
 | `security / dependency-audit (…)` | Fails on any high or critical advisory. With 2 high advisories open on the inherited tree, requiring it today blocks every pull request on debt that predates you. Clear them first. |
-| `CodeQL / Analyze (javascript-typescript)` | Cannot pass yet — Code Security is not enabled for this repository, so the analysis runs and the upload is rejected. See below. Requiring a check that can never report blocks all merges. |
+| `CodeQL / Analyze (javascript-typescript)` | The workflow is disabled — Code Security is not enabled for this repository, so the analysis runs and the upload is rejected. See below. Add the context once the workflow is re-enabled and green. |
 | `Mutation testing`, `SSE load test`, `Word add-in` | Not pull-request gates by design — monthly, manual, and path-filtered respectively. |
 
 ### Actions secrets
@@ -164,20 +164,28 @@ repository needs GitHub Code Security enabled for the repository, which on this
 organisation's plan may be a paid add-on. The analysis itself is fine; there is
 simply nowhere to publish the results.
 
-**Ticket 2022's acceptance criterion is that `codeql.yml` either runs green or
-is disabled with a documented decision.** Neither has happened yet, because the
-choice is a spend decision rather than an engineering one:
+**Decision taken: the workflow is disabled.** Ticket 2022's acceptance criterion
+is that `codeql.yml` either runs green or is disabled with a documented
+decision, and enabling Code Security is a spend decision that needs an
+organisation owner. Leaving it red was the worse option: a default branch that
+is red for a reason no commit can fix teaches people to ignore red, which is the
+same argument that justified deleting `scorecard.yml`.
 
-- **Enable Code Security** under Settings → Advanced Security. If it is included
-  on the plan this is a toggle and the workflow goes green with no code change.
-  Confirm the cost first — it is billed per active committer on some plans.
-- **Disable the workflow** and accept the loss. Comment out the `push` and
-  `pull_request` triggers, keep `workflow_dispatch`, and leave a note naming
-  what re-enables it — the same treatment ticket 2023 prescribes for the Word
-  add-in. One line to reverse.
+The `push`, `pull_request` and `schedule` triggers are commented out;
+`workflow_dispatch` is left live so the entitlement can be retested on demand
+without editing the file. Disabled rather than deleted, unlike `scorecard.yml`:
+Scorecard can never work on a private repository, whereas CodeQL starts working
+the moment Code Security is switched on.
 
-Until one of those happens, `Analyze (javascript-typescript)` is red on every
-pull request and every push to `main`, for a reason no code change can fix.
+**To re-enable:** turn on Code Security under Settings → Advanced Security, then
+delete the four comment markers in `.github/workflows/codeql.yml`. Nothing else
+changes — the `actions: read` permission is already in place. Confirm the cost
+first; it is billed per active committer on some plans.
+
+**What is lost meanwhile:** static analysis of the whole tree. The other
+security gates are unaffected — `gitleaks` scans full history, `security.yml`
+audits all four lockfiles, `stack-tests` asserts the RLS firewall, and Stryker
+still runs monthly against the security libraries.
 
 ## Known state of the inherited tree
 
@@ -198,7 +206,7 @@ configuration:
 - **288 test files**: 117 backend, 141 frontend, the rest in `e2e/` and
   `word-addin/`. The backend suite now runs in full — 1,383 tests passed, 39
   skipped, across 117 files.
-- **10 workflows** in `.github/workflows/`. There were 11; `scorecard.yml` has
+- **10 workflows** in `.github/workflows/`, of which `codeql.yml` is disabled (ticket 2022, above) and `word-addin.yml` is path-filtered to `word-addin/**`. There were 11; `scorecard.yml` has
   been deleted (ticket 2019). OpenSSF Scorecard rates public repositories: it
   sets `publish_results: true` against an API that only accepts them, and its
   own analysis failed on the default branch here with
