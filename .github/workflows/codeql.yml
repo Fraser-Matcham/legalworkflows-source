@@ -28,6 +28,13 @@ jobs:
       contents: read
       # Required to upload results to code scanning.
       security-events: write
+      # Required on a PRIVATE repository. When analysing a pull request the
+      # action uses overlay database mode and looks up the base database from a
+      # previous workflow run, which is an Actions REST call. On a public repo
+      # the default token can already read that; here it cannot, and init fails
+      # with "Resource not accessible by integration" before producing any
+      # database. Least privilege still holds — read, not write.
+      actions: read
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
