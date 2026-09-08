@@ -147,7 +147,7 @@ function PersonalisationForm({
                     Personalisation
                 </h2>
                 <p className="text-sm text-gray-500">
-                    Tell Mike about your role and practice so responses can be
+                    Tell LWF about your role and practice so responses can be
                     tailored to your professional context.
                 </p>
                 <SettingsSection>

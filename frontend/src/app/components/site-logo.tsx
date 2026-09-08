@@ -16,10 +16,11 @@ export function SiteLogo({
     animate = false,
     asLink = false,
 }: SiteLogoProps) {
-    const landingHref =
-        process.env.NODE_ENV === "production"
-            ? "https://mikeoss.com"
-            : "http://localhost:3000";
+    // Upstream points this at its own marketing site in production. This
+    // deployment has no separate marketing surface, and linking users out to
+    // the upstream brand is exactly what the debranding epic exists to remove,
+    // so the wordmark links to the application root.
+    const landingHref = "/";
     const sizeClasses = {
         sm: "text-xl",
         md: "text-2xl",
@@ -45,7 +46,7 @@ export function SiteLogo({
             >
                 <MikeIcon size={iconSizes[size]} />
             </span>
-            <span>Mike</span>
+            <span>legalworkflows</span>
         </h1>
     );
 

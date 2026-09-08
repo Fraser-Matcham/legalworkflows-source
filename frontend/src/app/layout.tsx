@@ -15,8 +15,15 @@ const ebGaramond = EB_Garamond({
 });
 
 export const metadata: Metadata = {
-    metadataBase: new URL("https://app.mikeoss.com"),
-    title: "Mike - AI Legal Platform",
+    // Canonical origin for link previews. Upstream hard-codes its own domain
+    // here; this deployment has its own, so it comes from the environment with
+    // a local fallback. Set NEXT_PUBLIC_APP_URL for staging and production —
+    // Open Graph image URLs are resolved against it, so a wrong value produces
+    // link previews with broken images.
+    metadataBase: new URL(
+        process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+    ),
+    title: "legalworkflows - AI Legal Platform",
     description:
         "AI-powered legal document analysis and contract review platform.",
     icons: {
@@ -28,9 +35,9 @@ export const metadata: Metadata = {
     },
     openGraph: {
         type: "website",
-        url: "https://app.mikeoss.com",
-        siteName: "Mike",
-        title: "Mike - AI Legal Platform",
+        url: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+        siteName: "legalworkflows",
+        title: "legalworkflows - AI Legal Platform",
         description:
             "AI-powered legal document analysis and contract review platform.",
         images: [
@@ -38,13 +45,13 @@ export const metadata: Metadata = {
                 url: "/link-image.jpg",
                 width: 1200,
                 height: 651,
-                alt: "Mike",
+                alt: "legalworkflows",
             },
         ],
     },
     twitter: {
         card: "summary_large_image",
-        title: "Mike - AI Legal Platform",
+        title: "legalworkflows - AI Legal Platform",
         description:
             "AI-powered legal document analysis and contract review platform.",
         images: ["/link-image.jpg"],

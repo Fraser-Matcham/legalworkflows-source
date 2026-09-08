@@ -64,7 +64,7 @@ export default function AppearancePage() {
                             Dark mode
                         </p>
                         <p className="text-sm text-gray-500">
-                            Use a darker color palette throughout Mike.
+                            Use a darker color palette throughout LWF.
                         </p>
                         {darkModeError && (
                             <p role="alert" className="text-xs text-red-600">

@@ -285,7 +285,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                                         shouldAnimate ? "sidebar-fade-in" : ""
                                     }`}
                                 >
-                                    Mike
+                                    legalworkflows
                                 </span>
                             </Link>
                         </div>

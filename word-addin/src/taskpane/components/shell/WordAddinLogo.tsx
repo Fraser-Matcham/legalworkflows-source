@@ -22,7 +22,7 @@ export function WordAddinLogo({
           large ? "text-4xl" : "text-2xl"
         )}
       >
-        Mike
+        legalworkflows
       </span>
     </div>
   );

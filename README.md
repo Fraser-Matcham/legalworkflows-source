@@ -1,16 +1,20 @@
-# Mike
+# legalworkflows
 
-![Mike](docs/assets/link-image.jpg)
+![legalworkflows](docs/assets/link-image.jpg)
 
-Mike (MikeOSS) is an open-source legal AI platform for document review,
-drafting, and legal research.
+legalworkflows is a legal AI service for document review, drafting, and legal
+research. The assistant is referred to as LWF in the product.
 
 It combines a Next.js frontend, an Express backend, Supabase Auth/Postgres,
-and Cloudflare R2-compatible object storage.
+and Cloudflare R2-compatible object storage, and is consumed by the Juralio
+matter management platform over HTTP.
 
-Website: [mikeoss.com](https://mikeoss.com)
+Derived from [Mike](https://github.com/open-legal-products/mike) by Open Legal
+Products, licensed under AGPL-3.0. This is a modified version; see
+[LICENSE](LICENSE) and [docs/upstream-sync.md](docs/upstream-sync.md).
 
-![Mike assistant home screen](docs/assets/mike-home.png)
+Before changing anything here, read the fork rules at the top of
+[AGENTS.md](AGENTS.md).
 
 ## Features
 
@@ -24,7 +28,7 @@ Website: [mikeoss.com](https://mikeoss.com)
 
 ## Quick start
 
-The included Docker Compose stack runs Mike, Supabase, RustFS object storage,
+The included Docker Compose stack runs legalworkflows, Supabase, RustFS object storage,
 and local email capture without requiring managed infrastructure.
 
 1. Copy the local environment templates:
@@ -84,11 +88,11 @@ authentication behavior, Ollama setup, and first-run guidance.
 
 ## System workflows
 
-Mike's system assistant and tabular-review workflows are maintained in the
+The system assistant and tabular-review workflows are maintained in the
 [`Open-Legal-Products/mike-workflows`](https://github.com/Open-Legal-Products/mike-workflows)
 repository. See [Contributing](CONTRIBUTING.md#system-workflows) for how they are
 packaged and synchronized with this application.
 
 ## License
 
-Mike is available under the [GNU Affero General Public License v3.0](LICENSE).
+legalworkflows is available under the [GNU Affero General Public License v3.0](LICENSE).
