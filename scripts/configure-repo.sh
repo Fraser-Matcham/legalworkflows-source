@@ -56,9 +56,12 @@ REQUIRED_CHECKS=(
 #       the four contexts here.
 #
 #   "CodeQL / Analyze (javascript-typescript)"
-#       Code scanning on a private repository owned by an organisation needs a
-#       paid GitHub security plan. Confirm the entitlement first (ticket 2022);
-#       requiring a check that never reports blocks all merges.
+#       Cannot pass on this repository today. The analysis runs, but the upload
+#       is rejected with "Code Security must be enabled for this repository to
+#       use code scanning" — it is a private-repo entitlement, not a code
+#       problem. Enable Code Security under Settings > Advanced Security, or
+#       disable the workflow (ticket 2022). Requiring a check that can never
+#       report blocks all merges.
 #
 #   "Mutation testing", "SSE load test", "Word add-in"
 #       Not pull-request gates by design. Mutation testing is a monthly drift

@@ -118,7 +118,7 @@ and a cross-tenant disclosure.
 | --- | --- |
 | `e2e / playwright` | The strongest gate and the slowest — it boots Supabase, RustFS, the backend and Next.js on the runner. Add it after a sprint of living with the feedback loop. |
 | `security / dependency-audit (…)` | Fails on any high or critical advisory. With 2 high advisories open on the inherited tree, requiring it today blocks every pull request on debt that predates you. Clear them first. |
-| `CodeQL / Analyze (javascript-typescript)` | Add it once it has been green for a few runs. Code scanning is available here — see below — but give it a settling period before it can block a merge. |
+| `CodeQL / Analyze (javascript-typescript)` | Cannot pass yet — Code Security is not enabled for this repository, so the analysis runs and the upload is rejected. See below. Requiring a check that can never report blocks all merges. |
 | `Mutation testing`, `SSE load test`, `Word add-in` | Not pull-request gates by design — monthly, manual, and path-filtered respectively. |
 
 ### Actions secrets
@@ -128,13 +128,12 @@ and a cross-tenant disclosure.
 | `ANTHROPIC_API_KEY` | The 4 LLM-dependent e2e specs | **Optional.** `e2e.yml` is green without it: 27 of 31 specs run and the other 4 self-skip via `e2e/llm.ts`. Set it — spend-capped, CI-scoped — only to enforce those 4. The plan treats it as required for a green e2e run; it is not. See [`e2e-ci.md`](e2e-ci.md). |
 | `LOADTEST_AUTH_TOKEN` | `loadtest.yml` | Only if the k6 job is kept. `workflow_dispatch` only, so it never gates a merge. |
 
-## CodeQL on a private repository — ticket 2022, answered
+## CodeQL on a private repository — ticket 2022
 
-The risk register expected code scanning to be unavailable on a private
-organisation repository without a paid plan. That is not what happened. CodeQL
-runs here; it failed for a different and much cheaper reason.
+Two separate blockers, one fixed here and one that needs a decision.
 
-The first run failed during `init` with:
+**Fixed: a missing token permission.** The first run failed during `init`, before
+producing any database:
 
 ```
 Setting overlay database mode to overlay with caching because we are analyzing a pull request.
@@ -142,16 +141,43 @@ Checking cache for overlay-base database
 ##[error]Resource not accessible by integration - https://docs.github.com/rest/actions/workflow-runs#get-a-workflow-run
 ```
 
-When analysing a pull request the action uses overlay database mode and looks
+Analysing a pull request puts the action in overlay database mode, which looks
 up the base database from a previous workflow run — an Actions REST call. The
 job granted `contents: read` and `security-events: write` and nothing else. On a
-public repository the default token can already read workflow runs, so upstream
-never hit this; on a private one it cannot. Adding `actions: read` to the job's
-permissions block fixes it, and least privilege still holds — read, not write.
+public repository the default token can already read workflow runs; on a private
+one it cannot. `actions: read` was added to the job's permissions block, and
+least privilege still holds: read, not write.
 
-So the answer to ticket 2022 is that the capability is there and the ticket is a
-one-line permissions change, not a purchasing decision. Confirm it stays green
-over a few runs before making it a required check.
+**Not fixed: the entitlement.** With that permission in place the job now gets
+much further — it checks out, builds the database and runs the full analysis —
+and then fails at the upload step:
+
+```
+##[warning]Code Security must be enabled for this repository to use code scanning.
+##[error]Please verify that the necessary features are enabled: Code Security must
+be enabled for this repository to use code scanning.
+CodeQL job status was configuration error.
+```
+
+This is the risk the register anticipated (item 10). Code scanning on a private
+repository needs GitHub Code Security enabled for the repository, which on this
+organisation's plan may be a paid add-on. The analysis itself is fine; there is
+simply nowhere to publish the results.
+
+**Ticket 2022's acceptance criterion is that `codeql.yml` either runs green or
+is disabled with a documented decision.** Neither has happened yet, because the
+choice is a spend decision rather than an engineering one:
+
+- **Enable Code Security** under Settings → Advanced Security. If it is included
+  on the plan this is a toggle and the workflow goes green with no code change.
+  Confirm the cost first — it is billed per active committer on some plans.
+- **Disable the workflow** and accept the loss. Comment out the `push` and
+  `pull_request` triggers, keep `workflow_dispatch`, and leave a note naming
+  what re-enables it — the same treatment ticket 2023 prescribes for the Word
+  add-in. One line to reverse.
+
+Until one of those happens, `Analyze (javascript-typescript)` is red on every
+pull request and every push to `main`, for a reason no code change can fix.
 
 ## Known state of the inherited tree
 
