@@ -130,11 +130,12 @@ updates:
       day: "monday"
     open-pull-requests-limit: 10
     ignore:
-      # office-addin-debugging 6 replaces @microsoft/teamsapp-cli with
-      # @microsoft/m365agentstoolkit-cli and drags ~200 transitive changes
-      # (inquirer 7->12, glob 7->13, msal 2->5) into what reads as a
-      # three-package security patch. It is a toolchain migration and wants
-      # its own change.
+      # office-addin-debugging 6 was taken deliberately once its tree passed
+      # typecheck, the webpack build and the full add-in Playwright suite, so
+      # this ignore holds nothing back today. It stays because the package's
+      # majors are toolchain migrations (6 swapped @microsoft/teamsapp-cli for
+      # @microsoft/m365agentstoolkit-cli, ~200 transitive changes) that want
+      # their own change rather than riding the weekly group.
       - dependency-name: "office-addin-debugging"
         update-types: ["version-update:semver-major"]
       # The add-in is on TS 5.9.3 and its typecheck fails on 7, the same
