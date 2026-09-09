@@ -9,6 +9,7 @@ import {
 import { consumeAuthHandoff, issueAuthHandoff } from "../lib/authHandoff";
 import { requestOriginIsWordAddin } from "../lib/origins";
 import { requireAuth } from "../middleware/auth";
+import { auditAuthEvents } from "../middleware/auditAuthEvents";
 import { requireTrustedOrigin } from "../middleware/trustedOrigin";
 import { routeParams } from "../lib/routeParams";
 
@@ -19,6 +20,10 @@ authRouter.use((_req, res, next) => {
   res.setHeader("Cache-Control", "private, no-store");
   next();
 });
+// Records sign-in, sign-out, password and MFA events once the response has
+// been sent. One middleware rather than a call in each handler: see the
+// header of auditAuthEvents.ts.
+authRouter.use(auditAuthEvents);
 
 const credentialsSchema = z.object({
   email: z.string().trim().email().max(320),
