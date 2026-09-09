@@ -118,6 +118,26 @@ jobs:
 
       - run: npm run boundary
 
+  tenancy:
+    name: Route tenancy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      # createServerSupabase() holds the service role key, so row-level
+      # security does not apply and each handler is the only thing scoping its
+      # own queries. This flags handlers that query the database and never use
+      # the caller's identity at all — the whole-handler omission. It cannot
+      # tell whether an identity that IS used reaches the right query; the
+      # cross-tenant denial tests cover that.
+      - run: npm run tenancy:self-test
+
+      - run: npm run tenancy
+
   evals:
     name: Eval harness
     runs-on: ubuntu-latest
