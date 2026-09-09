@@ -15,25 +15,29 @@ export default defineConfig({
             provider: "v8",
             reporter: ["text", "lcov"],
             include: ["src/lib/**"],
-            // No-regression RATCHET floor, not a target. src/lib/** spans the
-            // tested libs (access, storage keys/dispositions, downloadTokens,
-            // userApiKeys provider/env checks, chat doc resolution,
-            // llm model resolution, chat citations, userLookup,
-            // documentVersions, userDataCleanup, docxTrackedChanges,
-            // documentTypes, chat prompts, workflow catalog ingestion) AND the large,
-            // lightly tested feature libs (courtlistener, mcp, chat tool
-            // dispatch, llm providers, spreadsheet handling). Measured on
-            // this tree: 52.72% statements, 46.31% branches, 53.24% functions,
-            // 54.11% lines. These floors sit just below that (rounded down to
-            // whole percents) so CI
-            // fails on a *drop*. Floors only go up: when you add tests, raise
-            // them in the same PR. Backlog + per-area status:
-            // docs/testing-coverage.md.
+            // No-regression RATCHET floor, not a target.
+            //
+            // Scope is src/lib/** only, so src/routes/** is not measured at
+            // all: a route-level test PR can legitimately move these numbers
+            // by 0.00. The spread across src/lib/** is wide — many libs sit at
+            // or near 100%, while lib/mcp (7%), lib/tabular (36%) and
+            // lib/chat/tools (55%) hold the global figure down.
+            //
+            // Measured on this tree: 63.61% statements, 54.11% branches,
+            // 66.66% functions, 65.95% lines. The floors below are those
+            // rounded down to whole percents, so CI fails on a *drop*.
+            // Branches has the least headroom, 0.11 points — if a drop below
+            // it came from an upstream merge rather than your own change, see
+            // the upstream-merge note in docs/testing-coverage.md before
+            // touching these numbers.
+            //
+            // Floors only go up: when you add tests, raise them in the same
+            // PR. Backlog + per-area status: docs/testing-coverage.md.
             thresholds: {
-                statements: 52,
-                branches: 46,
-                functions: 53,
-                lines: 54,
+                statements: 63,
+                branches: 54,
+                functions: 66,
+                lines: 65,
             },
         },
     },
