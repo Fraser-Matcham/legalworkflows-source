@@ -80,12 +80,23 @@ is at fault.
 
 ### Coverage status
 
-This is not finished. There are roughly 190 route handlers; the ones with
-cross-tenant coverage are those in the integration suites for chat, orgs,
-projects, projectChat, tabular, user and library. `library.ts` was the largest
-tenant-scoped router with no tests at all, which is why it came first. Extending
-this to the remaining routers is ongoing work, not a completed sweep — treat a
-router's absence from that list as "unverified", not "safe".
+Routers with cross-tenant denial tests: chat, orgs, projects, projectChat,
+tabular, user, library, documents, workflows, downloads and quickActions.
+Treat a router's absence from that list as "unverified", not "safe".
+
+Each router needed a different mutation to prove its tests bite, because each
+guards tenancy differently — which is the reason to check rather than assume:
+
+| Router | Guard | What a mutation has to remove |
+| --- | --- | --- |
+| `library` | inline `.eq("user_id", …)`, sometimes twice in one handler | both clauses on the rename path; one is enough elsewhere |
+| `documents` | one shared `ensureDocAccess` call per handler | the single `if (!access.ok)` branch |
+| `workflows` | a resolver returning `role` and a separate `isOwner` | both — forcing `role` alone leaves every write refused |
+| `quickActions` | `.eq("user_id", …)` on the delete, which then returns 204 either way | the filter; assert the row SURVIVED, not the status code |
+| `downloads` | `ensureDocAccess` behind a signed token | the access check — a valid signature is not authority |
+
+Not every router in the list is fully swept endpoint by endpoint; the highest-
+privilege paths were taken first (sharing, deletion, download).
 
 ## SSE load harness (k6)
 
