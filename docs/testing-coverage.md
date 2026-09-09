@@ -21,100 +21,133 @@ in-memory Supabase query mocks for unit tests, no real network, one `describe`
 block per function or concern, and assertions on current behavior. Tests that
 need a real local Supabase stack are explicitly gated.
 
-## Current coverage (measured 2026-08)
+## Current coverage (measured 2026-09)
 
-Per-area statement coverage from `npm run test:coverage`:
+Global: **63.61% statements / 54.11% branches / 66.66% functions / 65.95%
+lines** — 5303/8336 statements, 3811/7043 branches, 910/1365 functions,
+4938/7487 lines.
 
-| Lib area | % statements | Tested? |
-| --- | ---: | :---: |
-| `lib/userDataCleanup.ts`, `lib/manifestSigning.ts`, `lib/supabase.ts` | 100 | ✓ |
-| `lib/llm/models.ts` | 96 | ✓ |
-| `lib/chat/types.ts` | 95 | ✓ |
-| `lib/documentVersions.ts` | 98 | ✓ |
-| `lib/chat/citations.ts` | 98 | ✓ |
-| `lib/userLookup.ts` | 91 | ✓ |
-| `lib/docxTrackedChanges.ts` | 89 | ✓ |
-| `lib/downloadTokens.ts` | 87 | ✓ |
-| `lib/access.ts` | 76 | ✓ |
-| `lib/storage.ts`, `lib/upload.ts` | 58 | partial |
-| `lib/workflowCatalog.ts` | 69 | partial |
-| `lib/workflowCatalogSource.ts`, `lib/workflowCatalogSync.ts` | 74–96 | ✓ |
-| `lib/userDataExport.ts` | 43 | partial |
-| `lib/chat/contextBuilders.ts`, `lib/chat/tools/toolDispatcher.ts` | 37–38 | partial |
-| `lib/userApiKeys.ts` | 13 | partial — provider/env helpers only |
-| `lib/chat/tools/documentOps.ts` | 10 | partial |
-| `lib/convert.ts`, `lib/chat/streaming.ts`, `lib/courtlistener.ts` | 2–5 | minimal |
-| `lib/llm/**` | 5 | minimal outside `models.ts` |
-| `lib/mcp/**` | 6 | minimal |
-| `lib/userSettings.ts`, `lib/officeText.ts`, `lib/spreadsheet.ts` | 0 | ✗ |
+Per-directory statement coverage from `npm run test:coverage`:
 
-Global: **52.72% statements / 46.31% branches / 53.24% functions / 54.11%
-lines**. The global number remains relatively low because `src/lib/**` includes
-several large feature libs (toolDispatcher, documentOps, CourtListener, MCP,
-and provider adapters) that dominate the line count.
+| Area | % statements | Where the gap is |
+| --- | ---: | --- |
+| `lib/maintenance` | 81 | `staleWork.ts`, the only file |
+| `lib/queue` | 79 | `runProgress.ts` (0) is the one hole |
+| `lib/dbq` | 78 | `runner.ts` (59) drags down an otherwise covered area |
+| `lib/llm` | 74 | strong except `rawStreamLog.ts` (9) |
+| `lib/` (root, 56 files) | 73 | see the per-file list below |
+| `lib/chat` | 70 | `contextBuilders.ts` (46), `streaming.ts` (54) |
+| `lib/chat/tools` | 55 | `toolDispatcher.ts` (40), `documentOps.ts` (53) |
+| `lib/tabular` | 36 | largest remaining block after `lib/mcp` |
+| `lib/mcp` | 7 | `servers.ts` 0, `oauth.ts` 3, `client.ts` 23 |
+
+The lowest-covered individual files, which is where the remaining ratchet
+headroom actually is:
+
+| File | % statements |
+| --- | ---: |
+| `lib/officeText.ts`, `lib/spreadsheet.ts`, `lib/mcp/servers.ts`, `lib/queue/runProgress.ts`, `lib/tabular/tabular.prompt.ts`, `lib/pdfjs.ts` | 0 |
+| `lib/courtlistener.ts` | 2 |
+| `lib/mcp/oauth.ts` | 3 |
+| `lib/tabular/tabular.extract.ts`, `lib/llm/rawStreamLog.ts` | 9 |
+| `lib/sseHeartbeat.ts` | 13 |
+| `lib/mcp/client.ts` | 23 |
+| `lib/tabular/tabular.generateStream.ts` | 26 |
+
+The global figure sits below most of the per-area ones because `src/lib/**`
+includes several large, lightly tested feature libs — `courtlistener.ts`, the
+MCP client and OAuth flow, `toolDispatcher.ts`, `documentOps.ts`, and the
+tabular extract/stream pipeline — that dominate the line count.
+
+**A file missing from the table is not an untested file.** The `% Coverage
+report` table does not always list every file, and what it omits depends on
+where you run it: 20 of the 101 files under `src/lib/**` are at 100% on all
+four metrics, and some local environments drop exactly those rows while the CI
+runner prints them. `documentTypes.ts` and `chat/prompts.ts` are two of them —
+both fully covered, both ticked in the list below, and both absent from some
+local runs. `coverage/lcov.info` always carries all 101 files; read it when the
+table and the TODO list look like they disagree.
 
 ## TODO — untested libs, in priority order
 
 Each item is meant to be one self-contained PR: add the suite, then raise the
 floors in `backend/vitest.config.mts` to just below the new measured numbers.
-Size is a rough guess: S ≈ an hour, M ≈ an afternoon.
+Size is a rough guess: S ~ an hour, M ~ an afternoon.
 
-- [x] `lib/documentTypes.ts` — pure catalog/lookup of document types; assert
-      known types resolve and unknown inputs fall back sanely. (S)
-- [x] `lib/chat/prompts.ts` — pure prompt builders; assert key instructions and
-      interpolated values appear in the output strings. (S)
-- [ ] `lib/userSettings.ts` — title/tabular model resolution from which API
-      keys a user has; reuse the Supabase mock pattern from
-      `userLookup.test.ts`. (S)
-- [ ] `lib/upload.ts` — multer wrapper: assert LIMIT_FILE_SIZE maps to a 413
-      with the right message and other errors pass through. (S)
-- [ ] `lib/officeText.ts` — office XML text extraction; build a tiny in-memory
-      zip fixture with JSZip and assert extracted/decoded text. (S)
-- [ ] `lib/chat/tools/toolSchemas.ts` — assert every tool schema has a name,
-      description, and well-formed parameters (guards against schema drift). (S)
-- [ ] `lib/userApiKeys.ts` (rest) — encrypt/decrypt round-trip and DB
-      load/store paths with a mocked Supabase client. (M)
-- [ ] `lib/storage.ts` (rest) — S3 upload/download/list/delete wrappers with a
+Landed since this list was first written:
+
+- [x] `lib/documentTypes.ts`, `lib/chat/prompts.ts` — both 100%.
+- [x] `lib/docxTrackedChanges.ts` — 89%. Tracked-changes XML round-trip.
+- [x] `lib/workflowCatalogSource.ts` (73%), `lib/workflowCatalogSync.ts` (96%).
+- [x] `lib/chat/tools/toolSchemas.ts` — 100%.
+- [x] `lib/userApiKeys.ts` — 81%, up from 13%.
+- [x] `lib/userDataExport.ts` — 83%, up from 43%.
+- [x] `lib/llm/aiSdk.ts` (87%), `lib/llm/providers.ts` (83%).
+
+`lib/upload.ts` no longer exists — it was deleted upstream in 3663a10 ("add
+direct upload sessions") and its replacement `lib/uploadSessions.ts` is at 95%.
+That item is dropped rather than carried.
+
+Still open:
+
+- [ ] `lib/sseHeartbeat.ts` — 13%; 28 lines around one interval timer. Assert
+      the keepalive is written on cadence, that a closed response is skipped,
+      and that `stop()` clears the timer. Fake timers. (S)
+- [ ] `lib/queue/runProgress.ts` — 0%; small progress-tracking helper. (S)
+- [ ] `lib/userSettings.ts` — 63% of statements but only 40% of functions; the
+      title/tabular model resolution paths are the untested half. Reuse the
+      Supabase mock pattern from `userLookup.test.ts`. (S)
+- [ ] `lib/officeText.ts` — 0%; office XML text extraction. Build a tiny
+      in-memory zip fixture with JSZip and assert extracted/decoded text. (S)
+- [ ] `lib/llm/rawStreamLog.ts` — 9%; log path construction and redaction with
+      a mocked fs. (S)
+- [ ] `lib/spreadsheet.ts` — 0%; parse a small in-memory xlsx fixture and
+      assert sheet and cell extraction, including empty and edge cells. (M)
+- [ ] `lib/tabular/**` — 36% across the directory and the biggest single block
+      of untested code outside `lib/mcp`. Start with `tabular.prompt.ts` (0%,
+      pure string building) and `tabular.rows.ts` (55%), not the extract and
+      stream pipeline. (M)
+- [ ] `lib/mcp/servers.ts` — 0%; server config validation and allow-listing
+      logic. Security relevant. (M)
+- [ ] `lib/mcp/client.ts` (23%) + `lib/mcp/oauth.ts` (3%) — connection
+      lifecycle and OAuth token handling with a mocked MCP SDK. Security
+      relevant. (M)
+- [ ] `lib/courtlistener.ts` — 2%; API client with mocked fetch: query
+      building, pagination, and error paths. Legal-research correctness. (M)
+- [ ] `lib/contentAccess.ts` (59%) and `lib/projectAccess.ts` (60% of
+      statements, 44% of functions) — authorization helpers, so the uncovered
+      branches are the ones that matter most. (M)
+- [ ] `lib/storage.ts` — 54%; S3 upload/download/list/delete wrappers with a
       mocked AWS SDK client. (M)
-- [ ] `lib/userDataExport.ts` — export assembly: given seeded mock tables,
-      assert the export contains the user's data and nobody else's. (M)
-- [ ] `lib/spreadsheet.ts` — parse a small in-memory xlsx fixture; assert sheet
-      and cell extraction, including empty/edge cells. (M)
-- [ ] `lib/chat/contextBuilders.ts` — context assembly from doc stores; assert
-      doc labels, truncation, and ordering. (M)
-- [x] `lib/docxTrackedChanges.ts` — tracked-changes XML round-trip on a minimal
-      docx fixture: insert/delete runs, accept/reject. High value: document
-      integrity. (M)
-- [ ] `lib/courtlistener.ts` — API client with mocked fetch: query building,
-      pagination, and error paths. Legal-research correctness. (M)
-- [x] `lib/workflowCatalogSource.ts`, `lib/workflowCatalogSync.ts` — validate
-      downloaded workflow definitions, temporary-file cleanup, asset uploads,
-      and the transactional import payload. (M)
-- [ ] `lib/llm/aiSdk.ts` + `lib/llm/providers.ts` — provider-neutral tool plumbing
-      and provider selection with mocked provider modules. (M)
-- [ ] `lib/mcp/types.ts` + `lib/mcp/servers.ts` — server config validation and
-      allow-listing logic; security relevant. (M)
-- [ ] `lib/mcp/client.ts` + `lib/mcp/oauth.ts` — connection lifecycle and OAuth
-      token handling with a mocked MCP SDK; security relevant. (M)
-- [ ] `lib/llm/rawStreamLog.ts` — log path construction and redaction with a
-      mocked fs. (S)
-- [ ] `lib/chat/tools/documentOps.ts` — start with the pure helpers (diff/match
-      utilities), not the full tool handlers. (M)
-- [ ] `lib/chat/tools/toolDispatcher.ts` — dispatch table routing and argument
-      validation with stubbed tools; don't try to cover every tool body. (M)
-- [ ] `lib/chat/streaming.ts` + `lib/llm/{aiSdk,providers}.ts` — streaming
-      loops and provider adapters; hardest to unit test, consider extracting
-      pure chunk-parsing helpers first. (M)
+- [ ] `lib/dbq/runner.ts` — 59%; job runner loop, retry, and failure handling.
+      (M)
+- [ ] `lib/chat/contextBuilders.ts` — 46%; context assembly from doc stores.
+      Assert doc labels, truncation, and ordering. (M)
+- [ ] `lib/chat/tools/toolDispatcher.ts` — 40%, and the largest drag on
+      `lib/chat/tools`. Cover dispatch-table routing and argument validation
+      with stubbed tools; don't try to cover every tool body. (M)
+- [ ] `lib/chat/tools/documentOps.ts` — 53%; continue with the pure helpers
+      (diff and match utilities) rather than the full tool handlers. (M)
+- [ ] `lib/chat/streaming.ts` — 54%; streaming loops are the hardest to unit
+      test here. Consider extracting pure chunk-parsing helpers first. (M)
 
-Not worth unit testing directly: `lib/supabase.ts` and `lib/convert.ts` are
-thin wrappers around external services (Supabase auth, LibreOffice); they are
+Not worth unit testing directly: `lib/convert.ts` is a thin wrapper around
+LibreOffice, and `lib/pdfjs.ts` is a type facade whose only executable
+statement is a dynamic `import()` — its 0% is structural, not a gap. Both are
 better exercised by the e2e suite.
 
 ## Ratchet policy
 
-`backend/vitest.config.mts` enforces global coverage **floors** (currently
-statements 39 / branches 35 / functions 42 / lines 40). They are a
-no-regression ratchet, not a target:
+`backend/vitest.config.mts` enforces global coverage **floors**. They are a
+no-regression ratchet, not a target. The "Backend build and tests" CI job runs
+`npm run test:coverage`, so a drop below a floor fails the build. (It ran plain
+`npm test` until the floors were raised to the measured numbers, which meant the
+thresholds were never evaluated in CI at all.)
+
+The config is the only place the numbers live. This section deliberately does
+not repeat them: it used to, and the copy here drifted more than thirteen
+points out of date before anyone noticed, which is worse than not stating them
+at all.
 
 - **Floors only go up.** Never lower them to get a PR green — that means your
   change removed tested behavior or added a large untested lib; add tests
@@ -122,5 +155,20 @@ no-regression ratchet, not a target:
 - **Raise them in the same PR that adds tests.** After your suite passes, run
   `npm run test:coverage`, take the new global numbers, and set each floor to
   the measured value rounded down to a whole percent.
-- Keep the measured numbers in the config comment and the table above honest
-  when you do.
+- Keep the measured numbers in the config comment and in the sections above
+  honest when you do.
+- Coverage is scoped to `src/lib/**` (`coverage.include`). Route tests move the
+  global numbers only where they reach lib code that was not already covered,
+  so a route-level PR can legitimately produce a 0.00 delta.
+
+### When an upstream merge drops the measured numbers
+
+This repository tracks an active upstream, so a merge can land a large,
+untested file through no fault of the merging PR. That is the one case where
+the measured number falls without anyone removing a test, and floors rounded
+down to whole percents leave under a point of margin to absorb it.
+
+Do not quietly lower a floor inside a merge commit. Either cover the incoming
+code, or lower the floor in a separate commit that names the upstream file
+responsible — so the lowering is visible in the history instead of buried in a
+merge diff — and raise it again in the PR that adds the tests.

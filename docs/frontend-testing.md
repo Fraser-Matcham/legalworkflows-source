@@ -94,8 +94,8 @@ are mostly composition.
 ## Ratchet policy
 
 `frontend/vitest.config.mts` enforces global coverage **floors** over
-`src/app/lib/**` (currently statements 99 / branches 97 / functions 100 /
-lines 100). Same rules as the backend
+`src/app/lib/**`. The config is the only place the numbers live — the copy that
+used to sit here had drifted from it. Same rules as the backend
 ([testing-coverage.md](testing-coverage.md#ratchet-policy)):
 
 - **Floors only go up.** Never lower them to get a PR green — that means your
