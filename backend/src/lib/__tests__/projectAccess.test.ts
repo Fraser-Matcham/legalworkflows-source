@@ -283,7 +283,10 @@ describe("project access grants", () => {
             role: "viewer",
             createdBy: "creator",
         });
-        await removeGrantsForEmail(db, " Gone@X.example ");
+        await removeGrantsForEmail(db, " Gone@X.example ", {
+            actorId: "gone-user",
+            actorEmail: "gone@x.example",
+        });
         expect((await grantsOf(db, "p1")).map((g) => g.email)).toEqual([
             "stays@x.example",
         ]);

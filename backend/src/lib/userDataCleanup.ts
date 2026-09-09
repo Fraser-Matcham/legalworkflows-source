@@ -936,7 +936,12 @@ export async function deleteUserAccountData(
     await Promise.all([
         // Direct project access is a grant row, so revoking this person's
         // access means deleting every grant addressed to their email.
-        removeGrantsForEmail(db, userEmail),
+        // Account deletion: the person losing the access is also the one
+        // who asked for it to go, so actor and subject are the same account.
+        removeGrantsForEmail(db, userEmail, {
+            actorId: userId,
+            actorEmail: userEmail ?? null,
+        }),
         // Chat and review invitations are grant rows too. They can outlive
         // the recipient's account, so remove them explicitly by email.
         removeContentGrantsForEmail(db, userEmail),

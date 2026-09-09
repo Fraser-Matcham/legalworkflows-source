@@ -23,6 +23,11 @@ import { normalizeEmail } from "./access";
 import { isProjectRole, type ProjectRole } from "./permissions";
 import { listOrgAccessPeople } from "./orgAccessOverrides";
 import { findProfileUserByEmail } from "./userLookup";
+import {
+    recordProjectAccessGranted,
+    recordProjectAccessPurged,
+    recordProjectAccessRevoked,
+} from "./projectAccessAudit";
 
 type Db = ReturnType<typeof createServerSupabase>;
 
@@ -187,6 +192,8 @@ export async function upsertProjectGrant(
         createdBy: string;
         /** Emails belonging to the project's creator can't be granted away. */
         creatorEmail?: string | null;
+        /** Actor address for the audit trail; the id alone is not readable. */
+        actorEmail?: string | null;
     },
 ): Promise<GrantWriteResult> {
     const email =
@@ -250,12 +257,22 @@ export async function upsertProjectGrant(
             kind: "db_error",
             detail: error?.message ?? "Failed to save access grant",
         };
+    await recordProjectAccessGranted(
+        db,
+        { actorId: params.createdBy, actorEmail: params.actorEmail },
+        { projectId: params.projectId, subjectEmail: email, role: params.role },
+    );
     return { ok: true, grant: data as ProjectGrant };
 }
 
 export async function deleteProjectGrant(
     db: Db,
-    params: { projectId: string; email: string },
+    params: {
+        projectId: string;
+        email: string;
+        actorId: string;
+        actorEmail?: string | null;
+    },
 ): Promise<{ ok: true; removed: boolean } | { ok: false; detail: string }> {
     const email = normalizeEmail(params.email);
     if (!email) return { ok: true, removed: false };
@@ -266,7 +283,16 @@ export async function deleteProjectGrant(
         .eq("email", email)
         .select("id");
     if (error) return { ok: false, detail: error.message };
-    return { ok: true, removed: ((data ?? []) as unknown[]).length > 0 };
+    const removed = ((data ?? []) as unknown[]).length > 0;
+    // Only a revoke that removed something is an event: a 404 for a grant
+    // that was not there is not an access change.
+    if (removed)
+        await recordProjectAccessRevoked(
+            db,
+            { actorId: params.actorId, actorEmail: params.actorEmail },
+            { projectId: params.projectId, subjectEmail: email },
+        );
+    return { ok: true, removed };
 }
 
 export type ProjectContact = {
@@ -458,15 +484,24 @@ export async function listProjectAdminContacts(
 export async function removeGrantsForEmail(
     db: Db,
     email: string | null | undefined,
+    actor: { actorId: string; actorEmail?: string | null },
 ): Promise<void> {
     const normalized = normalizeEmail(email);
     if (!normalized) return;
-    const { error } = await db
+    // select() so the audit event can state how much access was revoked;
+    // "12 grants removed" is the auditable fact when there is no single
+    // project to attribute the purge to.
+    const { data, error } = await db
         .from("project_access_grants")
         .delete()
-        .eq("email", normalized);
+        .eq("email", normalized)
+        .select("id");
     if (error)
         throw new Error(
             `Failed to revoke access grants: ${error.message ?? "unknown error"}`,
         );
+    await recordProjectAccessPurged(db, actor, {
+        subjectEmail: normalized,
+        revokedCount: ((data ?? []) as unknown[]).length,
+    });
 }
