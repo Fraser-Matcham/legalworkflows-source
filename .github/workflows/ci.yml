@@ -95,6 +95,29 @@ jobs:
   # enough to gate every PR. --threshold 1.0 = every case must pass.
   # Skips gracefully until the evals PR merges.
   # -----------------------------------------------------------------------
+  boundary:
+    name: Repository boundary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      # A gate rather than a review convention because the failure is
+      # irreversible. AGPL section 5(c) applies this repository's terms to the
+      # combined work once the parts are linked; Juralio is Apache-2.0, and
+      # reverting the commit does not withdraw the grant already made to
+      # whoever received the combined work.
+      #
+      # Run the self-test first: it builds a tree containing one of each
+      # violation and fails if any goes undetected, so a checker that has
+      # silently stopped detecting anything cannot pass as a clean repository.
+      - run: npm run boundary:self-test
+
+      - run: npm run boundary
+
   evals:
     name: Eval harness
     runs-on: ubuntu-latest

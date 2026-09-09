@@ -7,7 +7,9 @@
         "test:e2e:headed": "playwright test --headed",
         "test:e2e:ui": "playwright test --ui",
         "notices": "node scripts/generate-third-party-notices.mjs",
-        "notices:check": "node scripts/generate-third-party-notices.mjs --check"
+        "notices:check": "node scripts/generate-third-party-notices.mjs --check",
+        "boundary": "node scripts/check-repo-boundary.mjs",
+        "boundary:self-test": "node scripts/check-repo-boundary.mjs --self-test"
     },
     "devDependencies": {
         "@axe-core/playwright": "^4.13.0",

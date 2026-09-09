@@ -21,6 +21,11 @@ in either direction:
 Re-declare shared types on each side rather than importing them; a duplicated
 interface is the cost of the boundary, not a smell.
 
+CI enforces this. `scripts/check-repo-boundary.mjs` fails the build on a
+cross-repo import specifier, a submodule, a `file:`/`link:`/`portal:`
+dependency, a tsconfig path alias, or a workflow that checks out both
+repositories. Run it locally with `npm run boundary`.
+
 This is a licensing boundary as much as an architectural one. AGPL-3.0
 section 5(c) applies its terms to the work *as a whole* once the parts are
 combined, and that combination cannot be undone afterwards. Juralio is
