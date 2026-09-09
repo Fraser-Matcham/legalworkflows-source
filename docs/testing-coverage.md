@@ -59,11 +59,14 @@ includes several large, lightly tested feature libs — `courtlistener.ts`, the
 MCP client and OAuth flow, `toolDispatcher.ts`, `documentOps.ts`, and the
 tabular extract/stream pipeline — that dominate the line count.
 
-**A file missing from the table is not an untested file.** The text reporter
-omits any file at 100% on all four metrics, so `documentTypes.ts` and
-`chat/prompts.ts` are both fully covered and neither appears in the output.
-Twenty of the 101 files under `src/lib/**` are in that hidden set; all are small
-(21 lines or fewer). Read `coverage/lcov.info` for the complete picture.
+**A file missing from the table is not an untested file.** The `% Coverage
+report` table does not always list every file, and what it omits depends on
+where you run it: 20 of the 101 files under `src/lib/**` are at 100% on all
+four metrics, and some local environments drop exactly those rows while the CI
+runner prints them. `documentTypes.ts` and `chat/prompts.ts` are two of them —
+both fully covered, both ticked in the list below, and both absent from some
+local runs. `coverage/lcov.info` always carries all 101 files; read it when the
+table and the TODO list look like they disagree.
 
 ## TODO — untested libs, in priority order
 
