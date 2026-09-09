@@ -53,6 +53,40 @@ no-coverage mutants in
 score, so a run fails only on a genuine regression.
 When you kill survivors, raise `break` in the same PR — floors only go up.
 
+## Cross-tenant denial tests
+
+The tenancy boundary in most route handlers is a query filter, not a permission
+branch: the handler asks for the caller's rows and a resource belonging to
+someone else is simply not among them. That shapes how these tests have to be
+written.
+
+**The fake database must enforce `.eq()` filters.** A fake that returns its
+seeded rows regardless of the filters makes every denial test pass whether or
+not the scoping clause is there — coverage that proves nothing. See
+`src/__tests__/integration/library.crossTenant.test.ts`, whose fake filters, so
+deleting a `.eq("user_id", userId)` in a route makes the other tenant's row
+visible and turns the test red.
+
+**Assert the scoping argument, not the payload.** For handlers that scope
+through an RPC, check the argument itself (`p_user_id`) rather than searching
+the response body for an id. Substring assertions on a serialised payload pass
+for the wrong reasons — a `p_user_email` of `u1@test.local` contains `u1`.
+
+**A surviving mutation is not always a weak test.** Some handlers scope more
+than once: `PATCH /library/:kind/documents/:documentId` filters by `user_id` on
+both the lookup and the update, so removing either one alone still refuses the
+request. Check whether the code has defence in depth before concluding the test
+is at fault.
+
+### Coverage status
+
+This is not finished. There are roughly 190 route handlers; the ones with
+cross-tenant coverage are those in the integration suites for chat, orgs,
+projects, projectChat, tabular, user and library. `library.ts` was the largest
+tenant-scoped router with no tests at all, which is why it came first. Extending
+this to the remaining routers is ongoing work, not a completed sweep — treat a
+router's absence from that list as "unverified", not "safe".
+
 ## SSE load harness (k6)
 
 The streaming chat endpoint (`POST /chat`) is the product's hot path and
