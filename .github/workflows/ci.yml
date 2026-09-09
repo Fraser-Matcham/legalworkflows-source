@@ -42,9 +42,14 @@ jobs:
 
       - run: npm ci
 
-      # No-ops on a tree without a "test" script (e.g. before the vitest
-      # harness PR merges); runs the suite once it exists.
-      - run: npm test --if-present
+      # Runs the suite with the coverage-ratchet floor check (see
+      # docs/testing-coverage.md). This job ran plain `npm test` until the
+      # floors were raised to the measured numbers: the thresholds in
+      # vitest.config.mts were therefore never evaluated in CI, so a coverage
+      # drop could not fail anything. `test:coverage` runs the same suite and
+      # adds the floor check; --if-present keeps the original no-op semantics
+      # for a tree without the script.
+      - run: npm run test:coverage --if-present
 
       - run: npm run build
 

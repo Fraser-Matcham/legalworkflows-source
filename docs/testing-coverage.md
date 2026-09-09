@@ -136,7 +136,10 @@ better exercised by the e2e suite.
 ## Ratchet policy
 
 `backend/vitest.config.mts` enforces global coverage **floors**. They are a
-no-regression ratchet, not a target.
+no-regression ratchet, not a target. The "Backend build and tests" CI job runs
+`npm run test:coverage`, so a drop below a floor fails the build. (It ran plain
+`npm test` until the floors were raised to the measured numbers, which meant the
+thresholds were never evaluated in CI at all.)
 
 The config is the only place the numbers live. This section deliberately does
 not repeat them: it used to, and the copy here drifted more than thirteen
