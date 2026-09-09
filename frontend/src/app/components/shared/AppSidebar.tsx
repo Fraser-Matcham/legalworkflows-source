@@ -19,6 +19,7 @@ import { useUserProfile } from "@/app/contexts/UserProfileContext";
 import { useChatHistoryContext } from "@/app/contexts/ChatHistoryContext";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import { Scale } from "lucide-react";
 import { MikeIcon } from "@/app/components/chat/mike-icon";
 import { SidebarChatItem } from "@/app/components/shared/SidebarChatItem";
 import {
@@ -643,6 +644,19 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                                     >
                                         <OrganizationSkeuoIcon className="h-4 w-4" />
                                         Organizations
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            router.push("/legal");
+                                            setIsDropdownOpen(false);
+                                        }}
+                                        className={cn(
+                                            "w-full px-4 py-2 text-left text-sm text-gray-700 flex items-center gap-2 rounded-md",
+                                            LIQUID_GLASS_HOVER_CLASS,
+                                        )}
+                                    >
+                                        <Scale className="h-4 w-4" />
+                                        Legal notices
                                     </button>
                                     <button
                                         onClick={() => {

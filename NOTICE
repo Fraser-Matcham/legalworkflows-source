@@ -1,0 +1,58 @@
+legalworkflows
+==============
+
+Copyright (C) 2026 Fraser Matcham.
+
+This program is a modified version of Mike, by Open Legal Products
+<https://github.com/open-legal-products/mike>, which is licensed under the GNU
+Affero General Public License version 3. Portions of this program remain
+copyright of Open Legal Products and its contributors.
+
+Modified by Fraser Matcham, beginning 8 September 2026.
+Modifications include extraction into a standalone service, rebranding, build
+and dependency changes, CI configuration, and the changes recorded in this
+repository's commit history.
+
+
+Licence
+-------
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along
+with this program. If not, see <https://www.gnu.org/licenses/>.
+
+The full licence text is distributed with this program in the file LICENSE at
+the root of the source tree, and is published at
+<https://www.gnu.org/licenses/agpl-3.0.html>.
+
+
+Network use
+-----------
+
+Section 13 of the GNU Affero General Public License applies to this program.
+Where users interact with a modified version of it over a network, the operator
+of that instance must offer those users the Corresponding Source of the version
+they are interacting with, at no charge.
+
+
+Why this file exists
+--------------------
+
+Sections 5(a) and 5(b) of the GNU Affero General Public License require a
+modified work to carry prominent notices stating that it was modified, giving a
+relevant date, and stating that it is released under this licence. This file
+carries those notices for the source tree. The equivalent notices for the
+running application are displayed at the /legal route, which satisfies section
+5(d).
+
+LICENSE at the root of this repository is the unmodified text of the GNU Affero
+General Public License version 3. It is never edited: section 8 terminates the
+rights granted under the licence if its terms are altered.

@@ -10,8 +10,11 @@ and Cloudflare R2-compatible object storage, and is consumed by the Juralio
 matter management platform over HTTP.
 
 Derived from [Mike](https://github.com/open-legal-products/mike) by Open Legal
-Products, licensed under AGPL-3.0. This is a modified version; see
-[LICENSE](LICENSE) and [docs/upstream-sync.md](docs/upstream-sync.md).
+Products, licensed under AGPL-3.0. This is a modified version, modified by
+Fraser Matcham beginning 8 September 2026; see [NOTICE](NOTICE) for the
+modification and licence notices required by AGPL-3.0 sections 5(a) and 5(b),
+[LICENSE](LICENSE) for the licence itself, and
+[docs/upstream-sync.md](docs/upstream-sync.md) for how upstream is tracked.
 
 Before changing anything here, read the fork rules at the top of
 [AGENTS.md](AGENTS.md).
@@ -95,4 +98,13 @@ packaged and synchronized with this application.
 
 ## License
 
+Copyright (C) 2026 Fraser Matcham. Portions copyright Open Legal Products and
+its contributors.
+
 legalworkflows is available under the [GNU Affero General Public License v3.0](LICENSE).
+It is distributed WITHOUT ANY WARRANTY; see [NOTICE](NOTICE) for the full
+notices, which the running application also displays at `/legal`.
+
+Section 13 of the licence applies: where users interact with a modified version
+over a network, the operator of that instance must offer them the Corresponding
+Source of the version they are interacting with, at no charge.
