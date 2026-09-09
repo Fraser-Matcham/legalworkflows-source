@@ -1205,4 +1205,61 @@ describe("user.routes", () => {
             expect(res.body.code).toBe("mfa_verification_required");
         });
     });
+
+    // -----------------------------------------------------------------------
+    // GET /user/lookup — the invite flow's "does this account exist?" probe.
+    //
+    // Untested before this suite. It is an authenticated enumeration surface:
+    // it deliberately answers "does this email have an account", so the
+    // boundary that matters is that it requires auth, normalises the input,
+    // and never leaks more than existence plus a display name.
+    // -----------------------------------------------------------------------
+    describe("GET /user/lookup", () => {
+        it("rejects a missing email rather than returning every profile", async () => {
+            const res = await request(app).get("/user/lookup").set(...AUTH);
+            expect(res.status).toBe(400);
+            expect(res.body.detail).toBe("email is required");
+        });
+
+        it("rejects a whitespace-only email", async () => {
+            const res = await request(app)
+                .get("/user/lookup")
+                .query({ email: "   " })
+                .set(...AUTH);
+            expect(res.status).toBe(400);
+        });
+
+        it("reports a known account without exposing its user id", async () => {
+            supabaseState.tables.user_profiles = {
+                data: {
+                    user_id: "u-other",
+                    email: "known@test.local",
+                    display_name: "Grace",
+                },
+                error: null,
+            };
+            const res = await request(app)
+                .get("/user/lookup")
+                .query({ email: "known@test.local" })
+                .set(...AUTH);
+            expect(res.status).toBe(200);
+            expect(res.body.exists).toBe(true);
+            expect(res.body.display_name).toBe("Grace");
+            // The id is the thing an enumeration probe must not hand back.
+            expect(JSON.stringify(res.body)).not.toContain("u-other");
+        });
+
+        it("normalises the address it echoes for an unknown account", async () => {
+            supabaseState.tables.user_profiles = { data: null, error: null };
+            const res = await request(app)
+                .get("/user/lookup")
+                .query({ email: "  MiXeD@Test.Local  " })
+                .set(...AUTH);
+            expect(res.status).toBe(200);
+            expect(res.body.exists).toBe(false);
+            expect(res.body.email).toBe("mixed@test.local");
+            expect(res.body.display_name).toBeNull();
+        });
+    });
+
 });
