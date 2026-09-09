@@ -1992,4 +1992,64 @@ describe("tabular.routes", () => {
             expect(del.status).toBe(204);
         });
     });
+
+    // -----------------------------------------------------------------------
+    // GET /tabular-review/ids — the bulk id feed the client uses for
+    // select-all. Untested before this suite.
+    //
+    // The tenancy boundary lives in the RPC arguments: the handler passes the
+    // caller's id and email to get_tabular_review_ids_overview, and the RPC
+    // scopes on them. Drop those and the endpoint returns every tenant's
+    // review ids, so the arguments are asserted directly rather than only the
+    // response body.
+    // -----------------------------------------------------------------------
+    describe("GET /tabular-review/ids", () => {
+        it("scopes the query to the calling user", async () => {
+            supabaseState.rpc = {
+                data: [{ id: "r1", user_id: "u1" }],
+                error: null,
+            };
+            const res = await request(app).get("/tabular-review/ids").set(...AUTH);
+
+            expect(res.status).toBe(200);
+            const call = supabaseState.rpcCalls.find(
+                (c) => c.fn === "get_tabular_review_ids_overview",
+            );
+            expect(call).toBeDefined();
+            // Assert the scoping field itself, not a substring of the whole
+            // payload: p_user_email is "u1@test.local", so a loose
+            // `toContain("u1")` passes even when p_user_id has been dropped.
+            expect(call!.args).toMatchObject({
+                p_user_id: "u1",
+                p_user_email: "u1@test.local",
+            });
+        });
+
+        it("stops paginating when a page comes back empty", async () => {
+            supabaseState.rpc = { data: [], error: null };
+            const res = await request(app).get("/tabular-review/ids").set(...AUTH);
+
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual([]);
+            // One call, then the empty page breaks the loop — not
+            // TABULAR_REVIEW_IDS_MAX_PAGES calls.
+            expect(
+                supabaseState.rpcCalls.filter(
+                    (c) => c.fn === "get_tabular_review_ids_overview",
+                ),
+            ).toHaveLength(1);
+        });
+
+        it("returns a 500 without leaking the driver error", async () => {
+            supabaseState.rpc = {
+                data: null,
+                error: { message: "relation does not exist" },
+            };
+            const res = await request(app).get("/tabular-review/ids").set(...AUTH);
+
+            expect(res.status).toBe(500);
+            expect(JSON.stringify(res.body)).not.toContain("relation does not exist");
+        });
+    });
+
 });
