@@ -23,9 +23,9 @@ need a real local Supabase stack are explicitly gated.
 
 ## Current coverage (measured 2026-09)
 
-Global: **63.61% statements / 54.11% branches / 66.66% functions / 65.95%
-lines** — 5303/8336 statements, 3811/7043 branches, 910/1365 functions,
-4938/7487 lines.
+Global: **64.01% statements / 54.43% branches / 66.95% functions / 66.35%
+lines** — 5336/8336 statements, 3834/7043 branches, 914/1365 functions,
+4968/7487 lines.
 
 Per-directory statement coverage from `npm run test:coverage`:
 
@@ -37,7 +37,7 @@ Per-directory statement coverage from `npm run test:coverage`:
 | `lib/llm` | 74 | strong except `rawStreamLog.ts` (9) |
 | `lib/` (root, 56 files) | 73 | see the per-file list below |
 | `lib/chat` | 70 | `contextBuilders.ts` (46), `streaming.ts` (54) |
-| `lib/chat/tools` | 55 | `toolDispatcher.ts` (40), `documentOps.ts` (53) |
+| `lib/chat/tools` | 57 | `toolDispatcher.ts` (41), `documentOps.ts` (59) |
 | `lib/tabular` | 36 | largest remaining block after `lib/mcp` |
 | `lib/mcp` | 7 | `servers.ts` 0, `oauth.ts` 3, `client.ts` 23 |
 
@@ -123,11 +123,15 @@ Still open:
       (M)
 - [ ] `lib/chat/contextBuilders.ts` — 46%; context assembly from doc stores.
       Assert doc labels, truncation, and ordering. (M)
-- [ ] `lib/chat/tools/toolDispatcher.ts` — 40%, and the largest drag on
-      `lib/chat/tools`. Cover dispatch-table routing and argument validation
-      with stubbed tools; don't try to cover every tool body. (M)
-- [ ] `lib/chat/tools/documentOps.ts` — 53%; continue with the pure helpers
-      (diff and match utilities) rather than the full tool handlers. (M)
+- [ ] `lib/chat/tools/toolDispatcher.ts` — 41%, and still the largest drag on
+      `lib/chat/tools`. Characterisation tests now pin the dispatch loop's
+      fall-through behaviour; what remains is the body of each tool branch.
+      Cover them with stubbed tools rather than trying to exercise every tool
+      end to end. (M)
+- [ ] `lib/chat/tools/documentOps.ts` — 59%; the pure helpers
+      (`safeGeneratedFilename`, `normalizeWithMap`, `findTextMatches`, the
+      turn-read helpers) are now characterised. What remains is the generation
+      and edit paths, which need a mocked storage layer. (M)
 - [ ] `lib/chat/streaming.ts` — 54%; streaming loops are the hardest to unit
       test here. Consider extracting pure chunk-parsing helpers first. (M)
 
