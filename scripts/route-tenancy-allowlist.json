@@ -1,0 +1,14 @@
+[
+    {
+        "handler": "workflowAddons.ts GET /",
+        "reason": "Lists the shared workflow catalogue, filtered to distribution='addon' and active=true. mike_workflows holds the catalogue synced from the upstream workflow repository, not user data: every authenticated user is meant to see the same rows, so there is no caller identity to scope by. REMOVE WHEN: addons become per-user or per-organization, at which point this handler needs a tenant filter rather than an allowlist entry."
+    },
+    {
+        "handler": "workflowAddons.ts GET /:addonId",
+        "reason": "Reads one catalogue addon by id, with the same distribution='addon' and active=true filters as the list endpoint. Catalogue content is global, so there is no owning user to check. REMOVE WHEN: addons become per-user or per-organization."
+    },
+    {
+        "handler": "workflowAddons.ts GET /:addonId/assets/:assetId/display",
+        "reason": "Serves an asset attached to a catalogue addon for display. The asset belongs to the addon, which is global, and the handler re-checks the addon is an active addon before serving it. REMOVE WHEN: addons become per-user or per-organization."
+    }
+]

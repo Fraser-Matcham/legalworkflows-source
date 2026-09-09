@@ -9,7 +9,9 @@
         "notices": "node scripts/generate-third-party-notices.mjs",
         "notices:check": "node scripts/generate-third-party-notices.mjs --check",
         "boundary": "node scripts/check-repo-boundary.mjs",
-        "boundary:self-test": "node scripts/check-repo-boundary.mjs --self-test"
+        "boundary:self-test": "node scripts/check-repo-boundary.mjs --self-test",
+        "tenancy": "node scripts/check-route-tenancy.mjs",
+        "tenancy:self-test": "node scripts/check-route-tenancy.mjs --self-test"
     },
     "devDependencies": {
         "@axe-core/playwright": "^4.13.0",

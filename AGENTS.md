@@ -196,7 +196,10 @@ helpers in `frontend/src/app/lib/userFacingError.ts` for unexpected failures.
   beside the relevant module as `*.test.ts`.
 
 Keep route handlers thin when logic is reusable. Preserve authorization checks
-and ownership/project-sharing boundaries on every new query or mutation. Never
+and ownership/project-sharing boundaries on every new query or mutation. CI
+runs `npm run tenancy`, which fails the build on a route handler that queries
+the database without ever using the caller's identity; genuinely global data
+goes in `scripts/route-tenancy-allowlist.json` with a reason. Never
 send internal exception messages to clients: use the helpers in
 `backend/src/lib/httpError.ts`; logging must use the redaction helpers in
 `backend/src/lib/safeError.ts`. Intentional validation and permission failures
