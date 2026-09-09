@@ -34,6 +34,15 @@ the root of the source tree, and is published at
 <https://www.gnu.org/licenses/agpl-3.0.html>.
 
 
+Third-party components
+----------------------
+
+This program is distributed with third-party open-source components. Their
+licences, copyright attributions and licence elections are listed in
+THIRD-PARTY-NOTICES.md at the root of the source tree, which is generated from
+the distributed dependency trees by scripts/generate-third-party-notices.mjs.
+
+
 Network use
 -----------
 

@@ -73,6 +73,13 @@ export default function LegalNoticesPage() {
                     PURPOSE. See the {LICENCE_NAME} for more details.
                 </p>
 
+                <p data-testid="third-party-notices">
+                    This service includes third-party open-source components.
+                    Their licences and attributions are listed in{" "}
+                    <code>THIRD-PARTY-NOTICES.md</code>, distributed with the
+                    source of this program.
+                </p>
+
                 <p data-testid="licence-link">
                     You can view a copy of the {LICENCE_NAME} at{" "}
                     <Link

@@ -105,6 +105,10 @@ legalworkflows is available under the [GNU Affero General Public License v3.0](L
 It is distributed WITHOUT ANY WARRANTY; see [NOTICE](NOTICE) for the full
 notices, which the running application also displays at `/legal`.
 
+Third-party components are listed with their licences and attributions in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). Regenerate it with
+`npm run notices` after changing dependencies.
+
 Section 13 of the licence applies: where users interact with a modified version
 over a network, the operator of that instance must offer them the Corresponding
 Source of the version they are interacting with, at no charge.
