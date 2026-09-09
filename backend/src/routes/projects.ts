@@ -940,6 +940,7 @@ projectsRouter.post("/:projectId/access", requireAuth, async (req, res) => {
     email: req.body?.email,
     role: req.body?.role,
     createdBy: userId,
+    actorEmail: userEmail ?? null,
     creatorEmail:
       (creatorProfile?.data as { email?: string | null } | null)?.email ?? null,
   });
@@ -998,6 +999,8 @@ projectsRouter.delete(
     const result = await deleteProjectGrant(db, {
       projectId,
       email: decodeURIComponent(routeParams(req).email),
+      actorId: userId,
+      actorEmail: userEmail ?? null,
     });
     if (!result.ok) return void sendInternalError(res, result.detail);
     if (!result.removed)

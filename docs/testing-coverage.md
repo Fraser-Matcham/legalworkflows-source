@@ -23,9 +23,9 @@ need a real local Supabase stack are explicitly gated.
 
 ## Current coverage (measured 2026-09)
 
-Global: **64.01% statements / 54.43% branches / 66.95% functions / 66.35%
-lines** — 5336/8336 statements, 3834/7043 branches, 914/1365 functions,
-4968/7487 lines.
+Global: **64.08% statements / 54.51% branches / 67.03% functions / 66.43%
+lines** — 5349/8347 statements, 3846/7055 branches, 917/1368 functions,
+4981/7498 lines.
 
 Per-directory statement coverage from `npm run test:coverage`:
 
