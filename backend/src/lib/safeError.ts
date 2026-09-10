@@ -23,6 +23,10 @@
  *              matched by form. This catches the secrets the process env does
  *              NOT hold - a caller's own stored API key, a user's session
  *              token - which value-based redaction cannot see.
+ *   By context. A secret of no recognisable shape, held by no environment
+ *              variable, betrayed only by the label next to it: OpenAI's
+ *              "Incorrect API key provided: ..." echoes the rejected key
+ *              back verbatim. Restored from the module upstream deleted.
  *
  * Volume is the third defence and it is the one that handles document text.
  * A prompt or an extracted document does not match any pattern; it is simply
@@ -81,6 +85,25 @@ const SECRET_SHAPES: ReadonlyArray<readonly [RegExp, string]> = [
     [/\b[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{43}\b/g, "[redacted:signed-token]"],
 ];
 
+/**
+ * Secrets recognised by the words AROUND them rather than by their own shape.
+ *
+ * These come from the `safeError.ts` upstream used to have. Upstream deleted
+ * it as collateral in commit 1d92cba, a workflow-catalogue refactor that also
+ * dropped a 13,000-line module; the instruction to use these helpers survived
+ * in AGENTS.md long after the helpers did. They are restored here because
+ * they cover a case neither of the other defences can: a secret of arbitrary
+ * shape, held by nobody's environment, that a provider echoed back next to a
+ * label. OpenAI's "Incorrect API key provided: …" is the canonical example.
+ *
+ * Each pattern is exactly (prefix)(secret), so the replacement keeps the
+ * label — which is diagnostic — and drops only the value.
+ */
+const SECRET_CONTEXTS: ReadonlyArray<RegExp> = [
+    /(Incorrect API key provided:\s*)([^.\s]+)/gi,
+    /((?:api[_ -]?key|apikey|x-api-key|token|secret|password|authorization|bearer)\s*(?:provided\s*)?(?:is|:|=)\s*["']?)([A-Za-z0-9._~+/=-]{6,})/gi,
+];
+
 /** A uuid is an identifier, not a credential, and stays readable in logs. */
 const UUID =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -124,6 +147,9 @@ export function redactSecrets(text: string): string {
     for (const [name, value] of secretEnvValues()) {
         if (!out.includes(value)) continue;
         out = out.split(value).join(`[redacted:${name}]`);
+    }
+    for (const pattern of SECRET_CONTEXTS) {
+        out = out.replace(pattern, "$1[redacted]");
     }
     for (const [pattern, replacement] of SECRET_SHAPES) {
         out = out.replace(pattern, replacement);

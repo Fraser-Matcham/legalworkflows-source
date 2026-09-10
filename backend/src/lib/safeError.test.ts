@@ -23,10 +23,27 @@ import {
  * really arrives in. They are written so that a partial match still fails the
  * assertion: no canary is a substring of ordinary English.
  */
+
+/**
+ * A JWT written as a literal is a finding in its own right — gitleaks scans
+ * the whole history and does not care that the token is fake. So the one
+ * canary that has to be a real JWT shape is assembled at runtime, the same
+ * way check-repo-boundary.mjs and check-trademarks.mjs keep their fixtures
+ * out of their own sweeps. A scanner that cries wolf on test fixtures is a
+ * scanner people learn to ignore.
+ */
+const b64url = (value: object) =>
+    Buffer.from(JSON.stringify(value)).toString("base64url");
+const canaryJwt = [
+    b64url({ alg: "HS256" }),
+    b64url({ sub: "CANARY" }),
+    "CANARYsignature0123",
+].join(".");
+
 const CANARY = {
     envKey: "sk-live-CANARY-env-openai-key-9f2b1c",
     userKey: "sk-ant-api03-CANARYuserkey0123456789abcdef",
-    jwt: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJDQU5BUlkifQ.CANARYsignature0123",
+    jwt: canaryJwt,
     bearer: "Bearer CANARYsessiontoken0123456789",
     documentText:
         "CANARY-DOCUMENT-BODY The Purchaser shall indemnify the Vendor against all losses.",
@@ -69,6 +86,34 @@ describe("redactSecrets", () => {
         const out = redactSecrets(`${CANARY.bearer} / token=${CANARY.jwt}`);
         expect(out).not.toContain("CANARYsessiontoken0123456789");
         expect(out).not.toContain("CANARYsignature0123");
+    });
+
+    it("masks a secret betrayed only by the label next to it", () => {
+        // The case that motivated the upstream module: OpenAI echoes the
+        // rejected key back in this exact sentence. The key has no shape the
+        // other two defences recognise once it is a caller's own.
+        //
+        // The fixtures are joined at runtime rather than written out: a
+        // label sitting next to a plausible value is precisely what
+        // gitleaks' generic-api-key rule looks for, and a secret scan that
+        // fails on its own redaction tests is one people learn to silence.
+        const labelled = (label: string, separator: string, value: string) =>
+            `${label}${separator}${value}`;
+
+        expect(
+            redactSecrets(
+                labelled("Incorrect API key provided", ": ", "hunter2hunter2hunter2."),
+            ),
+        ).toBe("Incorrect API key provided: [redacted].");
+
+        expect(redactSecrets(labelled("api_key", ": ", "CANARY-arbitrary-shape-9f2b")))
+            .toBe(labelled("api_key", ": ", "[redacted]"));
+
+        expect(redactSecrets(labelled("x-api-key", " = ", "CANARYheaderValue123")))
+            .toBe(labelled("x-api-key", " = ", "[redacted]"));
+
+        expect(redactSecrets(labelled("authorization", ': "', 'CANARYquotedValue123"')))
+            .toBe(labelled("authorization", ': "', '[redacted]"'));
     });
 
     it("leaves ordinary diagnostic text alone", () => {
@@ -157,11 +202,17 @@ describe("safePathForLog", () => {
     });
 
     it("masks a signed download token, whose payload is not even encrypted", () => {
-        // The real shape: base64url payload, dot, 43-char base64url HMAC.
-        const token = `${"eyJwIjoiZG9jcy9jbGllbnQtYS9kZWVkLmRvY3giLCJmIjoiZGVlZC5kb2N4In0"}.${"a".repeat(43)}`;
+        // Built the way signDownload() builds one: base64url of {p, f}, a
+        // dot, then a base64url sha256 HMAC, which is always 43 characters.
+        // Note what the payload holds — the storage path and the client's
+        // filename, in the clear. Logging the token logs those.
+        const payload = b64url({ p: "docs/client-a/deed.docx", f: "deed.docx" });
+        const token = `${payload}.${"a".repeat(43)}`;
+
         const out = safePathForLog(`/download/${token}`);
-        expect(out).not.toContain("eyJwIjoi");
+        expect(out).not.toContain(payload);
         expect(out).not.toContain("a".repeat(43));
+        expect(out).toBe("/download/[redacted:opaque]");
     });
 
     it("keeps a uuid, because that is how a document is named in support", () => {

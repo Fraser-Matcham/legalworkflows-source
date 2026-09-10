@@ -23,8 +23,8 @@ export default defineConfig({
             // or near 100%, while lib/mcp (7%), lib/tabular (36%) and
             // lib/chat/tools (55%) hold the global figure down.
             //
-            // Measured on this tree: 64.32% statements, 54.83% branches,
-            // 67.22% functions, 66.66% lines. The floors below are those
+            // Measured on this tree: 64.34% statements, 54.83% branches,
+            // 67.22% functions, 66.67% lines. The floors below are those
             // rounded down to whole percents, so CI fails on a *drop*, and at
             // these figures that rounding lands on the same numbers as before.
             // Branches still has the least headroom, 0.83 points — if a drop

@@ -92,12 +92,18 @@ Three defences, because none is sufficient alone:
    tokens are matched by form. This catches the secrets the process
    environment does *not* hold — a caller's own stored API key, a user's
    session token.
-3. **By volume.** A prompt or an extracted page matches no pattern; it is
+3. **By context.** A secret with no recognisable shape, held by no environment
+   variable, betrayed only by the label beside it — OpenAI's `Incorrect API
+   key provided: …` echoes the rejected key back verbatim. These patterns are
+   restored from the `safeError.ts` upstream used to have and deleted as
+   collateral in commit `1d92cba`; the instruction to use them outlived the
+   module by four months.
+4. **By volume.** A prompt or an extracted page matches no pattern; it is
    simply long. Every string is truncated at `MAX_LOGGED_STRING`, and objects
    are never spread into a log line field by field.
 
 Volume is a defence, not a guarantee: a short prompt containing no secret
-pattern survives all three. Where a value is client content *by hypothesis* —
+pattern survives all four. Where a value is client content *by hypothesis* —
 the sanitised-5xx guard fires precisely because a handler put something
 unexpected in a response body — use `describeForLog` and print nothing at
 all. The probe caught this exact case: the guard was logging the offending
