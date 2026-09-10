@@ -189,6 +189,29 @@ jobs:
 
       - run: npm run schema-privileges
 
+  frontend-boundary:
+    name: Frontend boundary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      # The frontend used to type-import from backend/src. Two erased
+      # `import type` lines, and they were the reason frontend/Dockerfile had
+      # to take the repository root as its build context and copy the
+      # backend's sources in just to typecheck — which meant the frontend
+      # could not be built or deployed as a component at all.
+      #
+      # The types are re-declared in
+      # frontend/src/app/components/shared/apiTypes.ts. This stops the import
+      # coming back, the same way the Juralio boundary check does.
+      - run: npm run frontend-boundary:self-test
+
+      - run: npm run frontend-boundary
+
   evals:
     name: Eval harness
     runs-on: ubuntu-latest

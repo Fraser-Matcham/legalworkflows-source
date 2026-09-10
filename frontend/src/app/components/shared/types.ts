@@ -7,12 +7,12 @@ import type {
   SourceDocumentQuote,
   SourceDocumentType,
   SourceSubdocument,
-} from "../../../../../backend/src/lib/sourceDocuments";
+} from "./apiTypes";
 import type {
   AskInputItem as SharedAskInputItem,
   AskInputResponseItem as SharedAskInputResponseItem,
   AskInputsEvent as SharedAskInputsEvent,
-} from "../../../../../backend/src/lib/chat/types";
+} from "./apiTypes";
 
 export interface Folder {
   id: string;
