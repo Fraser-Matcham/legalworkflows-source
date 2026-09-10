@@ -21,6 +21,10 @@ The fork rules that constrain every change here are at the top of
 - [Troubleshooting](troubleshooting.md) — common local and production problems
 - [Safe local testing](safe-local-testing.md) — disposable resources, synthetic
   documents, and secret handling
+- [Observability](observability.md) — the per-request log line, what it
+  deliberately omits, and the redaction helpers every log site uses
+- [Data retention, storage and deletion](data-retention.md) — what is stored,
+  where, for how long, and what deletion actually does, with its known gaps
 
 ## Features and clients
 

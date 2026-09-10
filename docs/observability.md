@@ -67,6 +67,9 @@ plants a canary value in each of these positions and fails if it reappears:
 - **The remote IP.** Not recorded, consistent with the auth audit events in
   `backend/src/middleware/auditAuthEvents.ts` and UK GDPR data minimisation.
 
+What the service stores beyond logs — and what deletion does to it — is in
+[docs/data-retention.md](data-retention.md).
+
 ## Redaction
 
 `backend/src/lib/safeError.ts` holds the helpers. Anything on its way to a log
