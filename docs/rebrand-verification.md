@@ -38,29 +38,58 @@ target.
 
 ## How to run the pass
 
-No deployment is needed. The local stack in
-[docs/local-development.md](local-development.md) covers every screen below:
-`docker compose up` serves the app at `http://localhost:3000` with Supabase,
-Postgres, RustFS and Mailpit beside it, and local registration
-auto-confirms, so the authenticated screens are reachable immediately. The
-add-in sideloads from `https://localhost:3200` behind the trusted development
-certificate, so Word renders the real ribbon, labels and icons — see
-[docs/word-addin-development.md](word-addin-development.md).
+There are three tiers, and it is worth knowing which surfaces need which,
+because the cheapest tier covers more than it looks.
 
-Two things to know before you start.
+### Tier 1 — no Docker, no database, no deployment
 
-**The link-preview unfurl is the one exception.** The Open Graph and Twitter
-tags are readable from the local page source, but how a third-party client
-*renders* the card is not: localhost does not unfurl in Slack, WhatsApp or
-LinkedIn. Check the tags locally; check the rendered card against a deployed
-URL or a tunnel, whenever one next exists.
+Serve the production build and drive a headless browser at it. This needs
+nothing but the repo and a Chromium binary:
 
-**The add-in setup doc will show you an upstream URL.**
-`docs/word-addin-development.md` sets `REACT_APP_WEB_APP_URL` to the upstream
-domain in its example. Following it verbatim makes that domain appear in the
+```bash
+npm run build --prefix frontend
+npx next start -p 3000 --dir frontend   # or `npm start --prefix frontend`
+```
+
+Then screenshot or inspect. Every **unauthenticated** surface is covered:
+the landing, login, signup, `/legal` and `/support` pages, the wordmark and
+logo lockup as they actually render, and all page metadata — `<title>`,
+`og:title`, `og:site_name`, `twitter:title`, `og:image:alt` — read straight
+out of the DOM.
+
+Supabase being absent shows up as a "We could not check your session" banner
+on the login form. That is expected at this tier and is not a rebrand fault.
+
+### Tier 2 — the full local stack
+
+Everything **behind authentication** needs the database: the sidebar
+wordmark, the settings screens (appearance, personalisation, and the MFA
+issuer), onboarding, the tabular and assistant modals, and the copy that only
+appears on a real failure. That means Docker and the stack in
+[docs/local-development.md](local-development.md): `docker compose up` brings
+up the app with Supabase, Postgres, RustFS and Mailpit, and local
+registration auto-confirms so the authenticated screens are reachable
+straight away.
+
+The Word add-in is its own setup again — sideloaded from
+`https://localhost:3200` behind a trusted development certificate, with Word
+installed, per
+[docs/word-addin-development.md](word-addin-development.md). Nothing is
+hosted at that address by default; it only exists while you are running the
+add-in dev server.
+
+One trap in that doc: its example sets `REACT_APP_WEB_APP_URL` to the
+upstream domain. Following it verbatim makes that domain appear in the
 add-in, which looks like a missed rebrand and is not — it is the deferred
-fallback listed under [Known exceptions](#known-exceptions). A production
-build cannot reach it, because webpack throws without that variable set.
+fallback listed under [Known exceptions](#known-exceptions), and a production
+build cannot reach it because webpack throws without the variable set.
+
+### Tier 3 — a public URL
+
+Only one surface needs this: **how a link preview actually renders**.
+The Open Graph and Twitter tags are readable at tier 1, but localhost does
+not unfurl in Slack, WhatsApp or LinkedIn, so the rendered card can only be
+checked against a deployed URL or a tunnel.
 
 ## Screens to look at
 
@@ -71,14 +100,14 @@ would break them, so a single bad edit is caught by one row rather than none.
 
 | Surface | Where | What to confirm |
 | --- | --- | --- |
-| Browser tab and OG preview | `app/layout.tsx` | Title, `siteName`, OG title, Twitter title, image `alt`. Readable in local page source; the rendered unfurl needs a public URL. |
-| Sidebar wordmark | `components/shared/AppSidebar.tsx` | Renders, wraps correctly at narrow widths. |
-| Logo lockup | `components/site-logo.tsx` | Artwork and wordmark align; still legible in dark mode. |
+| Browser tab and OG preview | `app/layout.tsx` | Tier 1 for the tags; tier 3 for the rendered card. Title, `siteName`, OG title, Twitter title, image `alt`. |
+| Sidebar wordmark | `components/shared/AppSidebar.tsx` | Tier 2 — behind auth. Renders, wraps correctly at narrow widths. |
+| Logo lockup | `components/site-logo.tsx` | Tier 1. Artwork and wordmark align; still legible in dark mode. |
 | Crash page | `app/global-error.tsx` | Its `<title>` — only visible when the app has already failed, so easy to miss. |
-| MFA enrolment | `settings/security/page.tsx` | The issuer name as it appears **inside the authenticator app**, not just on screen. This is the one surface that leaves the product and persists in someone else's app. |
+| MFA enrolment | `settings/security/page.tsx` | Tier 2. The issuer name as it appears **inside the authenticator app**, not just on screen — it travels in the `otpauth://` URI. The one surface that leaves the product and persists in someone else's app. |
 | Appearance settings | `settings/appearance/page.tsx` | Short-form copy. |
 | Personalisation | `onboarding/profile/page.tsx`, `settings/personalisation/page.tsx` | Short-form copy. |
-| Support page | `app/support/page.tsx` | Short-form copy and the share-link placeholder. |
+| Support page | `app/support/page.tsx` | Tier 1. Short-form copy and the share-link placeholder. |
 | Tabular column prompts | `tabular/AddColumnModal.tsx`, `workflows/WFEditColumnModal.tsx` | Placeholder text, which is long and easy to truncate. |
 | Assistant prompts | `assistant/AskInputPopup.tsx` | Copy that is echoed back into a generated answer. |
 | Sharing errors | `shared/AddUserInput.tsx` | The "does not belong to an LWF user" path — needs a real failed invite to see. |
