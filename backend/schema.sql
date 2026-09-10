@@ -4776,6 +4776,8 @@ revoke all on public.workflow_open_source_submissions from anon, authenticated;
 revoke all on public.mike_workflows from anon, authenticated;
 revoke all on public.mike_workflow_assets from anon, authenticated;
 revoke all on public.workflow_addons from anon, authenticated;
+revoke all on public.quick_actions from anon, authenticated;
+revoke all on public.default_workflow_installations from anon, authenticated;
 revoke all on public.chats from anon, authenticated;
 revoke all on public.chat_access_grants from anon, authenticated;
 revoke all on public.chat_messages from anon, authenticated;
