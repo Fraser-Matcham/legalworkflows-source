@@ -1,19 +1,18 @@
 import type { NextRequest } from "next/server";
+import { resolveApiBaseUrl } from "@/app/lib/env";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+// The validation this used to carry inline now lives in @/app/lib/env, so the
+// startup guard in src/instrumentation.ts and this proxy cannot disagree about
+// what a valid API_BASE_URL is. In production the guard means an invalid value
+// never gets this far: the server refuses to start rather than answering every
+// request with the 502 below, which reads as a backend outage.
 function backendOrigin() {
-    const configuredUrl = process.env.API_BASE_URL?.trim();
-    if (!configuredUrl && process.env.NODE_ENV === "production") {
-        throw new Error("API_BASE_URL is required at runtime.");
-    }
-
-    const backendUrl = new URL(configuredUrl || "http://localhost:3001");
-    if (!["http:", "https:"].includes(backendUrl.protocol)) {
-        throw new Error("API_BASE_URL must use http or https.");
-    }
-    return backendUrl.toString().replace(/\/$/, "");
+    return resolveApiBaseUrl(process.env.API_BASE_URL, {
+        production: process.env.NODE_ENV === "production",
+    });
 }
 
 type RouteContext = { params: Promise<{ path: string[] }> };
