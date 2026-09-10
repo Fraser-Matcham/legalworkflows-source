@@ -11,7 +11,9 @@
         "boundary": "node scripts/check-repo-boundary.mjs",
         "boundary:self-test": "node scripts/check-repo-boundary.mjs --self-test",
         "tenancy": "node scripts/check-route-tenancy.mjs",
-        "tenancy:self-test": "node scripts/check-route-tenancy.mjs --self-test"
+        "tenancy:self-test": "node scripts/check-route-tenancy.mjs --self-test",
+        "trademarks": "node scripts/check-trademarks.mjs",
+        "trademarks:self-test": "node scripts/check-trademarks.mjs --self-test"
     },
     "devDependencies": {
         "@axe-core/playwright": "^4.13.0",
