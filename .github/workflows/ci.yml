@@ -162,6 +162,33 @@ jobs:
 
       - run: npm run trademarks
 
+  schema-privileges:
+    name: Schema privileges
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      # The backend reads client data as the Supabase service role, so every
+      # table is taken away from anon and authenticated to stop PostgREST —
+      # reachable by anyone holding the publishable key — serving a row at
+      # all. A table added without its revoke line is invisible to every
+      # other check: the backend still works, so no test notices.
+      #
+      # The schema-drift workflow cannot cover this either, and not for the
+      # obvious reason: it does use a real Supabase database. But it resets
+      # each path with `drop schema public cascade`, which discards the
+      # pg_default_acl entries that would otherwise hand a newly created
+      # table to anon and authenticated. So a missing revoke is a no-op on
+      # both sides, the fingerprints agree, and the check passes while a real
+      # project stays exposed. This reads the file instead.
+      - run: npm run schema-privileges:self-test
+
+      - run: npm run schema-privileges
+
   evals:
     name: Eval harness
     runs-on: ubuntu-latest

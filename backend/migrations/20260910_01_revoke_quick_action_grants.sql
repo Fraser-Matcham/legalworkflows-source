@@ -1,0 +1,35 @@
+-- Migration date: 2026-09-10
+--
+-- Take public.quick_actions and public.default_workflow_installations away
+-- from the anon and authenticated roles.
+--
+-- 20260811_01_workflow_restructure.sql already revoked both, so a deployment
+-- that has been upgraded step by step since before that date is unaffected
+-- and this is a no-op for it. The gap is fresh installs: backend/schema.sql
+-- never carried these two lines, and a database created from it records the
+-- newest migration filename as its starting version and therefore never runs
+-- 20260811_01 at all. Any deployment first installed since 11 August 2026 is
+-- missing the revoke with nothing scheduled to add it. This migration is that
+-- something.
+--
+-- The fresh-versus-upgraded drift check did not catch this, and not because
+-- it uses a toy database: it resets each path with `drop schema public
+-- cascade`, which discards the pg_default_acl entries that would otherwise
+-- hand a newly created table to anon and authenticated. The missing revoke is
+-- therefore a no-op on both sides there, while a real project keeps those
+-- default privileges and stays exposed. scripts/check-schema-privileges.mjs
+-- now reads the file directly so this cannot recur.
+--
+-- Why it matters: the backend reads client data as the Supabase service role,
+-- and every table is taken away from anon and authenticated so PostgREST —
+-- the REST API Supabase serves from the same database to anyone holding the
+-- publishable key — cannot return a row at all. Neither table has row-level
+-- security enabled, so the revoke is the only thing standing between a signed
+-- in user and every other user's rows. Both are per-user: quick_actions holds
+-- user-authored prompt shortcuts, default_workflow_installations records
+-- which workflows an account has installed.
+--
+-- revoke is idempotent, so this is safe to re-run.
+
+revoke all on public.quick_actions from anon, authenticated;
+revoke all on public.default_workflow_installations from anon, authenticated;
