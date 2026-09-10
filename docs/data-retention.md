@@ -106,9 +106,12 @@ as such: account deletion removes them.
 This is a **soft delete of the row and a hard delete of the bytes**, and the
 distinction matters:
 
-- The objects (`storage_path`, `pdf_storage_path`) are deleted from storage.
-  The cached `extracted-text/<versionId>.txt` is **not** — see
-  [Known gaps](#known-gaps).
+- The objects are deleted from storage, through the durable
+  `storage.cleanup` job rather than inline: `storage_path`,
+  `pdf_storage_path`, **and** the cached `extracted-text/<versionId>.txt`,
+  which holds the version's full plain text. The path columns are nulled in
+  the same handler, so a swallowed failure would leave the bytes with nothing
+  pointing at them; the queue is what stops that.
 - The row survives, with `deleted_at` and `deleted_by` set and both path
   columns nulled.
 - Therefore the **content is gone but the metadata is not**: filename, file
@@ -205,23 +208,6 @@ Stated plainly because a client questionnaire will find them anyway.
 - **Deleted-version metadata is kept forever.** Filename, size, page count and
   content hash of a deleted version survive with no expiry, and nothing
   purges soft-deleted rows.
-- **Deleting one version leaves its extracted text behind.** The handler
-  removes `storage_path` and `pdf_storage_path` but never
-  `extracted-text/<versionId>.txt`, which holds the version's full plain
-  text — arguably the most readable copy of the content. The document-delete
-  path does remove it; version-delete does not. The bound: because
-  `collectDocumentVersionPaths` does not filter soft-deleted rows, deleting
-  the document or the account still collects it, so this is not a permanent
-  erasure failure. But a user who deletes a single version specifically to
-  remove sensitive text leaves that text in object storage until the whole
-  document or account goes.
-- **The version-delete route uses fire-and-forget storage deletes.**
-  `deleteFile(path).catch(() => {})`, with the path columns nulled *before*
-  the delete. If the storage call fails, the bytes survive with nothing left
-  pointing at them. This is the exact failure the document-delete path already
-  fixed by moving to the durable `storage.cleanup` job. The orphan sweep at
-  account deletion covers `documents/<userId>/`, so these do not survive
-  account erasure — but they can outlive the document by a long way.
 - **The orphan sweep does not cover every prefix.** It reads
   `documents/<userId>/` and `workflow-references/<userId>/` only — and the
   second of those is a legacy prefix nothing writes any more, since
