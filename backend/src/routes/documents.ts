@@ -8,7 +8,6 @@ import {
   buildContentDisposition,
   createFileReadStream,
   downloadFile,
-  deleteFile,
   extractedTextKey,
   getSignedUrl,
   headFile,
@@ -967,10 +966,26 @@ documentsRouter.delete(
       return void sendInternalError(res, deleteErr);
     }
 
-    await Promise.all(
-      [target.storage_path, target.pdf_storage_path]
-        .filter((path): path is string => !!path)
-        .map((path) => deleteFile(path).catch(() => {})),
+    // Durable cleanup, not fire-and-forget. The path columns were nulled in
+    // the update above, so a swallowed failure here leaves the bytes with
+    // nothing left pointing at them — the same trap deleteDocumentAndVersionFiles
+    // already escaped by handing its keys to the storage.cleanup job.
+    //
+    // The extracted-text cache goes with them. It holds this version's full
+    // plain text, it is keyed by version id so it sits outside the per-user
+    // prefixes that the account-deletion sweep walks, and deleting the
+    // document was previously the only path that reached it. A user who
+    // deletes one version to remove sensitive text should not leave the
+    // readable copy behind.
+    await enqueueStorageCleanup(
+      db,
+      [
+        target.storage_path,
+        target.pdf_storage_path,
+        extractedTextKey(versionId),
+      ].filter(
+        (path): path is string => typeof path === "string" && path.length > 0,
+      ),
     );
 
     res.json({
