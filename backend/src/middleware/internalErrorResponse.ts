@@ -9,6 +9,7 @@ import {
   INTERNAL_ERROR_MESSAGE,
   sendInternalError,
 } from "../lib/httpError";
+import { describeForLog, safePathForLog } from "../lib/safeError";
 
 type ErrorBody = {
   code?: unknown;
@@ -53,9 +54,9 @@ export function protectInternalErrorResponses(
     console.error("[http/sanitized-internal-error]", {
       requestId,
       method: req.method,
-      path: req.originalUrl,
+      path: safePathForLog(req.originalUrl),
       status: res.statusCode,
-      error: errorBody?.detail ?? body,
+      error: describeForLog(errorBody?.detail ?? body),
     });
 
     return originalJson(publicBody);

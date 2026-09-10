@@ -217,8 +217,9 @@ the database without ever using the caller's identity; genuinely global data
 goes in `scripts/route-tenancy-allowlist.json` with a reason. Never
 send internal exception messages to clients: use the helpers in
 `backend/src/lib/httpError.ts`; logging must use the redaction helpers in
-`backend/src/lib/safeError.ts`. Intentional validation and permission failures
-should remain explicit 4xx responses.
+`backend/src/lib/safeError.ts`, which are documented with the request log
+line in [docs/observability.md](docs/observability.md). Intentional
+validation and permission failures should remain explicit 4xx responses.
 
 ## Database Migrations
 
