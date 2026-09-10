@@ -1,0 +1,210 @@
+# Stage 1 — your tasks (frontend)
+
+Five tasks. Do them in any order; none depends on another. Task 1 has a
+waiting period, so start it first even though the others are quicker.
+
+Each task is self-contained. Where a task ends with **"Tell me"**, that is
+information I need before I can finish the matching engineering work — send it
+back in the chat.
+
+Nothing here requires any software to be installed.
+
+---
+
+## Task 1 — Register the domain name
+
+**Why:** every later stage points at a domain. The TLS certificate, the
+sign-in redirect, the CDN and the Word add-in manifest all need it. Registering
+it now means the DNS propagation delay is not on the critical path in Stage 3.
+
+**Time:** 20 minutes, then up to 24 hours of waiting.
+
+**Cost:** roughly £10–15 per year for a `.com`, £8–12 for a `.co.uk`.
+
+### Steps
+
+1. Open a browser and go to **https://www.cloudflare.com/products/registrar/**
+   and sign in, or create a free Cloudflare account if you do not have one.
+   *Cloudflare is suggested because it sells domains at cost with no markup on
+   renewal, and includes free DNS. Any registrar works — if you already use
+   one, use that instead and skip to step 5.*
+2. In the Cloudflare dashboard, click **Domain Registration** in the left
+   sidebar, then **Register Domain**.
+3. Type the domain you want and press Enter. You are looking for something
+   short that matches the brand — for example `legalworkflows.co.uk` or
+   `legalworkflows.app`. Avoid hyphens and numbers.
+4. When one shows as available, click **Purchase**, complete the checkout, and
+   make sure **Auto-renew** is left switched **on**. Losing the domain
+   accidentally would take the whole service offline.
+5. Find the **nameservers** for your domain. In Cloudflare this is under
+   **Websites → your domain → DNS → Records**, and the nameservers are shown
+   near the top of the **Overview** page. They look like
+   `ana.ns.cloudflare.com`. Write them down.
+
+### Tell me
+
+- The exact domain you registered, including the ending — for example
+  `legalworkflows.co.uk`.
+- Which registrar you used.
+- Whether you want the application at the bare domain (`legalworkflows.co.uk`)
+  or on a subdomain (`app.legalworkflows.co.uk`). *If you have no strong view,
+  say so and I will use the bare domain, which is simpler.*
+
+---
+
+## Task 2 — Approve the new brand mark
+
+**Why:** the mark replaces the inherited one. It appears in the sidebar, the
+sign-in page, the browser tab, link previews and the Word ribbon, so it is
+worth a deliberate look before it is applied everywhere.
+
+**Time:** 5 minutes.
+
+### Steps
+
+1. Look at the image I sent in the chat, captioned *"New brand mark: four
+   graduated segments…"*. It shows the mark at the real sizes it will be used
+   at, on both light and dark backgrounds, in its normal, success and error
+   states, and beside the wordmark.
+2. Check the smallest size (20px, far left). That is how it appears in the
+   sidebar and is the size that matters most — if it is unclear there, it is
+   the wrong mark.
+3. Look at the bottom row, where the mark sits next to the word
+   *legalworkflows*. Decide whether the pairing looks right to you.
+
+### Tell me
+
+One of:
+
+- **"Approved"** — and I apply it everywhere, including generating the
+  favicon, the link-preview image and the Word ribbon icons from it.
+- **"Change it"** — and say what you want different. Useful things to say:
+  *heavier*, *lighter*, *more/fewer segments*, *a different shape entirely*,
+  or *try it in a colour rather than black*. You do not need design vocabulary;
+  plain description is enough.
+
+---
+
+## Task 3 — Obtain your Terms of Use
+
+**Why:** the sign-up page has a line reading *"By signing up, you agree to our
+Terms of Use and Privacy Policy."* Those two links currently point at the
+domain of the project this was forked from. They must point at your own terms
+before anyone signs up. This is the deferred item you chose to leave earlier —
+it now has to be resolved to launch.
+
+**Time:** 1–2 hours if you write it from a template; longer if you use a
+solicitor.
+
+### Steps
+
+1. Decide how you want to obtain the terms. Three realistic routes:
+   - **A template service.** Search for "SaaS terms of use template UK".
+     Services such as Rocket Lawyer or Genie AI produce a usable document for
+     roughly £20–100.
+   - **A solicitor.** Appropriate if clients will be law firms, who may review
+     your terms before signing up. Budget £500–1,500.
+   - **Write it yourself from a template.** Free, and legitimate for a first
+     launch, but read it properly rather than pasting it.
+2. Whichever route you choose, the document must cover at least: who provides
+   the service (you, Fraser Matcham, trading as legalworkflows), what the
+   service does, acceptable use, that AI output is not legal advice and must be
+   checked by a qualified person, limitation of liability, and how to
+   terminate an account.
+3. The AI disclaimer matters more than usual here. The product summarises and
+   drafts legal documents. Your terms should say plainly that output is
+   assistive, is not legal advice, and that the user remains responsible for
+   checking it.
+4. Save the finished document. You need it as a web page, so keep it as text
+   you can paste — not only as a PDF.
+
+### Tell me
+
+- The full text of the terms, pasted into the chat, **or** a URL if you have
+  published them somewhere already.
+- I will then build them into the application at `/terms` and point the sign-up
+  link at it.
+
+---
+
+## Task 4 — Obtain your Privacy Policy
+
+**Why:** the same sign-up line links to a privacy policy. Beyond the link, UK
+GDPR requires one, because the service stores personal data — names, email
+addresses, and the contents of documents that clients upload.
+
+**Time:** 1–2 hours.
+
+### Steps
+
+1. Obtain the document by the same route you chose for Task 3.
+2. It must reflect what the software actually does. I have already documented
+   that precisely, so use it rather than guessing — open
+   `docs/data-retention.md` in the repository, or ask me and I will paste the
+   relevant parts into the chat. The facts your policy needs are:
+   - **What is stored:** uploaded documents and every version of them, their
+     extracted text, chat messages, tabular review data, account details, and
+     an audit trail.
+   - **Where:** a Supabase database and an Amazon S3 bucket, both in the UK or
+     EU region.
+   - **How long:** until deleted. There is currently no automatic expiry — say
+     so, rather than inventing a retention period the software does not
+     enforce.
+   - **Who else sees it:** whichever AI provider is configured — Anthropic,
+     OpenAI or Google — receives document text and prompts in order to answer.
+     They are your sub-processors and should be named.
+   - **What deletion does:** deleting a document removes the file and its
+     text; deleting an account removes essentially everything. Deleted file
+     *metadata* — filename, size, page count — is retained.
+3. Include your contact address for data-protection queries. A business email
+   is sufficient for a sole trader.
+4. Consider whether you need to register with the **Information
+   Commissioner's Office**. Most UK organisations processing personal data
+   electronically must, and it costs £52 a year. Check at
+   **https://ico.org.uk/for-organisations/data-protection-fee/**.
+
+### Tell me
+
+- The full text of the privacy policy, pasted into the chat, **or** a URL.
+- Whether you have registered with the ICO, so I know whether to include a
+  registration number in the policy page.
+
+---
+
+## Task 5 — Confirm the operator identity shown in legal notices
+
+**Why:** the `/legal` page already names you as the copyright holder and
+states when modification began. Before launch, that page should also carry the
+trading details a visitor would expect. I need you to confirm them rather than
+infer them.
+
+**Time:** 5 minutes.
+
+### Steps
+
+1. Decide the exact trading name you want shown. At present the notices say
+   **Fraser Matcham** as the copyright holder and **legalworkflows** as the
+   product. Confirm both, or give me the wording you prefer.
+2. Decide the contact email address to publish for legal and support enquiries.
+   A role address such as `support@yourdomain` is better than a personal one,
+   and you can create it once the domain from Task 1 exists.
+3. If you have registered a business address you are willing to publish, note
+   it. A sole trader is not obliged to publish a home address; a
+   correspondence address or "available on request" is acceptable.
+
+### Tell me
+
+- The copyright holder name, exactly as it should appear.
+- The contact email address for legal and support.
+- The business address to publish, or **"none"**.
+
+---
+
+## When all five are done
+
+Send me the answers and I will finish Stage 1: apply the mark everywhere,
+generate the favicon and link-preview image, build the `/terms` and `/privacy`
+pages, and point the sign-up links at them.
+
+Stage 2's runbook then opens, which is where the Supabase project and the AI
+provider keys are set up.
