@@ -25,6 +25,8 @@ The fork rules that constrain every change here are at the top of
   deliberately omits, and the redaction helpers every log site uses
 - [Data retention, storage and deletion](data-retention.md) — what is stored,
   where, for how long, and what deletion actually does, with its known gaps
+- [Rebrand verification](rebrand-verification.md) — the naming convention, and
+  the per-screen checklist for the manual pass CI cannot do
 
 ## Features and clients
 
