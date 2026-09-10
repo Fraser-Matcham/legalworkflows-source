@@ -138,6 +138,30 @@ jobs:
 
       - run: npm run tenancy
 
+  trademarks:
+    name: Trademarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      # Neither licence grants the upstream marks: AGPL section 7(e) and
+      # Apache-2.0 section 6 both reserve them. This sweeps the surfaces a
+      # person or a link preview can see and fails on an upstream name,
+      # wordmark or domain that is not accounted for.
+      #
+      # It is an allowlist rather than a ban because AGPL 5(a) and 5(b)
+      # REQUIRE naming the original work, so the attribution in
+      # legalNotice.ts must survive the sweep. Entries print on every run,
+      # which is how the references the operator chose to defer stay visible
+      # instead of quietly becoming permanent.
+      - run: npm run trademarks:self-test
+
+      - run: npm run trademarks
+
   evals:
     name: Eval harness
     runs-on: ubuntu-latest

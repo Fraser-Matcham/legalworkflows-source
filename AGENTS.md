@@ -55,6 +55,21 @@ ownership.
 A find-and-replace across this repository is always wrong. Over 300 files
 mention the upstream name and only a few dozen of them are user-visible.
 
+CI enforces the visible half. `scripts/check-trademarks.mjs` sweeps
+`frontend/src`, `word-addin/src` and the add-in manifest for the upstream name,
+wordmark and domain, ignoring comments so the identifiers this rule keeps do
+not trip it. Run it locally with `npm run trademarks`.
+
+It has an allowlist rather than a blanket ban because attribution is not
+branding: AGPL-3.0 sections 5(a) and 5(b) *require* the modified work to name
+the original, and `frontend/src/app/lib/legalNotice.ts` holds those strings.
+Stripping them to finish a rename would breach the licence. Every allowlist
+entry carries a written reason and prints on each run, and an entry marked
+`"status": "deferred"` prints as `[DEFERRED]` — that is how a reference the
+operator has chosen to leave in place stays visible instead of quietly becoming
+permanent. Signatures include an occurrence count, so a *new* mark added to an
+already-allowlisted file still fails the build.
+
 ### 3. Make changes additively, in new files, wherever you can
 
 Upstream is active — 631 commits in its first four months — and this repository

@@ -1,0 +1,39 @@
+[
+    {
+        "surface": "frontend/src/app/lib/legalNotice.ts  Mike  x1",
+        "reason": "Required attribution, not branding. AGPL-3.0 section 5(a) obliges the modified work to carry prominent notices stating that it is modified, and section 5(b) that it is released under the AGPL; naming the original work is how /legal discharges both. This is nominative use, which section 7(e) does not restrict. Deleting UPSTREAM_NAME to 'finish the debranding' would breach the licence, not complete a rename."
+    },
+    {
+        "surface": "frontend/src/app/lib/legalNotice.ts  Open Legal Products  x2",
+        "reason": "UPSTREAM_ORG and the open-legal-products path inside UPSTREAM_URL. Same obligation as UPSTREAM_NAME above: section 5(a)/5(b) attribution plus the section 13 source offer, which needs a reachable link to the work the service is derived from. Both must stay."
+    },
+    {
+        "surface": "word-addin/manifest.xml  Mike  x2",
+        "reason": "The Group and Control ids MikeOSS.Group and MikeOSS.OpenMike. Office never renders a control id; only Label and Description resources reach the ribbon, and those were rebranded in ticket 2033. Fork rule 2 keeps invisible identifiers as upstream has them so add-in manifest changes stay mergeable."
+    },
+    {
+        "status": "deferred",
+        "surface": "frontend/src/app/signup/page.tsx  mikeoss.com  x2",
+        "reason": "The Terms and Privacy links on the signup form still point at the upstream domain. Real, user-visible, and deliberately deferred by the operator: the correct fix is to publish this service's own terms and privacy notice and link those, which is a legal-drafting task rather than a rename. Printed on every run so it stays visible."
+    },
+    {
+        "status": "deferred",
+        "surface": "word-addin/src/taskpane/auth/LoginPage.tsx  mikeoss.com  x1",
+        "reason": "Fallback web-app URL used when REACT_APP_WEB_APP_URL is unset. It cannot reach a shipped add-in: word-addin/webpack.config.js throws on a production build that does not set REACT_APP_WEB_APP_URL, so only a dev build can ever render this default. Deliberately deferred by the operator on that basis \u2014 changing it is a deployment-configuration decision, not a copy change. Printed on every run so it stays visible."
+    },
+    {
+        "status": "deferred",
+        "surface": "word-addin/src/taskpane/components/shell/ApiKeyBanner.tsx  mikeoss.com  x1",
+        "reason": "The same REACT_APP_WEB_APP_URL fallback as LoginPage.tsx, unreachable in a production build for the same reason and deferred on the same basis. Both defaults should change together when the operator's web-app origin is settled."
+    },
+    {
+        "status": "deferred",
+        "surface": "frontend/src/app/components/workflows/OpenSourceWorkflowModal.tsx  Open Legal Products  x3",
+        "reason": "WORKFLOWS_REPO_URL and the two rendered links naming Open-Legal-Products/mike-workflows. This copy tells a contributor where their workflow will actually be published, and MIKE_WORKFLOWS_REPOSITORY still resolves there, so renaming it before the catalogue is forked would make the consent text false. Blocked on tickets 2015 and 2016; fix the destination first, then the copy."
+    },
+    {
+        "status": "deferred",
+        "surface": "frontend/src/app/components/workflows/OpenSourceWorkflowModal.tsx  mikeoss.com  x1",
+        "reason": "The disclosure consent line naming the mikeoss.com website as a publication destination. Same blocker as the repository links above: this states where contributed workflows are published, so it changes when the destination changes, not before."
+    }
+]
