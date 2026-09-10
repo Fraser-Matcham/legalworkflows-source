@@ -19,7 +19,7 @@
 useDefault = true
 
 [[allowlists]]
-description = "safeError unit-test fixtures: fake OpenAI-style key and fake token used to prove secrets get scrubbed from error output (backend/src/lib/__tests__/safeError.test.ts)"
+description = "safeError unit-test fixtures: fake OpenAI-style key and fake token used to prove secrets get scrubbed from error output. The file that held them, backend/src/lib/__tests__/safeError.test.ts, was deleted upstream in 1d92cba along with the module it tested, so this entry is now purely historical - it keeps old commits scanning clean."
 regexes = [
     '''^sk-proj-abc123def456ghi789\.?$''',
     '''^abcdef123456$''',
@@ -35,3 +35,7 @@ regexes = [
     '''^eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9\.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0$''',
     '''^eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0\.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU$''',
 ]
+
+[[allowlists]]
+description = "Fake JWT from the redaction probe in backend/src/lib/safeError.test.ts, as that file was first committed. The current tree no longer contains it: the canary is assembled at runtime from its parts, so a synthetic JWT never lands in the tree again. This entry exists only because the scan covers full history and that first commit is already pushed. Anchored to the exact fake value, so a real JWT added anywhere - including to this same file - still fails."
+regexes = ['''^eyJhbGciOiJIUzI1NiJ9\.eyJzdWIiOiJDQU5BUlkifQ\.CANARYsignature0123$''']

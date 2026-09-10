@@ -27,6 +27,7 @@ import {
   handleUnhandledError,
   protectInternalErrorResponses,
 } from "./middleware/internalErrorResponse";
+import { requestLog } from "./middleware/requestLog";
 import { configuredAllowedOrigins } from "./lib/origins";
 import { envInt } from "./lib/runtimeConfig";
 
@@ -172,6 +173,7 @@ app.use((_req, res, next) => {
   next();
 });
 app.use(protectInternalErrorResponses);
+app.use(requestLog);
 
 app.use(
   helmet({
