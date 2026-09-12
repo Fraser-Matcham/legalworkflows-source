@@ -45,6 +45,7 @@ inherited.**
 | 1.6 | ✅ Generate favicon, Open Graph image and add-in ribbon icons from the new mark — `npm run brand-assets`, drift-checked in CI | 2032 |
 | 1.7 | ~~Frontend coverage ratchet, matching the backend's~~ — **already in place.** `frontend/vitest.config.mts` gates `src/app/lib/**` at 100/99/100/100 and the CI frontend job runs `test:coverage`. This row cited 2089, which is a *backend* ticket (closed by 2090–2092); there was never a separate frontend ticket. | — |
 | 1.8 | Close 2053/2054 as decided; record the decision in the backlog | 2053, 2054 |
+| 1.9 | ✅ Terms of Use and Privacy Policy, and the signup links pointed at them | 2032 follow-on |
 
 ### Done when
 
