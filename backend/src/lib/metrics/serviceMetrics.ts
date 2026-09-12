@@ -176,6 +176,70 @@ export function recordProviderTokens(input: {
     add("output", input.outputTokens);
 }
 
+// --- Logged failures ------------------------------------------------------
+
+/**
+ * One counter for every logged failure in the service, keyed by subsystem.
+ *
+ * Ticket 2087 names five silent paths to alert on — queue backlog, repeated
+ * job failures, model provider errors, storage failures, migration failures —
+ * and three of them already have a purpose-built metric above. Storage is the
+ * awkward one: `lib/storage.ts` logs its failures and then returns `null`, so
+ * the log line is the only signal a caller ever sees, and adding a counter
+ * beside each `console.error` would mean editing an inherited file five times
+ * for one number.
+ *
+ * The error-tracking bridge already passes every `console.error` in the
+ * service, and already derives a `source` from the bracketed label the call
+ * sites use — `[storage]`, `[dbq]`, `[worker-thread]`. Counting there gives
+ * an alertable error rate for every subsystem at once, from one place, with
+ * no further edits and none needed for a subsystem added later.
+ *
+ * The source label is bounded by construction: it comes from our own log
+ * labels, matched as `[a-z0-9-]+`, never from a request. The registry's cap
+ * sits behind that anyway.
+ *
+ * This counts independently of whether error tracking has a DSN. Metrics and
+ * error reporting are separate concerns, and a deployment with no tracker
+ * still needs to know its error rate.
+ */
+export const loggedErrors = registry.register(
+    new Counter(
+        "logged_errors_total",
+        "Failures written to console.error, by subsystem, taken from the bracketed log label. For storage this is the only signal: those helpers log and then return null.",
+        ["source"],
+    ),
+);
+
+export function recordLoggedError(source: string): void {
+    loggedErrors.inc([source]);
+}
+
+/**
+ * Best-effort cleanup steps that failed.
+ *
+ * Separate from `logged_errors_total` because these are the failures the code
+ * deliberately does NOT propagate: the operation that triggered them reports
+ * success either way, by design. That makes this counter the only durable
+ * record that anything went wrong, which is a different alerting question
+ * from a generic error rate — a slow, quiet leak rather than a spike.
+ */
+export const storageCleanupFailures = registry.register(
+    new Counter(
+        "storage_cleanup_failures_total",
+        "Best-effort storage cleanup steps that failed. These never fail the operation that triggered them, so this counter is the only lasting signal that they happened.",
+        ["operation", "stage"],
+    ),
+);
+
+export function recordStorageCleanupFailure(
+    operation: string,
+    stage: string,
+    count = 1,
+): void {
+    storageCleanupFailures.inc([operation, stage], count);
+}
+
 // --- Queue depth ----------------------------------------------------------
 
 /**

@@ -4,15 +4,19 @@ import {
     httpRequests,
     jobDuration,
     jobOutcomes,
+    loggedErrors,
     providerCalls,
     providerTokens,
     recordHttpRequest,
     recordJobOutcome,
+    recordLoggedError,
     recordProviderCall,
     recordProviderTokens,
+    recordStorageCleanupFailure,
     registry,
     safeRouteLabel,
     setQueueDepthReader,
+    storageCleanupFailures,
 } from "./serviceMetrics";
 
 /**
@@ -161,6 +165,45 @@ describe("recordProviderTokens", () => {
 
         expect(providerTokens.get(["tokens-bad", "m-1", "input"])).toBe(0);
         expect(providerTokens.get(["tokens-bad", "m-1", "output"])).toBe(0);
+    });
+});
+
+describe("recordLoggedError", () => {
+    it("counts by the subsystem source label", () => {
+        const before = loggedErrors.get(["metrics-test-source"]);
+
+        recordLoggedError("metrics-test-source");
+        recordLoggedError("metrics-test-source");
+
+        expect(loggedErrors.get(["metrics-test-source"])).toBe(before + 2);
+    });
+});
+
+describe("recordStorageCleanupFailure", () => {
+    it("counts by operation and stage, and accepts a batch count", () => {
+        const before = storageCleanupFailures.get([
+            "metrics-test-op",
+            "delete",
+        ]);
+
+        recordStorageCleanupFailure("metrics-test-op", "delete", 3);
+
+        expect(storageCleanupFailures.get(["metrics-test-op", "delete"])).toBe(
+            before + 3,
+        );
+    });
+
+    it("defaults to counting one failure", () => {
+        const before = storageCleanupFailures.get([
+            "metrics-test-op",
+            "sweep",
+        ]);
+
+        recordStorageCleanupFailure("metrics-test-op", "sweep");
+
+        expect(storageCleanupFailures.get(["metrics-test-op", "sweep"])).toBe(
+            before + 1,
+        );
     });
 });
 

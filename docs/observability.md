@@ -318,8 +318,20 @@ in stage 3, which needs an AWS account that does not exist yet. Building
 dashboards against an account nobody can `terraform plan` would be unverifiable
 work.
 
-**Alerting**, which is ticket 2087 and likewise needs somewhere to send an
-alert.
+**Alerting** — firing a rule and holding a drill — is ticket 2087 and
+likewise needs somewhere to send an alert (stage 3's `observability` Terraform
+module). The metrics above already give each of that ticket's named failure
+paths a signal to attach a rule to when that module exists; the full
+disposition of every path, including the one genuinely silent bug this found
+and fixed (`deleteOrphanedUserStorage`'s bare `catch {}`), is in
+[data-retention.md](data-retention.md#disposition-of-each-silent-failure-path-ticket-2087).
+
+`logged_errors_total{source}` is the general-purpose one, worth naming here
+because it did not get its own row in the table above: it counts every
+`console.error` call in the service by the bracketed label the call site
+already uses, from inside the same bridge that captures those calls for error
+tracking. That is how storage's failures — which log and return `null` rather
+than throwing — get a counter without editing `lib/storage.ts` five times.
 
 **A provider's time-to-first-token.** `llm_call_duration_seconds` measures to
 the end of the stream. First-token latency is the better user-experience

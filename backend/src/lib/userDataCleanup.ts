@@ -1,5 +1,6 @@
 import { createServerSupabase } from "./supabase";
 import { deleteFile, extractedTextKey, listFiles } from "./storage";
+import { recordStorageCleanupFailure } from "./metrics/serviceMetrics";
 import { enqueueStorageCleanup } from "./dbq/enqueue";
 import { removeGrantsForEmail } from "./projectAccess";
 import { removeContentGrantsForEmail } from "./contentAccess";
@@ -519,14 +520,35 @@ async function deleteOrphanedUserStorage(db: Db, userId: string) {
         if (paths.length === 0) return;
 
         const claimed = await claimedStoragePaths(db, paths);
-        await Promise.all(
-            paths
-                .filter((path) => !claimed.has(path))
-                .map((path) => deleteFile(path).catch(() => {})),
+        const toDelete = paths.filter((path) => !claimed.has(path));
+        const results = await Promise.allSettled(
+            toDelete.map((path) => deleteFile(path)),
         );
-    } catch {
-        // Version-linked objects are deleted above. Prefix cleanup is best-effort
-        // for orphaned files left behind by interrupted uploads.
+        const failed = results.filter((r) => r.status === "rejected").length;
+        if (failed > 0) {
+            // This used to be a silent per-file catch. data-retention.md's
+            // known-gaps section said so explicitly: "A failure there is
+            // invisible." It no longer is — see recordStorageCleanupFailure
+            // in lib/metrics/serviceMetrics.ts, which is the durable record
+            // now that the operation itself still succeeds either way.
+            console.error("[user-data-cleanup] orphan storage delete failed", {
+                userId,
+                failed,
+                attempted: toDelete.length,
+            });
+            recordStorageCleanupFailure("orphan_user_storage", "delete", failed);
+        }
+    } catch (err) {
+        // Version-linked objects are deleted above. Prefix cleanup is
+        // best-effort for orphaned files left behind by interrupted uploads,
+        // so this must not throw — but "must not throw" and "must not be
+        // observed" are different requirements, and only the first is
+        // deliberate.
+        console.error("[user-data-cleanup] orphan storage sweep failed", {
+            userId,
+            error: err,
+        });
+        recordStorageCleanupFailure("orphan_user_storage", "sweep");
     }
 }
 
