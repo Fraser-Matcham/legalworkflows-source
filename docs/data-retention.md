@@ -218,8 +218,38 @@ Stated plainly because a client questionnaire will find them anyway.
   `extracted-text/` is keyed by version id rather than by user and is
   likewise reachable only through the row.
 - **`deleteOrphanedUserStorage` swallows its errors** by design, as documented
-  best-effort cleanup. A failure there is invisible.
+  best-effort cleanup. A failure there used to be invisible; ticket 2087
+  closed that specific gap — see below.
 - **Backups are out of scope of this document.** Deletion here means deletion
   from the live database and bucket. Whatever your Supabase and object-storage
   backup retention is, deleted content persists in it until those backups age
   out; that window belongs in any answer about erasure timelines.
+
+### Disposition of each silent failure path (ticket 2087)
+
+The plan's own "done when" for this ticket is narrower than the ticket text:
+every path below either **alerts** or is **documented as accepted**. Firing an
+alert needs a destination, which is the SNS topic in stage 3's `observability`
+Terraform module — not built yet, because it needs the AWS account. So
+"alerts" below means the metric or log line an alert rule will attach to in
+stage 3, not a rule that fires today. Nothing here is a drill; ticket 2087's
+own acceptance criterion ("each alert has fired at least once") is unmet by
+construction until that module exists.
+
+| Failure path | Disposition |
+| --- | --- |
+| Queue backlog growth | **Signal exists.** `job_queue_depth` gauge, read live from `db_jobs`. See [observability.md](observability.md#metrics). |
+| Repeated job failures | **Signal exists.** `job_outcomes_total{outcome="failed"}` separately from `"retry"`, so a rising failure rate is distinguishable from ordinary retry noise. |
+| Model provider errors | **Signal exists.** `llm_calls_total{outcome="error"}`, by provider and model. |
+| Storage failures | **Signal exists**, but by a different route: `lib/storage.ts`'s helpers log and return `null` rather than throwing, so the log line was always the only signal a caller saw. `logged_errors_total{source="storage"}` now counts those lines without editing the five call sites individually — the error-tracking bridge in `lib/errorTracking/` derives the counter from the same bracketed label every subsystem already logs under. |
+| `deleteOrphanedUserStorage` swallowing its errors | **Fixed, not just signalled.** This was the one genuinely invisible path — a bare `catch {}` with no log line at all, so not even `logged_errors_total` could see it. It now logs (redacted) and increments `storage_cleanup_failures_total{operation="orphan_user_storage"}`, distinguishing a sweep-level failure (`stage="sweep"`) from per-file delete failures (`stage="delete"`, with the failed count). The tolerance itself — this must never fail an account deletion — is unchanged; only its silence is fixed. |
+| Migration failures | **Accepted, deferred to stage 4.** Migrations are applied manually against production today, outside the running service's process (see [deployment.md](deployment.md)), so there is nothing in `backend/src` for a metric to observe. Stage 4's deploy workflow (`4.3`, tickets 2051/2052) is what runs a migration as part of a deploy; that workflow's exit code is the signal, and it belongs there, not here. |
+| No retention policy / metadata never expires / orphan sweep's uncovered prefixes | **Accepted design gaps, not failure paths.** Nothing is failing silently here — these are things the system does not attempt, stated in the bullets above so a questionnaire finds them stated rather than discovered. Alerting does not apply to work that is not attempted. |
+| Backups out of scope | **Accepted**, and explicitly not a failure path — it is a scope boundary of this document, restated above. |
+
+Three of the six alertable paths already had metrics from ticket 2086; the
+fourth (storage) was covered for free by routing through the existing
+`console.error` bridge rather than by adding a call at each of the five
+storage helpers. The fifth (the account-cleanup sweep) was the one actual bug
+this ticket found: silence that was assumed to be merely a missing metric
+turned out, on inspection, to have no log line either.

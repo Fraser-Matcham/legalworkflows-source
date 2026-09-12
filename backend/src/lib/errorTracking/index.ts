@@ -39,6 +39,7 @@
  * unconditionally and only the *sending* is gated on configuration.
  */
 
+import { recordLoggedError } from "../metrics/serviceMetrics";
 import {
     safeErrorForLog,
     safeLogString,
@@ -369,6 +370,10 @@ export function installErrorTracking(
         try {
             const { error, rest } = extractError(args);
             const source = sourceFromArgs(args);
+            // Before the reporting, and deliberately not inside it: the
+            // counter is a metric, and a deployment with no DSN still needs
+            // its error rate. See loggedErrors in lib/metrics.
+            recordLoggedError(source);
             const context = contextFromArgs(rest);
             reportError(
                 error ??

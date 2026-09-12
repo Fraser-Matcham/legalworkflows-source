@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { loggedErrors } from "../metrics/serviceMetrics";
 import {
     errorTrackingConfiguration,
     handleUncaughtException,
@@ -316,6 +317,20 @@ describe("the console.error bridge", () => {
 
         // Two stacked bridges would each call through, printing twice.
         expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("counts every logged failure by subsystem, whether or not tracking is configured", () => {
+        // logged_errors_total is metrics, not error reporting: a deployment
+        // with no DSN still needs an error rate to alert on.
+        installErrorTracking({ env: {}, globalHandlers: false });
+        const before = loggedErrors.get(["storage"]);
+
+        console.error("[storage] getSignedUploadUrl failed", {
+            key: "k",
+            error: new Error("boom"),
+        });
+
+        expect(loggedErrors.get(["storage"])).toBe(before + 1);
     });
 });
 

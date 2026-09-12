@@ -10,6 +10,7 @@ vi.mock("../storage", () => ({
 }));
 
 import { deleteFile, listFiles } from "../storage";
+import { storageCleanupFailures } from "../metrics/serviceMetrics";
 import {
     deleteAllUserChats,
     deleteAllUserTabularReviews,
@@ -533,6 +534,69 @@ describe("deleteUserAccountData", () => {
             deleteUserAccountData(db, "u1", "u1@example.com"),
         ).resolves.toBeUndefined();
         expect(ids(tables.documents)).toEqual(["d-other"]);
+    });
+
+    // data-retention.md used to say plainly: "A failure there is invisible."
+    // It no longer is — the sweep still must not fail the account deletion
+    // (that tolerance is the test above), but it must now leave a trace.
+    it("logs and counts a failed orphan sweep, without losing its tolerance", async () => {
+        const { db } = fixture();
+        listFilesMock.mockImplementation(async (prefix: string) => {
+            if (prefix === "exports/u1/") return [];
+            throw new Error("storage unavailable");
+        });
+        const consoleError = vi
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+        const before = storageCleanupFailures.get([
+            "orphan_user_storage",
+            "sweep",
+        ]);
+
+        await deleteUserAccountData(db, "u1", "u1@example.com");
+
+        expect(consoleError).toHaveBeenCalledWith(
+            "[user-data-cleanup] orphan storage sweep failed",
+            expect.objectContaining({ userId: "u1" }),
+        );
+        expect(
+            storageCleanupFailures.get(["orphan_user_storage", "sweep"]),
+        ).toBe(before + 1);
+        consoleError.mockRestore();
+    });
+
+    it("logs and counts per-file orphan delete failures without failing the request", async () => {
+        const { db } = fixture();
+        listFilesMock.mockImplementation(async (prefix: string) =>
+            prefix === "documents/u1/"
+                ? ["documents/u1/orphan-a.bin", "documents/u1/orphan-b.bin"]
+                : [],
+        );
+        deleteFileMock.mockImplementation(async (path: string) => {
+            if (path.startsWith("documents/u1/orphan")) {
+                throw new Error("storage unavailable");
+            }
+        });
+        const consoleError = vi
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+        const before = storageCleanupFailures.get([
+            "orphan_user_storage",
+            "delete",
+        ]);
+
+        await expect(
+            deleteUserAccountData(db, "u1", "u1@example.com"),
+        ).resolves.toBeUndefined();
+
+        expect(consoleError).toHaveBeenCalledWith(
+            "[user-data-cleanup] orphan storage delete failed",
+            expect.objectContaining({ userId: "u1", failed: 2 }),
+        );
+        expect(
+            storageCleanupFailures.get(["orphan_user_storage", "delete"]),
+        ).toBe(before + 2);
+        consoleError.mockRestore();
     });
 
     // The exports/ prefix is different in kind from the orphan sweep: each
