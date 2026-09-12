@@ -1,13 +1,16 @@
 # Stage 3 — your tasks (infrastructure)
 
-Nine tasks. Do them **in order** — each builds on the one before.
+Ten tasks. Do them **in order** — each builds on the one before.
 
 This is the longest runbook. Tasks 1 to 3 create the AWS account and lock it
 down; tasks 4 to 6 give me the access I need to build the infrastructure;
-tasks 7 to 9 connect the domain and turn on billing safety.
+tasks 7 to 9 connect the domain and turn on billing safety; task 10 requests
+production email sending.
 
-**Total time: about 3 hours**, spread over two days because one task waits on
-an email from AWS.
+**Total time: about 3 hours**, spread over two days because Task 10 waits on
+an email from AWS approving production access for SES — submit it as soon as
+Task 7's domain work is done, so the wait runs alongside everything else
+rather than sitting at the end.
 
 > **Two ground rules for this stage.**
 >
@@ -359,14 +362,68 @@ go that you will actually see.
 
 ---
 
-## When all nine are done
+## Task 10 — Request production access for Amazon SES
+
+**Why:** a brand-new SES identity starts in a sandbox that can only send to
+individually verified addresses. Production access lifts that limit so the
+service can email real clients. See decision 6 in `../architecture.md` for
+why SES was chosen over Resend, the provider named in an earlier draft of
+Stage 2's runbook.
+
+**Time:** 15 minutes to submit. Approval is manual on AWS's side and has no
+fixed turnaround — often same-day, occasionally longer. This is the "email
+from AWS" the runbook's introduction mentions, so submit this as soon as
+Task 7's domain move is done rather than leaving it until last.
+
+**Before you start:** Task 7 must be complete — SES verifies the domain
+against the same Route 53 zone that task creates.
+
+### Steps
+
+1. In the AWS console, search for **SES** (Simple Email Service) and open it.
+2. Confirm the **Region** selector at the top right matches the region you
+   chose in Stage 2, Task 7 — SES's sandbox status is per-region.
+3. On the **Account dashboard**, find **Sending statistics** or a banner
+   reading **Your account is in the sandbox** — click **Request production
+   access** (sometimes phrased **View Get Set Up Page** → **Request
+   production access**).
+4. Fill in the form. Suggested answers, adjust anything that doesn't match
+   reality:
+   - **Mail type:** Transactional
+   - **Website URL:** `https://legalworkflows.co.uk`
+   - **Use case description:** "Transactional account emails only —
+     sign-up confirmation, password reset, and multi-factor authentication
+     codes — for legalworkflows, a document-review SaaS product for UK law
+     firms. No marketing email is sent through this account."
+   - **Process for handling bounces and complaints:** "Amazon SNS
+     notifications for bounces and complaints are routed to a monitored
+     configuration set; repeated bounces or complaints for one recipient
+     suppress further sends to that address."
+   - **Additional contact addresses:** your own email address.
+5. Submit the form.
+
+### Tell me
+
+- **"SES production access requested"**, and the region you submitted it in.
+- **"SES production access approved"** once AWS's confirmation email arrives
+  — I cannot create the domain identity's DKIM records or issue SMTP
+  credentials until then, since a sandboxed identity would only prove it
+  works and then fail on real clients.
+
+---
+
+## When all ten are done
 
 Send me the answers and I will build the infrastructure: the network, the
 storage, the container services, the load balancer, the CDN, the certificate,
-the secrets and the alarms — all as Terraform code in the repository, reviewed
-in a pull request before anything is created.
+the secrets, the SES domain identity and SMTP credential, and the alarms —
+all as Terraform code in the repository, reviewed in a pull request before
+anything is created.
 
 I will then run it against your account, prove a document can be uploaded and
-downloaded through real S3, and prove a database restore works.
+downloaded through real S3, prove a database restore works, and give you the
+handful of SMTP settings to paste into Supabase's **Authentication → SMTP
+Settings** so sign-in emails send from your own domain — the step Task 5 in
+Stage 2's runbook pointed here for.
 
 Stage 4's runbook is the last one: it covers going live.

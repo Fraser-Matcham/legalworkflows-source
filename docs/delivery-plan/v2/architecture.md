@@ -12,6 +12,7 @@ Decided 10 September 2026. Supersedes the infrastructure assumptions in
 | 3 | Environments | **Production only, for now** |
 | 4 | Database and identity | **Supabase, retained** (see below) |
 | 5 | Public origin | **`https://legalworkflows.co.uk`**, the bare domain |
+| 6 | Auth email delivery | **AWS SES**, not Resend |
 
 ### 1. AWS with Terraform
 
@@ -88,6 +89,32 @@ before they can point anywhere else, and the workflow-contribution copy, which
 names where a contributed workflow is actually published and changes when that
 destination does (tickets 2015 and 2016).
 
+### 6. Auth email is sent through AWS SES, not Resend
+
+`human-tasks/stage-2-backend.md`'s Task 5 originally named Resend: it needs no
+AWS account, so it was reachable before Stage 3 existed. That is the only
+reason it was there — nothing in the code prefers one SMTP provider over
+another, and `docs/deployment.md` says as much ("Mike does not require a
+Resend API key for these messages").
+
+Revisited once Stage 3 was designed, because decision 4 already keeps
+everything else — compute, storage, DNS, secrets — inside one AWS account and
+one IAM boundary (see "Why S3 rather than Cloudflare R2" below), and a second
+transactional-email vendor bought nothing that justified sitting outside it.
+SES's one real cost is the sandbox: a new identity can only send to
+individually verified addresses until AWS approves a production-access
+request, a manual form with no fixed turnaround. Stage 3, Task 10 is that
+request, submitted as early in that stage as the domain allows so the wait
+overlaps with the rest of the infrastructure build rather than sitting on the
+critical path at the end.
+
+Task 5 in the Stage 2 runbook now points here and to Stage 3, Task 10 rather
+than repeating Resend's steps. The domain identity, DKIM records and SMTP
+credentials are Terraform's responsibility (the `email` module below), created
+once Route 53 holds the zone (Stage 3, Task 7); the operator's part is the one
+step Terraform cannot do on their behalf — filing the production-access
+request itself.
+
 ## The target architecture
 
 ```
@@ -155,6 +182,7 @@ caching its static assets. Stage 3 provisions both services from one module.
 | `backend` | ECR repository, ECS cluster, Fargate service, task definition, ALB, target group, autoscaling |
 | `frontend` | ECR repository, Fargate service, target group, CloudFront distribution, cache and path routing |
 | `dns` | Route 53 zone, ACM certificate, validation records, aliases |
+| `email` | SES domain identity, DKIM records, configuration set for bounce/complaint handling, IAM user scoped to `ses:SendRawEmail` for the SMTP credential |
 | `secrets` | Secrets Manager entries, IAM task role and execution role |
 | `observability` | CloudWatch log groups, retention, alarms, SNS topic |
 
@@ -184,6 +212,7 @@ eyes, not to reopen it.
 | NAT gateway | £28–32 |
 | CloudFront + S3 (low traffic) | £2–5 |
 | Route 53 | £0.40 |
+| SES (email, low volume) | <£1 |
 | Secrets Manager | £2 |
 | Supabase Pro | £20 |
 | **Total** | **≈ £110–140** |
