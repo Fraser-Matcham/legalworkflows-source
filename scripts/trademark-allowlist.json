@@ -13,11 +13,6 @@
     },
     {
         "status": "deferred",
-        "surface": "frontend/src/app/signup/page.tsx  mikeoss.com  x2",
-        "reason": "The Terms and Privacy links on the signup form still point at the upstream domain. Real, user-visible, and deliberately deferred by the operator: the correct fix is to publish this service's own terms and privacy notice and link those, which is a legal-drafting task rather than a rename. Printed on every run so it stays visible."
-    },
-    {
-        "status": "deferred",
         "surface": "frontend/src/app/components/workflows/OpenSourceWorkflowModal.tsx  Open Legal Products  x3",
         "reason": "WORKFLOWS_REPO_URL and the two rendered links naming Open-Legal-Products/mike-workflows. This copy tells a contributor where their workflow will actually be published, and MIKE_WORKFLOWS_REPOSITORY still resolves there, so renaming it before the catalogue is forked would make the consent text false. Blocked on tickets 2015 and 2016; fix the destination first, then the copy."
     },
