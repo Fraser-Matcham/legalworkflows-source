@@ -70,15 +70,15 @@ frontend can be deployed against independently.**
 | # | Work | Ticket |
 | --- | --- | --- |
 | 2.1 | ~~Replace `xlsx` with `exceljs`~~ — **recommended won't-do.** The premise does not hold; see "Why 2.1 is not being done" below | 2012 |
-| 2.2 | Verify a clean install and the full backend suite from scratch | 2013 |
-| 2.3 | Close the remaining audit-trail gaps | 2056 |
+| 2.2 | ✅ Verify a clean install and the full backend suite from scratch — done in a fresh clone, not the working tree | 2013 |
+| 2.3 | ✅ Close the remaining audit-trail gaps — project access grants and revocations now audited | 2056 |
 | 2.4 | ✅ Harden the service-role authorisation boundary — `uploadSessions` denial tests added; the rest audited and recorded in `docs/testing-coverage.md` | 2059 |
 | 2.5 | Production origin and rate-limit configuration, driven by environment | 2063 |
 | 2.6 | ✅ Health and readiness endpoints that distinguish "process alive" from "dependencies reachable" — `/health` unchanged, `/ready` added | 2052 |
 | 2.7 | Wire error tracking through the existing redaction helpers | 2084 |
 | 2.8 | Service and queue metrics | 2086 |
 | 2.9 | Alerts on the silent failure paths named in `docs/data-retention.md` | 2087 |
-| 2.10 | Publish the API contract the frontend builds against | 2068 (adapted) |
+| 2.10 | ✅ Publish the API contract the frontend builds against — `docs/api-contract.md`, gated by `npm run api-contract` | 2068 (adapted) |
 
 ### Done when
 

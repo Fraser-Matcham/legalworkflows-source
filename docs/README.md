@@ -21,6 +21,9 @@ The fork rules that constrain every change here are at the top of
 - [Troubleshooting](troubleshooting.md) — common local and production problems
 - [Safe local testing](safe-local-testing.md) — disposable resources, synthetic
   documents, and secret handling
+- [API contract](api-contract.md) — what the HTTP surface promises its
+  consumers: mounts, auth, the two error envelopes, and the SSE event
+  vocabulary. Checked against `app.ts` by `npm run api-contract`
 - [Observability](observability.md) — the per-request log line, what it
   deliberately omits, and the redaction helpers every log site uses
 - [Data retention, storage and deletion](data-retention.md) — what is stored,
