@@ -35,7 +35,7 @@ Task 4 onwards. See `architecture.md` for the expected monthly figure.
 1. Go to **https://aws.amazon.com** and click **Create an AWS Account**.
 2. Enter an email address you control and will keep. This becomes the **root
    user** — the account owner. Use a role address such as
-   `aws@yourdomain` rather than a personal one, so it survives if you later
+   `aws@legalworkflows.co.uk` rather than a personal one, so it survives if you later
    bring someone else in.
 3. Choose an **AWS account name**: `legalworkflows`.
 4. Verify the email with the code AWS sends.
@@ -268,8 +268,7 @@ AWS has to be able to prove it controls the domain. That means AWS DNS.
 
 1. In the AWS console, search for **Route 53** and open it.
 2. Click **Hosted zones** → **Create hosted zone**.
-3. **Domain name:** enter your domain exactly as registered, for example
-   `legalworkflows.co.uk`. No `www`, no `https://`.
+3. **Domain name:** enter `legalworkflows.co.uk`. No `www`, no `https://`.
 4. **Type:** leave as **Public hosted zone**.
 5. Click **Create hosted zone**.
 6. The zone opens showing several records. Find the one with **Type: NS**. It

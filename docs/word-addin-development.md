@@ -47,7 +47,7 @@ steps manually:
 
    ```env
    REACT_APP_API_BASE_URL=https://localhost:3200/api
-   REACT_APP_WEB_APP_URL=https://app.mikeoss.com
+   REACT_APP_WEB_APP_URL=https://legalworkflows.co.uk
    API_PROXY_TARGET=http://localhost:3001
    OBJECT_STORAGE_PROXY_TARGET=http://localhost:9000
    OBJECT_STORAGE_BUCKET_NAME=mike

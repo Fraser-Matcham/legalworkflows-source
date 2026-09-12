@@ -18,16 +18,6 @@
     },
     {
         "status": "deferred",
-        "surface": "word-addin/src/taskpane/auth/LoginPage.tsx  mikeoss.com  x1",
-        "reason": "Fallback web-app URL used when REACT_APP_WEB_APP_URL is unset. It cannot reach a shipped add-in: word-addin/webpack.config.js throws on a production build that does not set REACT_APP_WEB_APP_URL, so only a dev build can ever render this default. Deliberately deferred by the operator on that basis \u2014 changing it is a deployment-configuration decision, not a copy change. Printed on every run so it stays visible."
-    },
-    {
-        "status": "deferred",
-        "surface": "word-addin/src/taskpane/components/shell/ApiKeyBanner.tsx  mikeoss.com  x1",
-        "reason": "The same REACT_APP_WEB_APP_URL fallback as LoginPage.tsx, unreachable in a production build for the same reason and deferred on the same basis. Both defaults should change together when the operator's web-app origin is settled."
-    },
-    {
-        "status": "deferred",
         "surface": "frontend/src/app/components/workflows/OpenSourceWorkflowModal.tsx  Open Legal Products  x3",
         "reason": "WORKFLOWS_REPO_URL and the two rendered links naming Open-Legal-Products/mike-workflows. This copy tells a contributor where their workflow will actually be published, and MIKE_WORKFLOWS_REPOSITORY still resolves there, so renaming it before the catalogue is forked would make the consent text false. Blocked on tickets 2015 and 2016; fix the destination first, then the copy."
     },

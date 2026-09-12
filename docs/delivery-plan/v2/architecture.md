@@ -11,6 +11,7 @@ Decided 10 September 2026. Supersedes the infrastructure assumptions in
 | 2 | This repository's frontend | **The product frontend** |
 | 3 | Environments | **Production only, for now** |
 | 4 | Database and identity | **Supabase, retained** (see below) |
+| 5 | Public origin | **`https://legalworkflows.co.uk`**, the bare domain |
 
 ### 1. AWS with Terraform
 
@@ -52,6 +53,40 @@ MFA, 65 backend files using the Supabase client.
 
 Supabase therefore stays as managed Postgres and identity. AWS provides
 compute, object storage, CDN, DNS, TLS and secrets.
+
+### 5. The public origin is `https://legalworkflows.co.uk`
+
+Registered by the operator on 12 September 2026. `.co.uk` over `.com`: the
+market is UK law firms, and a UK registration reads as native to them.
+
+**The bare domain, not `app.` or any other subdomain.** This is not a
+presentational choice — it follows from "Why one origin" below. The browser
+calls `/api` as a relative path and the CDN routes that prefix to the backend,
+so the frontend and the API share a single origin and a single certificate.
+Whatever origin is chosen is therefore the origin for both, and the bare domain
+is the simpler of the two.
+
+The operator did not state a preference between bare and subdomain, so the
+documented default in `human-tasks/stage-1-frontend.md` applies. Reversing it
+is cheap until Stage 3 provisions the certificate and CDN distribution against
+it, and expensive afterwards; if it is going to change, it should change before
+then.
+
+This origin now appears in:
+
+- `frontend/.env.example` as the production `NEXT_PUBLIC_APP_URL`.
+- The Word add-in's `REACT_APP_WEB_APP_URL` fallback, in `LoginPage.tsx`,
+  `ApiKeyBanner.tsx` and `webpack.config.js`. Those three previously defaulted
+  to the upstream project's site, which is what the settled origin unblocked —
+  the two deferred trademark-allowlist entries said in terms that "both
+  defaults should change together when the operator's web-app origin is
+  settled", and they have been removed now that it is.
+
+Still pointing at the upstream domain, and correctly so: the signup form's
+Terms and Privacy links, which need this service's own documents to exist
+before they can point anywhere else, and the workflow-contribution copy, which
+names where a contributed workflow is actually published and changes when that
+destination does (tickets 2015 and 2016).
 
 ## The target architecture
 

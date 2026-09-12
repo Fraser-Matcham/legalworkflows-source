@@ -11,7 +11,21 @@ Nothing here requires any software to be installed.
 
 ---
 
-## Task 1 — Register the domain name
+## Task 1 — Register the domain name — ✅ DONE
+
+> **Registered 12 September 2026: `legalworkflows.co.uk`.** Recorded as
+> decision 5 in `../architecture.md` and wired into
+> `frontend/.env.example` and the Word add-in's fallback URL.
+>
+> Taken as the **bare domain** (`legalworkflows.co.uk`, not
+> `app.legalworkflows.co.uk`) — the default offered below, since no preference
+> was stated. Say so if you would rather have the subdomain: it is cheap to
+> change now and expensive once Stage 3 issues the certificate against it.
+>
+> Two things still outstanding from this task, neither blocking: **which
+> registrar** you used (needed for the DNS steps in Stage 2 Task 5 and Stage 3
+> Task 7 — the instructions currently assume Cloudflare), and the
+> **nameservers** from step 5, which Stage 3 Task 7 needs.
 
 **Why:** every later stage points at a domain. The TLS certificate, the
 sign-in redirect, the CDN and the Word add-in manifest all need it. Registering
@@ -186,7 +200,8 @@ infer them.
    **Fraser Matcham** as the copyright holder and **legalworkflows** as the
    product. Confirm both, or give me the wording you prefer.
 2. Decide the contact email address to publish for legal and support enquiries.
-   A role address such as `support@yourdomain` is better than a personal one,
+   A role address such as `support@legalworkflows.co.uk` is better than a
+   personal one,
    and you can create it once the domain from Task 1 exists.
 3. If you have registered a business address you are willing to publish, note
    it. A sole trader is not obliged to publish a home address; a
