@@ -49,6 +49,12 @@ Every route requires one except: `/auth/*` (it is how you get a session),
 verifies an export manifest is usually outside the workspace and needs the key
 from the server rather than from the file they were handed).
 
+`GET /metrics` is the one endpoint with an authentication scheme of its own: a
+bearer token from `METRICS_TOKEN`, not a session. A scraper is not a user and
+should not hold a user's session. With no token configured the endpoint answers
+**404**, the same as any unrouted path, so the default posture is that it does
+not exist.
+
 Authorisation is **per handler**. The backend holds the service-role key and
 bypasses RLS entirely, so a route that forgets its access check is a
 cross-tenant leak rather than a permission error. `npm run tenancy` guards
@@ -151,6 +157,7 @@ Standalone endpoints, outside any router:
 | `GET /health` | Liveness. Unconditionally `{"ok":true}` | none |
 | `GET /ready` | Readiness — dependencies reachable. 200 with a report, or 503 with no body | none |
 | `GET /manifest-signing-key` | The Ed25519 public key for export manifests, or `null` | none |
+| `GET /metrics` | Prometheus text exposition. 404 when `METRICS_TOKEN` is unset, 401 without it | `Authorization: Bearer $METRICS_TOKEN` |
 
 ## Rate limits
 

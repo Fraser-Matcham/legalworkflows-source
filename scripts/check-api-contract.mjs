@@ -51,13 +51,29 @@ function mountedPrefixes(source) {
 }
 
 /**
- * Standalone endpoints: app.get("/x", <inline handler>) rather than a router.
+ * Standalone endpoints: app.get("/x", <handler>) rather than a router.
  * Matched separately because they are documented in their own table — they
  * have no router and no sub-paths.
+ *
+ * The handler takes two shapes, and the distinction from a rate limiter is
+ * the whole difficulty:
+ *
+ *   app.get("/health", (_req, res) => …)          an inline handler
+ *   app.get("/metrics", metricsHandler(registry)) a handler from a factory
+ *   app.get("/user/export", exportLimiter)        NOT an endpoint — a limiter
+ *                                                 attached to a path that a
+ *                                                 router serves
+ *
+ * So the rule is: an inline function or a **call expression** is the handler;
+ * a bare identifier is middleware. That keeps the limiter lines out, as the
+ * note on mountedPrefixes requires, while closing the gap that a factory-built
+ * handler used to slip through — an endpoint the gate could not see is exactly
+ * the stale contract this script exists to prevent.
  */
 function standaloneEndpoints(source) {
     const found = new Set();
-    const re = /app\.get\(\s*"([^"]+)"\s*,\s*(?:async\s*)?\(/g;
+    const re =
+        /app\.get\(\s*"([^"]+)"\s*,\s*(?:(?:async\s*)?\(|[A-Za-z_$][\w$]*\s*\()/g;
     for (const [, path] of source.matchAll(re)) found.add(path);
     return found;
 }
@@ -131,6 +147,25 @@ ${extra}
         "a rate limiter on a path is not mistaken for a mount",
         !r.undocumented.includes("/auth/login") &&
             !r.stale.includes("/auth/login"),
+    ]);
+
+    write(
+        APP,
+        app('app.get("/metrics", metricsHandler(registry));'),
+    );
+    write(DOC, doc());
+    r = scan(dir);
+    cases.push([
+        "an endpoint whose handler comes from a factory is seen",
+        r.undocumented.includes("/metrics"),
+    ]);
+
+    write(APP, app('app.get("/user/export", exportLimiter);'));
+    write(DOC, doc());
+    r = scan(dir);
+    cases.push([
+        "a bare-identifier limiter on a path is still not an endpoint",
+        !r.undocumented.includes("/user/export"),
     ]);
 
     write(APP, app('app.use("/orgs", orgsRouter);'));

@@ -24,6 +24,8 @@ import { authRouter } from "./routes/auth";
 import { uploadSessionsRouter } from "./routes/uploadSessions";
 import { manifestPublicKey } from "./lib/manifestSigning";
 import { checkReadiness } from "./lib/readiness";
+import { metricsHandler } from "./lib/metrics/endpoint";
+import { registry } from "./lib/metrics/serviceMetrics";
 import {
   handleUnhandledError,
   protectInternalErrorResponses,
@@ -334,6 +336,12 @@ app.get("/ready", async (_req, res) => {
   // clean fix is an explicit opt-in in that middleware, made deliberately.
   res.status(503).end();
 });
+
+// Metrics, for a scraper. Absent unless METRICS_TOKEN is set: with no token
+// configured this answers 404, the same as any unrouted path, so a deployment
+// that never thinks about it cannot expose one by accident and a scan cannot
+// learn the endpoint exists but is locked. See lib/metrics/endpoint.ts.
+app.get("/metrics", metricsHandler(registry));
 
 // The Ed25519 public key this deployment signs project export manifests with,
 // or null when no key is configured. Deliberately open: whoever checks a

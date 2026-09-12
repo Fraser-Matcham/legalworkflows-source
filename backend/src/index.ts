@@ -2,6 +2,7 @@ import { Worker as ThreadWorker } from "node:worker_threads";
 import path from "node:path";
 import { app } from "./app";
 import { installErrorTracking } from "./lib/errorTracking";
+import { installQueueDepthMetric } from "./lib/metrics/queueDepth";
 import { manifestPublicKey } from "./lib/manifestSigning";
 import { validateRuntimeConfiguration } from "./lib/runtimeConfig";
 import { assertProductionConfiguration } from "./lib/productionConfig";
@@ -14,6 +15,11 @@ const PORT = process.env.PORT ?? 3001;
 // uncaughtException handlers that put safeError in front of Node's own raw
 // dump. See lib/errorTracking/index.ts.
 installErrorTracking();
+
+// Queue depth is read from db_jobs on scrape. Wired here rather than at import
+// so a unit test that imports the Express app does not reach for a database
+// client. See lib/metrics/queueDepth.ts.
+installQueueDepthMetric();
 
 // Surface a malformed MANIFEST_SIGNING_KEY at boot rather than when someone's
 // first export fails. Unset is a valid choice and means manifests go out
