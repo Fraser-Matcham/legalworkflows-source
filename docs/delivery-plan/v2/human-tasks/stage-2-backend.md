@@ -1,7 +1,9 @@
 # Stage 2 — your tasks (backend)
 
-Seven tasks. Do them **in order** — tasks 2 to 5 all happen inside the project
-that task 1 creates.
+Seven tasks. Do them **in order** — tasks 2 to 4 all happen inside the project
+that task 1 creates. Task 5 no longer belongs here: it needs an AWS account,
+which doesn't exist until Stage 3, so it now points there instead of
+repeating itself.
 
 Each task is self-contained. Where a task ends with **"Tell me"**, that is
 information I need to configure the backend — send it back in the chat.
@@ -190,52 +192,32 @@ For a service holding client legal documents, it should be on.
 
 ---
 
-## Task 5 — Configure how sign-in emails are sent
+## Task 5 — Configure how sign-in emails are sent — ➡️ MOVED TO STAGE 3
 
-**Why:** Supabase sends the password-reset and email-confirmation messages. Its
-built-in sender is rate-limited to a handful of emails per hour and delivers
-from a shared address that often lands in spam. That is fine for testing and
-not fine for real users.
+> **Moved, not skipped.** This task originally named Resend, chosen only
+> because it needs no AWS account and so was reachable this early. Revisited
+> once Stage 3 existed: decision 6 in `../architecture.md` explains why AWS
+> SES is the better fit — it keeps email inside the same AWS account and IAM
+> boundary as everything else Stage 3 builds, at the cost of a manual
+> production-access approval with no fixed turnaround.
+>
+> The domain identity, DKIM records and SMTP credentials this needs don't
+> exist until Stage 3 provisions the AWS account and moves the domain's DNS
+> to Route 53. **Stage 3, Task 10** is the one part of this that is still
+> yours to do — requesting SES's production access, since that judgement call
+> is the operator's, not something Terraform can do on your behalf. Once it's
+> approved, I configure the domain identity, DKIM and SMTP credentials as
+> Terraform code, and give you the handful of Supabase SMTP settings to paste
+> in — the same "Enable Custom SMTP" screen this task originally described,
+> just pointed at SES instead of Resend.
+>
+> **Why:** Supabase's built-in email sender is rate-limited to a handful of
+> emails per hour and delivers from a shared address that often lands in
+> spam — fine for testing, not for real users. Nothing about that need has
+> changed; only which provider answers it.
 
-**Time:** 30 minutes.
-
-**Cost:** free at low volume — Resend's free tier covers 3,000 emails a month.
-
-**Before you start:** Task 1 of Stage 1 (the domain) must be complete, because
-you have to prove you own the domain.
-
-### Steps
-
-1. Go to **https://resend.com** and create an account.
-2. In the Resend dashboard click **Domains**, then **Add Domain**.
-3. Enter `legalworkflows.co.uk` — just the domain itself, with no `https://`
-   and no `www`.
-4. Resend shows you a set of DNS records to add — normally three: one `MX` and
-   two `TXT`. Keep this page open.
-5. In a second browser tab, open your domain registrar (Cloudflare, if you
-   followed the suggestion) and go to the **DNS** section for your domain.
-6. Add each record Resend showed you, one at a time. For each: copy the
-   **Type**, **Name** and **Value** exactly. If Cloudflare shows an orange
-   cloud "Proxy" toggle, switch it **off** for these records — email records
-   must not be proxied.
-7. Return to Resend and click **Verify**. It may take a few minutes. Wait until
-   the domain shows **Verified**.
-8. In Resend, click **API Keys**, then **Create API Key**. Name it
-   `supabase-smtp`, give it **Sending access**, and copy the key it shows you.
-   It starts `re_` and is shown once.
-9. Back in Supabase, go to **Project Settings → Authentication → SMTP
-   Settings**, and switch on **Enable Custom SMTP**. Enter:
-   - **Sender email:** `noreply@legalworkflows.co.uk`
-   - **Sender name:** `legalworkflows`
-   - **Host:** `smtp.resend.com`
-   - **Port:** `465`
-   - **Username:** `resend`
-   - **Password:** the `re_...` key from step 8
-10. Click **Save**.
-
-### Tell me
-
-- **"Custom SMTP configured"**, and the sender address you used.
+**Before you start:** nothing, for now — this task has no steps until Stage 3
+opens. Its full instructions live there as Task 10.
 
 ---
 
