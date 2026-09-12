@@ -14,7 +14,20 @@ information I need to configure the backend — send it back in the chat.
 
 ---
 
-## Task 1 — Create the Supabase production project
+## Task 1 — Create the Supabase production project — ✅ DONE
+
+> **Created 12 September 2026: `legalworkflows-production`, region
+> `eu-west-2` (London), project ref `zaiwvjacchzwjzcvzlys`.** Created directly
+> through the connected Supabase account rather than the dashboard click-through
+> below, once you confirmed the account and chose a plan.
+>
+> **On the Free plan, not Pro** — your explicit choice, to avoid committing to
+> the $25/month Pro cost before the rest of the stack exists. The trade-offs
+> this runbook warns about are real: the project pauses after a week of
+> inactivity, and there are no automatic backups. Upgrade to Pro from the
+> project's billing settings whenever you're ready to leave it running
+> continuously; nothing about the schema or configuration needs to change when
+> you do.
 
 **Why:** Supabase is the database and the login system. Everything else waits
 on it. The local Docker version you may have seen is for testing only and
@@ -51,7 +64,13 @@ for a live service.
 
 ---
 
-## Task 2 — Collect the Supabase connection keys
+## Task 2 — Collect the Supabase connection keys — ✅ DONE
+
+> **Collected.** The Project URL and the `anon`/publishable key were retrieved
+> directly through the connected Supabase account rather than asked of you —
+> no tool exposes the `service_role` secret key that way, by deliberate design
+> on Supabase's side, so that one came from you via the dashboard's API Keys
+> page. All three are held for Stage 3, not written into the repository.
 
 **Why:** the backend authenticates to Supabase with these. Without them it
 cannot start.
@@ -86,7 +105,29 @@ service_role:  eyJ....
 
 ---
 
-## Task 3 — Load the database structure
+## Task 3 — Load the database structure — ✅ DONE
+
+> **Loaded 12 September 2026.** Applied directly through the connected
+> Supabase account, split into eleven ordered chunks at safe statement
+> boundaries rather than pasted as one block into the SQL Editor — the
+> practical effect is the same as the steps below, verified afterwards with
+> `list_tables` (51 tables, matching the count this task promises) and a
+> security-advisor pass.
+>
+> **Two things surfaced by that advisor pass, worth knowing about rather than
+> fixing silently:** 21 tables (`projects`, `documents`, `workflows`, `chats`,
+> `tabular_reviews` among them) show Row Level Security disabled. This is the
+> schema's existing design, not a defect from loading it — those tables are
+> locked down by revoking `anon`/`authenticated` grants rather than by RLS
+> policies, and the service-role backend bypasses RLS regardless. Supabase's
+> linter still flags it as a defense-in-depth gap because a future stray
+> `GRANT` would reopen access where an RLS policy would not. Left as-is
+> pending your decision — say the word if you want a ticket opened to add RLS
+> policies on top of the existing revokes. Separately, about a dozen read-only
+> functions lack an explicit `search_path`, `pg_trgm` sits in the `public`
+> schema, and three auth-trigger functions are callable directly via RPC —
+> all three are also pre-existing in `backend/schema.sql`, not introduced
+> here.
 
 **Why:** the project starts empty. This creates the 51 tables the application
 needs, along with their security rules.
@@ -121,7 +162,9 @@ needs, along with their security rules.
 
 ---
 
-## Task 4 — Turn on multi-factor authentication
+## Task 4 — Turn on multi-factor authentication — ✅ DONE
+
+> **Enabled 12 September 2026.** TOTP is on; SMS was left off as recommended.
 
 **Why:** the application supports MFA and the code expects it to be available.
 For a service holding client legal documents, it should be on.
