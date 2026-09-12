@@ -37,14 +37,14 @@ inherited.**
 
 | # | Work | Ticket |
 | --- | --- | --- |
-| 1.1 | Sever the backend type import: re-declare the nine symbols in `frontend/src/app/components/shared/types.ts` | new |
-| 1.2 | Add a CI check that fails on any new `backend/src` import from `frontend/` — the same shape as `npm run boundary` | new |
-| 1.3 | Rewrite `frontend/Dockerfile` for a frontend-only build context | new |
-| 1.4 | Create `frontend/.env.example` documenting all three variables, with a startup guard that fails fast on a missing required one | new |
-| 1.5 | Replace the inherited mark with the new one | 2032 |
+| 1.1 | ✅ Sever the backend type import: re-declare the nine symbols in `frontend/src/app/components/shared/apiTypes.ts` (this row's own text named `types.ts`, which was never the file — corrected here) | new |
+| 1.2 | ✅ Add a CI check that fails on any new `backend/src` import from `frontend/` — `scripts/check-frontend-boundary.mjs`, run as `npm run frontend-boundary` | new |
+| 1.3 | ✅ Rewrite `frontend/Dockerfile` for a frontend-only build context — its own header states "Build context is `frontend/` — this directory alone" | new |
+| 1.4 | ✅ Create `frontend/.env.example` documenting all three variables, with a startup guard that fails fast on a missing required one — `frontend/src/app/lib/env.ts` and `frontend/src/instrumentation.ts`, commit 0c82a6d | new |
+| 1.5 | ✅ Replace the inherited mark with the new one — `frontend/src/shared/ui/BrandMarkUI.tsx` | 2032 |
 | 1.6 | ✅ Generate favicon, Open Graph image and add-in ribbon icons from the new mark — `npm run brand-assets`, drift-checked in CI | 2032 |
 | 1.7 | ~~Frontend coverage ratchet, matching the backend's~~ — **already in place.** `frontend/vitest.config.mts` gates `src/app/lib/**` at 100/99/100/100 and the CI frontend job runs `test:coverage`. This row cited 2089, which is a *backend* ticket (closed by 2090–2092); there was never a separate frontend ticket. | — |
-| 1.8 | Close 2053/2054 as decided; record the decision in the backlog | 2053, 2054 |
+| 1.8 | ✅ Close 2053/2054 as decided; record the decision in the backlog — see "Ticket disposition" below: `2053, 2054 | undecided | closed: keep and complete` | 2053, 2054 |
 | 1.9 | ✅ Terms of Use and Privacy Policy, and the signup links pointed at them | 2032 follow-on |
 
 ### Done when
@@ -57,9 +57,12 @@ inherited.**
 
 ### Blocked on your runbook
 
-The brand decisions (accent colour, favicon confirmation) and the domain name.
-Domain is needed in stage 3, but buying it early means DNS propagation is not
-on the critical path later.
+Nothing remains here. This heading described the brand decisions (accent
+colour, favicon confirmation) and the domain name; both are now settled. The
+mark was approved and generated (`frontend/src/shared/ui/BrandMarkUI.tsx`,
+drift-checked in CI by `npm run brand-assets:check`), and the domain was
+registered — `legalworkflows.co.uk`, baked into
+`frontend/src/app/lib/operatorDetails.ts`.
 
 ## Stage 2 — Backend
 
