@@ -223,20 +223,20 @@ addresses, and the contents of documents that clients upload.
 
 ---
 
-## Task 5 — Confirm the operator identity shown in legal notices — defaulted, not confirmed
+## Task 5 — Confirm the operator identity shown in legal notices — ✅ DONE
 
-> **This one is genuinely still open**, not done — everything below still
-> applies. `frontend/src/app/lib/operatorDetails.ts` currently holds
-> reasonable defaults rather than your confirmation: `OPERATOR_NAME` is
-> "Fraser Matcham" and `TRADING_NAME` is "legalworkflows" (both already used
-> by `legalNotice.ts`), and the contact addresses are
-> `support@legalworkflows.co.uk` / `privacy@legalworkflows.co.uk`, derived
-> from the domain rather than stated by you. `ICO_REGISTRATION_NUMBER` and
-> `POSTAL_ADDRESS` are left **empty on purpose** — the Terms and Privacy
-> Policy pages render nothing where they are unset rather than showing a
-> placeholder, which is lawful (UK GDPR Article 13 needs only a name and a
-> means of contact) but a law firm's due-diligence questionnaire will still
-> ask for both.
+> **Confirmed 12 September 2026.** `OPERATOR_NAME` ("Fraser Matcham") and
+> `TRADING_NAME` ("legalworkflows") were already correct as defaulted. The
+> one correction: the contact address is **your own**,
+> `frasermatcham@gmail.com`, not the role addresses at the domain this file
+> originally defaulted to — mail routing for `legalworkflows.co.uk` does not
+> exist yet, so a role address there would not have received anything.
+> `ICO_REGISTRATION_NUMBER` and `POSTAL_ADDRESS` are confirmed **staying
+> empty** — the Terms and Privacy Policy pages render nothing where they are
+> unset rather than showing a placeholder, which is lawful (UK GDPR Article
+> 13 needs only a name and a means of contact), though a law firm's
+> due-diligence questionnaire may ask for both later. Revisit this task only
+> if either changes.
 
 **Why:** the `/legal` page already names you as the copyright holder and
 states when modification began. Before launch, that page should also carry the
@@ -268,14 +268,12 @@ infer them.
 
 ## When all five are done
 
-Four of the five are done. Only **Task 5** is genuinely still open — send me
-the operator name, contact email, ICO registration number (or confirmation
-you have not registered) and postal address (or "none"), and I will update
-`operatorDetails.ts` and the two policy pages to match. Everything else
-Stage 1's engineering could do without your answers is already built: the
-mark is applied everywhere, the favicon and link-preview image are generated,
-and the `/terms` and `/privacy` pages exist with the sign-up links pointed at
-them.
+All five are done. The mark is applied everywhere, the favicon and
+link-preview image are generated, the `/terms` and `/privacy` pages exist
+with the sign-up links pointed at them, and the operator identity is
+confirmed — `operatorDetails.ts` carries your own contact address rather
+than a default. Revisit the ICO registration number and postal address only
+if either changes; both are confirmed as deliberately blank for now.
 
 Stage 2's runbook is already open — see `stage-2-backend.md` — which is where
 the Supabase project and the AI provider keys are set up. You do not need to
