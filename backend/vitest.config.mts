@@ -23,11 +23,11 @@ export default defineConfig({
             // or near 100%, while lib/mcp (7%), lib/tabular (36%) and
             // lib/chat/tools (55%) hold the global figure down.
             //
-            // Measured on this tree: 64.34% statements, 54.83% branches,
-            // 67.22% functions, 66.67% lines. The floors below are those
-            // rounded down to whole percents, so CI fails on a *drop*, and at
-            // these figures that rounding lands on the same numbers as before.
-            // Branches still has the least headroom, 0.83 points — if a drop
+            // Measured on this tree: 65.00% statements, 55.58% branches,
+            // 67.81% functions, 67.30% lines. The floors below are those
+            // rounded down to whole percents, so CI fails on a *drop*.
+            // Statements now has the least headroom, 0.00 points, because the
+            // figure landed exactly on a whole percent — if a drop
             // below it came from an upstream merge rather than your own
             // change, see the upstream-merge note in docs/testing-coverage.md
             // before touching these numbers.
@@ -35,10 +35,10 @@ export default defineConfig({
             // Floors only go up: when you add tests, raise them in the same
             // PR. Backlog + per-area status: docs/testing-coverage.md.
             thresholds: {
-                statements: 64,
-                branches: 54,
+                statements: 65,
+                branches: 55,
                 functions: 67,
-                lines: 66,
+                lines: 67,
             },
         },
     },

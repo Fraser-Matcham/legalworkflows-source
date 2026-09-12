@@ -243,6 +243,27 @@ Exceeding a limiter returns **429**.
 > Revisit these once there is a week of real traffic. The figures above are
 > reasoned, not measured, and saying so is part of the record.
 
+### Error tracking
+
+Optional, and off unless `ERROR_TRACKING_DSN` is set. The redaction of
+unhandled rejections and uncaught exceptions happens either way, so a
+deployment that never configures a DSN still gains the part that matters most
+for confidentiality — see
+[docs/observability.md](observability.md#error-tracking) for why there is no
+SDK and what the raw dump used to leak.
+
+| Variable | Default | Production |
+| --- | --- | --- |
+| `ERROR_TRACKING_DSN` | unset (tracking off) | The project DSN. A malformed value disables tracking with a warning rather than failing the boot: a misspelled telemetry endpoint must not become an outage. |
+| `ERROR_TRACKING_ENVIRONMENT` | `NODE_ENV` | `production` |
+| `ERROR_TRACKING_RELEASE` | unset | The deployed commit sha, so an event points at a build. |
+| `ERROR_TRACKING_SERVER_NAME` | unset | Distinguishes the API task from the worker task when both report. |
+| `ERROR_TRACKING_MAX_EVENTS_PER_MINUTE` | 60 | 60. A failure loop must not flood the ingest or the egress budget. Suppression is logged once per window, so "quiet" is distinguishable from "throttled". |
+
+The DSN's public key is not a secret — it is designed to ship in browser
+bundles — but it still belongs in the secrets store with everything else,
+because a leaked DSN lets a stranger fill the project's event quota.
+
 ## Authentication email
 
 Supabase Auth sends signup, email-change, and password-recovery messages.
