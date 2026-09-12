@@ -1,12 +1,19 @@
 import { Worker as ThreadWorker } from "node:worker_threads";
 import path from "node:path";
 import { app } from "./app";
+import { installErrorTracking } from "./lib/errorTracking";
 import { manifestPublicKey } from "./lib/manifestSigning";
 import { validateRuntimeConfiguration } from "./lib/runtimeConfig";
 import { assertProductionConfiguration } from "./lib/productionConfig";
 import { startAllWorkers, stopAllWorkers } from "./workerRuntime";
 
 const PORT = process.env.PORT ?? 3001;
+
+// Before the boot gate, so a configuration failure is redacted too, and
+// before anything can reject: this registers the unhandledRejection and
+// uncaughtException handlers that put safeError in front of Node's own raw
+// dump. See lib/errorTracking/index.ts.
+installErrorTracking();
 
 // Surface a malformed MANIFEST_SIGNING_KEY at boot rather than when someone's
 // first export fails. Unset is a valid choice and means manifests go out

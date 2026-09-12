@@ -76,7 +76,7 @@ frontend can be deployed against independently.**
 | 2.4 | ✅ Harden the service-role authorisation boundary — `uploadSessions` denial tests added; the rest audited and recorded in `docs/testing-coverage.md` | 2059 |
 | 2.5 | ✅ Production origin and rate-limit configuration — boot guard for the `ALLOWED_ORIGINS`/loopback gap, production values recorded in `docs/deployment.md` | 2063 |
 | 2.6 | ✅ Health and readiness endpoints that distinguish "process alive" from "dependencies reachable" — `/health` unchanged, `/ready` added | 2052 |
-| 2.7 | Wire error tracking through the existing redaction helpers | 2084 |
+| 2.7 | ✅ Wire error tracking through the existing redaction helpers — no SDK, a `console.error` bridge for the ~200 inherited call sites, and the unhandled-rejection raw dump closed | 2084 |
 | 2.8 | Service and queue metrics | 2086 |
 | 2.9 | Alerts on the silent failure paths named in `docs/data-retention.md` | 2087 |
 | 2.10 | ✅ Publish the API contract the frontend builds against — `docs/api-contract.md`, gated by `npm run api-contract` | 2068 (adapted) |

@@ -6,7 +6,12 @@
 // worker process/machine (src/worker.ts) stays identical.
 
 import { parentPort } from "node:worker_threads";
+import { installErrorTracking } from "./lib/errorTracking";
 import { startAllWorkers, stopAllWorkers } from "./workerRuntime";
+
+// A worker_thread has its own handler registry, so the API process's install
+// does not cover this thread. See lib/errorTracking/index.ts.
+installErrorTracking();
 
 startAllWorkers();
 console.log("[worker-thread] background workers started");

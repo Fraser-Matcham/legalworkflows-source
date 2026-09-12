@@ -17,7 +17,13 @@
 // never noticed because compose injects real environment variables.
 import "dotenv/config";
 
+import { installErrorTracking } from "./lib/errorTracking";
 import { startAllWorkers, stopAllWorkers } from "./workerRuntime";
+
+// Background work is where a rejection is most likely to go unhandled: no
+// request is waiting on it, so nothing else notices. See
+// lib/errorTracking/index.ts.
+installErrorTracking();
 
 startAllWorkers();
 
