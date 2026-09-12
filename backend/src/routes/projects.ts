@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { requireAuth, requireMfaIfEnrolled } from "../middleware/auth";
+import { auditAccessEvents } from "../middleware/auditAccessEvents";
 import { createServerSupabase } from "../lib/supabase";
 import { enqueueStorageCleanup } from "../lib/dbq/enqueue";
 import { createClient } from "@supabase/supabase-js";
@@ -56,6 +57,11 @@ import { ensureResourceAccessSummaries } from "../lib/resourceAccessSummary";
 import { routeParams } from "../lib/routeParams";
 
 export const projectsRouter = Router();
+
+// Records who granted or revoked access to a project, and to whom. One
+// middleware rather than a recordAudit call inside each handler, for the
+// reasons in the header of auditAccessEvents.ts.
+projectsRouter.use(auditAccessEvents);
 
 function normalizeOptionalString(value: unknown) {
   if (typeof value !== "string") return null;

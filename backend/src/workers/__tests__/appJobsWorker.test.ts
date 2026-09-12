@@ -82,7 +82,9 @@ function makeDb(opts: {
     };
 }
 
-beforeEach(() => enqueueAppJobDelivery.mockClear());
+beforeEach(() => {
+    enqueueAppJobDelivery.mockClear();
+});
 
 describe("outbox delivery on enqueue", () => {
     it("hands the inserted row's id to BullMQ when the Redis driver is active", async () => {

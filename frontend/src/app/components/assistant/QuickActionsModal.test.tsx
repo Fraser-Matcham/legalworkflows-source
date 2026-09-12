@@ -27,7 +27,9 @@ const action: QuickAction = {
 };
 
 describe("QuickActionsModal", () => {
-    beforeEach(() => listWorkflowsMock.mockClear());
+    beforeEach(() => {
+        listWorkflowsMock.mockClear();
+    });
 
     it("only enables Save after an editable field changes", async () => {
         const onSave = vi.fn().mockResolvedValue(undefined);
