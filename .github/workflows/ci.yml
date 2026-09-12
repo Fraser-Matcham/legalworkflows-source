@@ -162,6 +162,14 @@ jobs:
 
       - run: npm run trademarks
 
+      # The committed favicon, Apple touch icon, link-preview image and Word
+      # ribbon icons are generated from the mark's geometry in
+      # frontend/src/shared/ui/BrandMarkUI.tsx. This fails if that geometry
+      # moves without the assets being regenerated — otherwise the browser tab
+      # and the Word ribbon keep showing the old mark, and nobody notices until
+      # a customer does. Regenerate with: npm run brand-assets
+      - run: npm run brand-assets:check
+
   schema-privileges:
     name: Schema privileges
     runs-on: ubuntu-latest

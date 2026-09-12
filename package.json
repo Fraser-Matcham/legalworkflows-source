@@ -19,7 +19,9 @@
     "frontend-boundary": "node scripts/check-frontend-boundary.mjs",
     "frontend-boundary:self-test": "node scripts/check-frontend-boundary.mjs --self-test",
     "api-contract": "node scripts/check-api-contract.mjs",
-    "api-contract:self-test": "node scripts/check-api-contract.mjs --self-test"
+    "api-contract:self-test": "node scripts/check-api-contract.mjs --self-test",
+    "brand-assets": "node scripts/generate-brand-assets.mjs",
+    "brand-assets:check": "node scripts/generate-brand-assets.mjs --check"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
