@@ -13,7 +13,7 @@ import {
 import { Loader2 } from "lucide-react";
 
 const WEB_APP_URL = (
-  process.env.REACT_APP_WEB_APP_URL || "https://app.mikeoss.com"
+  process.env.REACT_APP_WEB_APP_URL || "https://legalworkflows.co.uk"
 ).replace(/\/+$/, "");
 
 function openWebAuthPage(

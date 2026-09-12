@@ -165,8 +165,8 @@ you have to prove you own the domain.
 
 1. Go to **https://resend.com** and create an account.
 2. In the Resend dashboard click **Domains**, then **Add Domain**.
-3. Enter the domain you registered in Stage 1 — just the domain itself, for
-   example `legalworkflows.co.uk`.
+3. Enter `legalworkflows.co.uk` — just the domain itself, with no `https://`
+   and no `www`.
 4. Resend shows you a set of DNS records to add — normally three: one `MX` and
    two `TXT`. Keep this page open.
 5. In a second browser tab, open your domain registrar (Cloudflare, if you
@@ -182,7 +182,7 @@ you have to prove you own the domain.
    It starts `re_` and is shown once.
 9. Back in Supabase, go to **Project Settings → Authentication → SMTP
    Settings**, and switch on **Enable Custom SMTP**. Enter:
-   - **Sender email:** `noreply@yourdomain` (using your real domain)
+   - **Sender email:** `noreply@legalworkflows.co.uk`
    - **Sender name:** `legalworkflows`
    - **Host:** `smtp.resend.com`
    - **Port:** `465`
