@@ -223,7 +223,7 @@ Changes to the register in `docs/delivery-plan/backlog.csv`:
 
 | Ticket | Was | Now |
 | --- | --- | --- |
-| 2012 | assumed done | **open** — `spreadsheet.ts` still imports `xlsx` |
+| 2012 | assumed done | **won't-do** — `spreadsheet.ts` still imports `xlsx`, deliberately; see "Why 2.1 is not being done" above |
 | 2023 | open | **obsolete** — the add-in is not deferred |
 | 2038–2041 | provision Supabase | folded into stage 2's runbook |
 | 2053, 2054 | undecided | **closed: keep and complete** |
