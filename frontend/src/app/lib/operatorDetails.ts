@@ -26,8 +26,15 @@ export const TRADING_NAME = "legalworkflows";
 /** The public origin. Kept here so the policies and the links cannot diverge. */
 export const SERVICE_DOMAIN = "legalworkflows.co.uk";
 
-export const CONTACT_EMAIL = `support@${SERVICE_DOMAIN}`;
-export const PRIVACY_EMAIL = `privacy@${SERVICE_DOMAIN}`;
+/**
+ * A single confirmed address for both legal and support enquiries, and for
+ * privacy requests. Not a role address at the domain — that would need mail
+ * routing for `legalworkflows.co.uk` to exist first, which it does not yet —
+ * so this is the operator's own address, confirmed explicitly rather than
+ * defaulted. Change both together if a role address is ever set up.
+ */
+export const CONTACT_EMAIL = "frasermatcham@gmail.com";
+export const PRIVACY_EMAIL = "frasermatcham@gmail.com";
 
 /**
  * Date the current versions took effect. Shown on both policies: a policy
