@@ -72,7 +72,7 @@ frontend can be deployed against independently.**
 | 2.1 | ~~Replace `xlsx` with `exceljs`~~ — **recommended won't-do.** The premise does not hold; see "Why 2.1 is not being done" below | 2012 |
 | 2.2 | Verify a clean install and the full backend suite from scratch | 2013 |
 | 2.3 | Close the remaining audit-trail gaps | 2056 |
-| 2.4 | Harden the service-role authorisation boundary — the remaining work beyond the tenancy gate | 2059 |
+| 2.4 | ✅ Harden the service-role authorisation boundary — `uploadSessions` denial tests added; the rest audited and recorded in `docs/testing-coverage.md` | 2059 |
 | 2.5 | Production origin and rate-limit configuration, driven by environment | 2063 |
 | 2.6 | ✅ Health and readiness endpoints that distinguish "process alive" from "dependencies reachable" — `/health` unchanged, `/ready` added | 2052 |
 | 2.7 | Wire error tracking through the existing redaction helpers | 2084 |

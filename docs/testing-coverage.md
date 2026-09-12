@@ -140,6 +140,49 @@ LibreOffice, and `lib/pdfjs.ts` is a type facade whose only executable
 statement is a dynamic `import()` — its 0% is structural, not a gap. Both are
 better exercised by the e2e suite.
 
+## Cross-tenant denial coverage (ticket 2059)
+
+The backend runs as service role against a policy-free schema, so tenancy is
+whatever the handler remembers to check. There is no database backstop: a route
+that forgets `.eq("user_id", …)` hands over another tenant's row and nothing
+underneath objects. 2059's acceptance is therefore "every route with a
+tenant-scoped resource has a test proving another tenant is denied".
+
+Each cross-tenant suite uses a Supabase fake that **enforces `.eq()` filters**,
+so removing a tenancy filter turns the tests red rather than leaving them
+quietly passing.
+
+| Router | Denial coverage | Where |
+| --- | --- | --- |
+| `documents` | yes | `documents.crossTenant.test.ts` |
+| `workflows` | yes | `workflows.crossTenant.test.ts`, `workflows.routes.test.ts` |
+| `library` | yes | `library.crossTenant.test.ts` |
+| `downloads`, `quickActions` | yes | `smallRouters.crossTenant.test.ts` |
+| `uploadSessions` | yes | `uploadSessions.crossTenant.test.ts` |
+| `projects` | yes | `projects.routes.test.ts` |
+| `tabular` | yes | `tabular.routes.test.ts` |
+| `chat`, `projectChat`, `wordChat` | yes | their `*.routes.test.ts` |
+| `user` | yes | `user.routes.test.ts` |
+| `documentsUpload` | yes | `documentsUpload.routes.test.ts` |
+| `orgs` | yes | `orgs.routes.test.ts` — "404s an org the caller does not belong to", "hides the resource inventory from non-members", "404s somebody else's invitation rather than confirming it exists" |
+| `audit` | yes | `routes/__tests__/audit.test.ts` — scoping is asserted where it is decided, on the query builder: "scopes to own events OR accessible project events", "falls back to own-events-only when no projects are accessible" |
+
+Deliberately **not** covered, because they hold no tenant-scoped resource:
+
+| Router | Why |
+| --- | --- |
+| `auth` | Authentication itself. There is no other tenant's resource to reach. |
+| `models` | Provider catalogues (OpenRouter, Vercel AI Gateway, OpenCode). Global data behind a server-side key. Per-user model choices live in `user`. |
+| `sourceDocuments` | Public case law from CourtListener, keyed by cluster id. The in-flight dedupe map is keyed `${userId}:${documentId}`, so one caller's fetch cannot serve another's. |
+| `workflowAddons` | Reads a global add-on catalogue and writes only the caller's own rows — the imported workflow is created with `user_id: userId`. |
+
+> **A warning about measuring this by grep.** Counting `404`/`403` assertions
+> and literal `"u1"`/`"u2"` identities gets it wrong in both directions. It
+> reported `orgs` as uncovered (it uses a mutable `currentUser`, not literals)
+> and `audit` as uncovered (it asserts scoping on the query builder rather than
+> over HTTP), while a high count proves nothing about *which* denial is
+> asserted. Read the test titles.
+
 ## Ratchet policy
 
 `backend/vitest.config.mts` enforces global coverage **floors**. They are a
