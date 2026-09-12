@@ -3,6 +3,7 @@ import path from "node:path";
 import { app } from "./app";
 import { manifestPublicKey } from "./lib/manifestSigning";
 import { validateRuntimeConfiguration } from "./lib/runtimeConfig";
+import { assertProductionConfiguration } from "./lib/productionConfig";
 import { startAllWorkers, stopAllWorkers } from "./workerRuntime";
 
 const PORT = process.env.PORT ?? 3001;
@@ -13,6 +14,12 @@ const PORT = process.env.PORT ?? 3001;
 // deployment whose exports will fail later.
 try {
   validateRuntimeConfiguration();
+  // Public origins, in production only. configuredAllowedOrigins falls back to
+  // http://localhost:3000 when FRONTEND_URL is unset, and that fallback is not
+  // guarded by NODE_ENV — so a production deployment that forgets it refuses
+  // the real frontend and trusts a page on the caller's own machine, neither
+  // of which is visible from the server. See lib/productionConfig.ts.
+  assertProductionConfiguration();
   const signingKey = manifestPublicKey();
   if (signingKey) {
     console.log(`Export manifests signed with key ${signingKey.key_id}`);

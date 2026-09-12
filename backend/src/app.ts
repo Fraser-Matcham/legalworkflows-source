@@ -23,6 +23,7 @@ import { auditRouter } from "./routes/audit";
 import { authRouter } from "./routes/auth";
 import { uploadSessionsRouter } from "./routes/uploadSessions";
 import { manifestPublicKey } from "./lib/manifestSigning";
+import { checkReadiness } from "./lib/readiness";
 import {
   handleUnhandledError,
   protectInternalErrorResponses,
@@ -303,7 +304,36 @@ app.use("/documents", sourceDocumentsRouter);
 app.use("/audit", auditRouter);
 app.use("/upload-sessions", uploadSessionsRouter);
 
+// Liveness: is this process running? Deliberately unconditional and cheap —
+// the e2e workflow's wait-on, playwright.config.ts and word-addin/scripts/dev.sh
+// all gate on it, so it must never depend on anything that can be down.
 app.get("/health", (_req, res) => res.json({ ok: true }));
+
+// Readiness: are this process's dependencies reachable? A load balancer wants
+// this one — /health stays 200 on an instance that has lost its database, which
+// is exactly the instance it should stop sending traffic to. Unauthenticated by
+// necessity (the balancer cannot log in), so the ready body carries check names
+// and booleans only — never a reason, which goes to the log, redacted. The
+// unready path sends no body at all; see the note below. See lib/readiness.ts.
+app.get("/ready", async (_req, res) => {
+  const report = await checkReadiness();
+  if (report.ready) {
+    res.status(200).json(report);
+    return;
+  }
+  // No body on the failure path, deliberately. protectInternalErrorResponses
+  // replaces any res.json body at status >= 500 with the generic internal
+  // error — correct for an escaped exception, but it would also swallow this
+  // report and log a spurious [http/sanitized-internal-error] on every
+  // unhealthy probe. That middleware is inherited from upstream, and fork rule
+  // 3 says not to edit inherited files when there is another way. There is: a
+  // balancer acts on the status code alone, and an operator gets the failing
+  // check by name from the {"kind":"readiness"} log line. Sending nothing is
+  // also the robust choice — an empty body cannot leak whatever the guard does
+  // or does not intercept. If the detail is ever wanted on this path too, the
+  // clean fix is an explicit opt-in in that middleware, made deliberately.
+  res.status(503).end();
+});
 
 // The Ed25519 public key this deployment signs project export manifests with,
 // or null when no key is configured. Deliberately open: whoever checks a

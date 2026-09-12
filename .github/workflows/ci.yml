@@ -212,6 +212,30 @@ jobs:
 
       - run: npm run frontend-boundary
 
+  api-contract:
+    name: API contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      # The frontend, the Word add-in and (later) Juralio build against
+      # docs/api-contract.md. Juralio may not import anything from this
+      # repository at all (AGENTS.md fork rule 1), so that document is the only
+      # thing that crosses the boundary — which makes a stale one worse than
+      # none: a consumer builds against a promise nobody is keeping.
+      #
+      # The check is narrow on purpose. It does not validate request or
+      # response shapes; it checks that every router mounted in app.ts is in
+      # the contract's mount table and that nothing in the table has stopped
+      # being mounted.
+      - run: npm run api-contract:self-test
+
+      - run: npm run api-contract
+
   evals:
     name: Eval harness
     runs-on: ubuntu-latest

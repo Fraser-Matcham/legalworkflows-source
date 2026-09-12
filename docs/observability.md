@@ -129,6 +129,57 @@ switch is that someone turns it off and nobody notices. If the volume becomes
 a cost, drop `/health` at the log platform rather than at the source, so the
 service keeps emitting a complete record.
 
+## Health and readiness
+
+Two endpoints, answering two different questions. Confusing them is how a load
+balancer ends up routing traffic to an instance that cannot reach its database.
+
+| Endpoint | Question | Cost | Auth |
+| --- | --- | --- | --- |
+| `GET /health` | Is the process running? | None — a constant | None |
+| `GET /ready` | Are its dependencies reachable? | One no-row query, one HEAD | None |
+
+**`/health` must stay unconditional.** Four things gate on it: the e2e
+workflow's `wait-on`, `playwright.config.ts`'s `webServer` block,
+`word-addin/scripts/dev.sh`, and its own integration test. If it ever starts
+depending on something that can be down, those all become flaky. It returns
+`{"ok": true}` and nothing else.
+
+**`/ready` is what a load balancer should poll.** `200` with the report when
+every dependency answered; `503` with **no body** when one did not.
+
+The checks live in `backend/src/lib/readiness.ts`:
+
+- `database` — a `head: true` select, so PostgREST returns headers and no rows.
+  It proves the connection and the credentials, and reads nobody's data.
+- `storage` — a HEAD for a key that will not exist. `headFile` returns null on
+  a 404 and throws on anything else, so "not found" is the answer we want: the
+  bucket was reachable and the credentials were accepted. Reported as
+  `skipped` rather than failing when no bucket is configured, which is the
+  legitimate case locally and in e2e.
+
+Every check races a 2-second timeout, because a probe that hangs tells the
+balancer less than one that fails. Checks run concurrently and none
+short-circuits: an operator needs to know whether one dependency is down or
+all of them.
+
+**Why the failure path sends no body.** `protectInternalErrorResponses`
+rewrites any `res.json` body at status ≥ 500 into the generic internal error
+and logs a sanitised-error line — right for an escaped exception, wrong here,
+where the 503 is deliberate. That middleware is inherited from upstream and
+fork rule 3 says not to edit inherited files when there is another way. There
+is: the balancer acts on the status code, and the failing check is named in the
+log. An empty body also cannot leak, whatever that middleware does or does not
+intercept.
+
+The reason for a failure never reaches the caller — the endpoint is
+unauthenticated by necessity — and goes to the log instead, through
+`safeErrorForLog`:
+
+```json
+{"kind":"readiness","check":"database","ok":false,"error":{…redacted…}}
+```
+
 ## Known gap
 
 The two error paths (`sendInternalError` and the sanitised-response guard) and

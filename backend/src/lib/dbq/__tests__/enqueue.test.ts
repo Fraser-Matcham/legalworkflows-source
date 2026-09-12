@@ -47,7 +47,9 @@ function makeDb(opts: {
     return { inserts, from };
 }
 
-beforeEach(() => deleteFile.mockClear());
+beforeEach(() => {
+    deleteFile.mockClear();
+});
 
 describe("enqueueDbJob", () => {
     it("inserts the job and returns its id", async () => {

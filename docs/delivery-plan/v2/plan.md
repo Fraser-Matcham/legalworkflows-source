@@ -69,16 +69,16 @@ frontend can be deployed against independently.**
 
 | # | Work | Ticket |
 | --- | --- | --- |
-| 2.1 | Replace `xlsx` with `exceljs` in `backend/src/lib/spreadsheet.ts` — the frontend already uses exceljs | 2012 |
-| 2.2 | Verify a clean install and the full backend suite from scratch | 2013 |
-| 2.3 | Close the remaining audit-trail gaps | 2056 |
-| 2.4 | Harden the service-role authorisation boundary — the remaining work beyond the tenancy gate | 2059 |
-| 2.5 | Production origin and rate-limit configuration, driven by environment | 2063 |
-| 2.6 | Health and readiness endpoints that distinguish "process alive" from "dependencies reachable" | 2052 |
+| 2.1 | ~~Replace `xlsx` with `exceljs`~~ — **recommended won't-do.** The premise does not hold; see "Why 2.1 is not being done" below | 2012 |
+| 2.2 | ✅ Verify a clean install and the full backend suite from scratch — done in a fresh clone, not the working tree | 2013 |
+| 2.3 | ✅ Close the remaining audit-trail gaps — project access grants and revocations now audited | 2056 |
+| 2.4 | ✅ Harden the service-role authorisation boundary — `uploadSessions` denial tests added; the rest audited and recorded in `docs/testing-coverage.md` | 2059 |
+| 2.5 | ✅ Production origin and rate-limit configuration — boot guard for the `ALLOWED_ORIGINS`/loopback gap, production values recorded in `docs/deployment.md` | 2063 |
+| 2.6 | ✅ Health and readiness endpoints that distinguish "process alive" from "dependencies reachable" — `/health` unchanged, `/ready` added | 2052 |
 | 2.7 | Wire error tracking through the existing redaction helpers | 2084 |
 | 2.8 | Service and queue metrics | 2086 |
 | 2.9 | Alerts on the silent failure paths named in `docs/data-retention.md` | 2087 |
-| 2.10 | Publish the API contract the frontend builds against | 2068 (adapted) |
+| 2.10 | ✅ Publish the API contract the frontend builds against — `docs/api-contract.md`, gated by `npm run api-contract` | 2068 (adapted) |
 
 ### Done when
 
@@ -88,6 +88,53 @@ frontend can be deployed against independently.**
   and is what the load balancer polls.
 - Every failure path in `docs/data-retention.md`'s known-gaps section either
   alerts or is documented as accepted.
+
+### Why 2.1 is not being done
+
+Ticket 2012 reads "replace `xlsx` with `exceljs` — the frontend already uses
+exceljs". Three checks against the code say that would be a functional
+regression rather than a cleanup.
+
+**ExcelJS cannot produce the formatted display text the module exists to
+produce.** Measured, by writing a workbook with date, currency and percentage
+formats and reading it back with both libraries:
+
+| Cell | SheetJS `cell.w` (today) | ExcelJS `cell.text` |
+| --- | --- | --- |
+| Date | `1/3/26` | `Sun Mar 01 2026 00:00:00 GMT+0000 (…)` |
+| Currency | `$1,200` | `1200` |
+| Percentage | `45.7%` | `0.4567` |
+
+ExcelJS returns the raw value and the `numFmt` *string*, and never applies it.
+`spreadsheet.ts` says in its own header that `cell.w` is why SheetJS was
+chosen: so "dates and currency reach the model the way a human sees them". A
+due-diligence spreadsheet would reach the model with dates as `46082`.
+
+**ExcelJS has no `.xls` reader.** Its `lib/` carries `csv`, `doc`, `stream` and
+`xlsx` — no BIFF. The module handles `.xlsx`, `.xlsm` and legacy `.xls` today,
+and that is what removed the LibreOffice→PDF→text detour for spreadsheets.
+Legacy `.xls` is not rare in legal work.
+
+**"The frontend already uses exceljs" is true but not transferable.**
+`frontend/src/app/components/tabular/exportToExcel.ts` only *writes* —
+`addWorksheet`, `xlsx.writeBuffer()`. Writing a workbook you constructed and
+parsing arbitrary client-supplied ones with display formatting are different
+capabilities.
+
+The supply-chain reason for moving is weaker than it first looks, too: the
+backend depends on `@e965/xlsx`, a third party's republish of a package
+SheetJS de-listed from npm, but `package-lock.json` pins it with a sha512
+integrity hash and CI runs `npm ci`, which verifies it. A later malicious
+publish cannot reach a build unless someone updates the lockfile.
+
+Doing this properly would mean writing an Excel number-format interpreter —
+positive/negative/zero/text sections, date tokens, fractions, conditionals — to
+reimplement, worse, what SheetJS already does. The alternatives are accepting
+the regression, or carrying two spreadsheet libraries, which defeats the
+ticket's own consistency goal.
+
+**Recommendation: close 2012 as won't-do**, and revisit only if SheetJS stops
+being maintained.
 
 ### Blocked on your runbook
 

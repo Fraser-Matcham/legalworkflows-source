@@ -1,35 +1,37 @@
 {
-    "name": "mike",
-    "private": true,
-    "scripts": {
-        "test:e2e": "playwright test",
-        "test:e2e:local": "bash scripts/e2e-local-stack.sh",
-        "test:e2e:headed": "playwright test --headed",
-        "test:e2e:ui": "playwright test --ui",
-        "notices": "node scripts/generate-third-party-notices.mjs",
-        "notices:check": "node scripts/generate-third-party-notices.mjs --check",
-        "boundary": "node scripts/check-repo-boundary.mjs",
-        "boundary:self-test": "node scripts/check-repo-boundary.mjs --self-test",
-        "tenancy": "node scripts/check-route-tenancy.mjs",
-        "tenancy:self-test": "node scripts/check-route-tenancy.mjs --self-test",
-        "trademarks": "node scripts/check-trademarks.mjs",
-        "trademarks:self-test": "node scripts/check-trademarks.mjs --self-test",
-        "schema-privileges": "node scripts/check-schema-privileges.mjs",
-        "schema-privileges:self-test": "node scripts/check-schema-privileges.mjs --self-test",
-        "frontend-boundary": "node scripts/check-frontend-boundary.mjs",
-        "frontend-boundary:self-test": "node scripts/check-frontend-boundary.mjs --self-test"
-    },
-    "devDependencies": {
-        "@axe-core/playwright": "^4.13.0",
-        "@playwright/test": "^1.63.0",
-        "@types/node": "^26.4.1",
-        "typescript": "^7.0.2"
-    },
-    "engines": {
-        "node": ">=22"
-    },
-    "license": "AGPL-3.0-only",
-    "allowScripts": {
-        "fsevents@2.3.2": true
-    }
+  "name": "mike",
+  "private": true,
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:local": "bash scripts/e2e-local-stack.sh",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
+    "notices": "node scripts/generate-third-party-notices.mjs",
+    "notices:check": "node scripts/generate-third-party-notices.mjs --check",
+    "boundary": "node scripts/check-repo-boundary.mjs",
+    "boundary:self-test": "node scripts/check-repo-boundary.mjs --self-test",
+    "tenancy": "node scripts/check-route-tenancy.mjs",
+    "tenancy:self-test": "node scripts/check-route-tenancy.mjs --self-test",
+    "trademarks": "node scripts/check-trademarks.mjs",
+    "trademarks:self-test": "node scripts/check-trademarks.mjs --self-test",
+    "schema-privileges": "node scripts/check-schema-privileges.mjs",
+    "schema-privileges:self-test": "node scripts/check-schema-privileges.mjs --self-test",
+    "frontend-boundary": "node scripts/check-frontend-boundary.mjs",
+    "frontend-boundary:self-test": "node scripts/check-frontend-boundary.mjs --self-test",
+    "api-contract": "node scripts/check-api-contract.mjs",
+    "api-contract:self-test": "node scripts/check-api-contract.mjs --self-test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.4.1",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "AGPL-3.0-only",
+  "allowScripts": {
+    "fsevents@2.3.2": true
+  }
 }
