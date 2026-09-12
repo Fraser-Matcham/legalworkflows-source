@@ -66,7 +66,17 @@ it now means the DNS propagation delay is not on the critical path in Stage 3.
 
 ---
 
-## Task 2 — Approve the new brand mark
+## Task 2 — Approve the new brand mark — ✅ DONE
+
+> **Approved.** The mark shown in chat was approved and is now applied
+> everywhere it needs to be: `frontend/src/shared/ui/BrandMarkUI.tsx` is the
+> mark itself, and the favicon, Open Graph link-preview image and Word add-in
+> ribbon icons are generated from it by `npm run brand-assets` and
+> drift-checked in CI (`npm run brand-assets:check`). Nothing left to do here.
+
+**Why:** the mark replaces the inherited one. It appears in the sidebar, the
+sign-in page, the browser tab, link previews and the Word ribbon, so it is
+worth a deliberate look before it is applied everywhere.
 
 **Why:** the mark replaces the inherited one. It appears in the sidebar, the
 sign-in page, the browser tab, link previews and the Word ribbon, so it is
@@ -99,7 +109,23 @@ One of:
 
 ---
 
-## Task 3 — Obtain your Terms of Use
+## Task 3 — Obtain your Terms of Use — ✅ DONE, by a different route
+
+> **Drafted, not obtained.** Rather than a template service or a solicitor,
+> you asked me to write standard UK terms directly from the codebase's own
+> behaviour, and I did: `frontend/src/app/terms/page.tsx`, served at
+> `/terms`, with the sign-up links pointing at it. It covers everything step 2
+> below lists — who provides the service, that AI output is not legal advice
+> and must be checked, limitation of liability, and how to terminate an
+> account — plus specifics a generic template would not know: the £100
+> liability floor, that the service is "not a system of record and is not a
+> backup", and the AGPL licence notices.
+>
+> **This is a drafting baseline, not legal advice.** I said so when I wrote
+> it and I am saying it again here: for software holding privileged client
+> material, it is worth a solicitor's review before real clients sign up.
+> Nothing below is wrong to still do — a solicitor's pass over the existing
+> draft is cheaper than commissioning one from nothing.
 
 **Why:** the sign-up page has a line reading *"By signing up, you agree to our
 Terms of Use and Privacy Policy."* Those two links currently point at the
@@ -141,7 +167,19 @@ solicitor.
 
 ---
 
-## Task 4 — Obtain your Privacy Policy
+## Task 4 — Obtain your Privacy Policy — ✅ DONE, by the same route as Task 3
+
+> **Drafted from `docs/data-retention.md`, not obtained.** Same route as
+> Task 3: `frontend/src/app/privacy/page.tsx`, served at `/privacy`. It states
+> the facts step 2 below lists precisely because it was written from that
+> document rather than a template — including the two disclosures a generic
+> policy would get wrong for this specific service: that nothing you upload
+> expires automatically, and that an unnamed chat's audit record carries the
+> first 120 characters of your message plus filenames. The same "drafting
+> baseline, not legal advice" caveat from Task 3 applies here too.
+>
+> **Still open from this task:** whether you have registered with the ICO —
+> see Task 5, which carries the same open question.
 
 **Why:** the same sign-up line links to a privacy policy. Beyond the link, UK
 GDPR requires one, because the service stores personal data — names, email
@@ -185,7 +223,20 @@ addresses, and the contents of documents that clients upload.
 
 ---
 
-## Task 5 — Confirm the operator identity shown in legal notices
+## Task 5 — Confirm the operator identity shown in legal notices — defaulted, not confirmed
+
+> **This one is genuinely still open**, not done — everything below still
+> applies. `frontend/src/app/lib/operatorDetails.ts` currently holds
+> reasonable defaults rather than your confirmation: `OPERATOR_NAME` is
+> "Fraser Matcham" and `TRADING_NAME` is "legalworkflows" (both already used
+> by `legalNotice.ts`), and the contact addresses are
+> `support@legalworkflows.co.uk` / `privacy@legalworkflows.co.uk`, derived
+> from the domain rather than stated by you. `ICO_REGISTRATION_NUMBER` and
+> `POSTAL_ADDRESS` are left **empty on purpose** — the Terms and Privacy
+> Policy pages render nothing where they are unset rather than showing a
+> placeholder, which is lawful (UK GDPR Article 13 needs only a name and a
+> means of contact) but a law firm's due-diligence questionnaire will still
+> ask for both.
 
 **Why:** the `/legal` page already names you as the copyright holder and
 states when modification began. Before launch, that page should also carry the
@@ -217,9 +268,15 @@ infer them.
 
 ## When all five are done
 
-Send me the answers and I will finish Stage 1: apply the mark everywhere,
-generate the favicon and link-preview image, build the `/terms` and `/privacy`
-pages, and point the sign-up links at them.
+Four of the five are done. Only **Task 5** is genuinely still open — send me
+the operator name, contact email, ICO registration number (or confirmation
+you have not registered) and postal address (or "none"), and I will update
+`operatorDetails.ts` and the two policy pages to match. Everything else
+Stage 1's engineering could do without your answers is already built: the
+mark is applied everywhere, the favicon and link-preview image are generated,
+and the `/terms` and `/privacy` pages exist with the sign-up links pointed at
+them.
 
-Stage 2's runbook then opens, which is where the Supabase project and the AI
-provider keys are set up.
+Stage 2's runbook is already open — see `stage-2-backend.md` — which is where
+the Supabase project and the AI provider keys are set up. You do not need to
+finish Task 5 before starting it; the two are independent.
