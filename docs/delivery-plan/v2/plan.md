@@ -193,7 +193,7 @@ going live has been rehearsed rather than attempted.**
 | 4.2 | Build-and-push workflow for both images, on merge to `main` | 2050 |
 | 4.3 | Deploy workflow: migrate, then start, then health-gate, then shift traffic | 2051, 2052 |
 | 4.4 | Rollback that has been tested by rolling back | 2052 |
-| 4.5 | Make the security suites required checks | 2024, 2025 |
+| 4.5 | ✅ Make the security suites required checks — done directly in GitHub's branch protection settings for `main`, not by engineering in this repo | 2024, 2025 |
 | 4.6 | Corresponding Source mirror pipeline, and gate deploys on it | 2073, 2074, 2075 |
 | 4.7 | Serve the source offer from the running UI | 2076 |
 | 4.8 | k6 SSE load scenario against production configuration | 2097, 2098 |
