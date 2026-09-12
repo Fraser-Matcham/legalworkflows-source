@@ -73,7 +73,7 @@ frontend can be deployed against independently.**
 | 2.2 | ✅ Verify a clean install and the full backend suite from scratch — done in a fresh clone, not the working tree | 2013 |
 | 2.3 | ✅ Close the remaining audit-trail gaps — project access grants and revocations now audited | 2056 |
 | 2.4 | ✅ Harden the service-role authorisation boundary — `uploadSessions` denial tests added; the rest audited and recorded in `docs/testing-coverage.md` | 2059 |
-| 2.5 | Production origin and rate-limit configuration, driven by environment | 2063 |
+| 2.5 | ✅ Production origin and rate-limit configuration — boot guard for the `ALLOWED_ORIGINS`/loopback gap, production values recorded in `docs/deployment.md` | 2063 |
 | 2.6 | ✅ Health and readiness endpoints that distinguish "process alive" from "dependencies reachable" — `/health` unchanged, `/ready` added | 2052 |
 | 2.7 | Wire error tracking through the existing redaction helpers | 2084 |
 | 2.8 | Service and queue metrics | 2086 |

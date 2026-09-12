@@ -164,6 +164,85 @@ Model-provider keys and the CourtListener token can be configured globally in
 `backend/.env` or per user under **Settings > API Keys**. When a key is
 configured globally, its matching field is read-only.
 
+## Production configuration
+
+### Origins — the backend refuses to start on a bad one
+
+Two boot checks, and it is worth knowing which owns what, because they report
+different faults and duplicating them would send you looking for two problems.
+
+**`validateRuntimeConfiguration`** (`backend/src/lib/runtimeConfig.ts`,
+inherited) already requires, in production:
+
+| Variable | Rule |
+| --- | --- |
+| `FRONTEND_URL` | required, and must be HTTPS |
+| `API_PUBLIC_URL` | required, and must be HTTPS |
+| `WORD_ADDIN_URL` | must be HTTPS if set |
+
+**`assertProductionConfiguration`** (`backend/src/lib/productionConfig.ts`)
+covers the two things that one does not, both of which reach the CORS
+allowlist:
+
+| Gap | Why it matters |
+| --- | --- |
+| **`ALLOWED_ORIGINS` is not validated at all.** Its entries are split on commas and pushed straight into `configuredAllowedOrigins`. | Measured: with `ALLOWED_ORIGINS=http://evil.example.com`, a deployment that passes every existing check trusts that plain-HTTP origin for credentialed cross-origin requests. |
+| **Loopback is not rejected.** `requireHttps` is satisfied by `https://localhost:3000`. | A copy-pasted development origin survives into production and trusts a page served from the caller's own machine. |
+
+Both are quiet failures — nothing in the server's own logs shows either, which
+is why they are a boot check rather than a note here. Any entry that is
+unparseable, non-HTTPS, or loopback stops the process with a non-zero exit.
+
+Nothing is checked outside production: local development legitimately serves
+over plain HTTP on localhost.
+
+For this deployment:
+
+```
+NODE_ENV=production
+FRONTEND_URL=https://legalworkflows.co.uk
+API_PUBLIC_URL=https://legalworkflows.co.uk
+ALLOWED_ORIGINS=
+WORD_ADDIN_URL=
+```
+
+`ALLOWED_ORIGINS` is normally empty. It exists for an additional trusted
+origin, and every entry widens what may make credentialed calls, so add one
+only for a reason you can name.
+
+### Rate limits
+
+Twelve limiters, all environment-driven, attached in `backend/src/app.ts`
+before the routers. The defaults are development-shaped. These are **starting
+values for a first production deployment**, not tuned figures — nobody has
+traffic data yet, and the honest thing is to set them deliberately, watch, and
+revise.
+
+The principle: authentication limits are tight because they guard credential
+stuffing and account enumeration; work limits are loose enough that a
+legitimate heavy user never meets them, because a limiter that fires on real
+work trains people to retry, which costs more than it saves.
+
+| Limiter | Default | Production | Reasoning |
+| --- | --- | --- | --- |
+| `RATE_LIMIT_AUTH_LOGIN_MAX` (per IP / 15 min) | 30 | **20** | An office behind one NAT address shares this. 20 covers a handful of people fumbling passwords; credential stuffing needs orders of magnitude more. |
+| `RATE_LIMIT_AUTH_ACCOUNT_MAX` (per account / 15 min) | 10 | **10** | Keyed by a one-way digest of the address, so it survives an attacker rotating IPs. Ten is already generous for one human. |
+| `RATE_LIMIT_AUTH_EMAIL_MAX` (per hour) | 10 | **5** | Sign-up and password-reset send mail. This is the spend limit on the email provider as much as a security control. |
+| `RATE_LIMIT_AUTH_MFA_MAX` (per 15 min) | 20 | **10** | A TOTP code is six digits; brute force needs far more than ten attempts, and no honest user needs them. |
+| `RATE_LIMIT_AUTH_FLOW_MAX` (per 15 min) | 30 | 30 | OAuth and handoff. Unchanged — retries here are usually legitimate. |
+| `RATE_LIMIT_GENERAL_MAX` (per 15 min) | 300 | **600** | The catch-all sits under every route. A document-heavy session makes many small calls, and this firing looks like the application is broken. |
+| `RATE_LIMIT_CHAT_MAX` (per 15 min) | 30 | 30 | Each call is an LLM request with real cost. Unchanged. |
+| `RATE_LIMIT_CHAT_CREATE_MAX` (per 15 min) | 60 | 60 | Unchanged. |
+| `RATE_LIMIT_TOOL_RESULT_MAX` (per 15 min) | 2000 | 2000 | One assistant turn posts many tool results. Unchanged. |
+| `RATE_LIMIT_UPLOAD_MAX` (per hour) | 50 | **200** | A due-diligence bundle is routinely more than fifty documents, and hitting this mid-upload is the worst moment to meet a limiter. |
+| `RATE_LIMIT_EXPORT_MAX` (per hour) | 10 | 10 | Exports are expensive to build. Unchanged. |
+| `RATE_LIMIT_DATA_DELETE_MAX` (per hour) | 20 | 20 | Unchanged. |
+
+Exceeding a limiter returns **429**.
+
+> Revisit these once there is a week of real traffic. The figures above are
+> reasoned, not measured, and saying so is part of the record.
+
 ## Authentication email
 
 Supabase Auth sends signup, email-change, and password-recovery messages.
