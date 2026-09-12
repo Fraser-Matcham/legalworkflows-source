@@ -250,6 +250,82 @@ operator; it is not one that redacting a log line gets to make.
 failure loop cannot flood the ingest or the egress budget. Suppression is
 reported once per window, so "quiet" is distinguishable from "throttled".
 
+## Metrics
+
+`GET /metrics`, Prometheus text exposition, absent unless `METRICS_TOKEN` is
+set — see [docs/deployment.md](deployment.md#metrics) for why the default is
+404 rather than 401.
+
+### What is collected
+
+Ticket 2086 names three areas. Each is recorded at a chokepoint that already
+existed, so no call site had to be hunted down and none was edited beyond the
+one line that records.
+
+| Metric | Type | Labels | Recorded at |
+| --- | --- | --- | --- |
+| `http_requests_total` | counter | method, route, status | `requestLog`'s emit |
+| `http_request_duration_seconds` | histogram | method, route | the same place |
+| `job_outcomes_total` | counter | kind, outcome | `processClaimedJob` |
+| `job_duration_seconds` | histogram | kind | the same place |
+| `job_queue_depth` | gauge | status | read from `db_jobs` on scrape |
+| `llm_calls_total` | counter | provider, model, outcome | `lib/llm/aiSdk.ts` |
+| `llm_call_duration_seconds` | histogram | provider, model | the same place |
+| `llm_tokens_total` | counter | provider, model, direction | the stream's `finish` part |
+
+Three of those choices are worth stating rather than inferring.
+
+**`job_outcomes_total` separates `retry` from `failed`.** A queue that retries
+steadily and one that is losing work look identical if both are counted as
+failures.
+
+**Queue depth is a gauge read at scrape time, not a counter.** The backlog is a
+property of a table shared by the API process, the worker thread and any
+standalone worker. Each of them counting its own view would report a fraction;
+a scrape summing across tasks would report a multiple. Only `pending` and
+`running` are counted — `done` and `failed` grow until the retention sweep
+runs, so counting them would turn a backlog gauge into a slow-moving total that
+says nothing about now.
+
+**An unreported token count records nothing, not zero.** The AI SDK's usage
+fields are `number | undefined`, and a provider that reports no usage would
+otherwise quietly drag the average spend down.
+
+### Cardinality is a safety property
+
+Every distinct combination of label values is a series held in memory for the
+life of the process, so a label whose values come from outside is a memory
+exhaustion primitive anyone with a socket can pull.
+
+That risk is specific here. `buildRequestLogLine` deliberately falls back to
+the **raw request path** when Express matched no route, because seeing what was
+probed is the whole value of logging an unmatched request. Right for a log
+line, written once and forgotten; wrong for a metric label, retained forever. A
+scanner walking `/a`, `/b`, `/c` would mint a series per request.
+
+So `safeRouteLabel` collapses every unmatched path to a single `<unmatched>`
+series — which still answers the question an operator asks of it ("are we
+serving a lot of 404s?") without letting the asker choose the label. Behind
+that, the registry caps each metric at `MAX_SERIES_PER_METRIC` and folds
+further combinations into an `overflow` series, so a label that escapes the
+discipline is visibly capped rather than quietly unbounded.
+
+### What is not here
+
+**Charting.** The ticket asks for metrics "collected and charted". This is the
+collection half; the dashboards belong to the `observability` Terraform module
+in stage 3, which needs an AWS account that does not exist yet. Building
+dashboards against an account nobody can `terraform plan` would be unverifiable
+work.
+
+**Alerting**, which is ticket 2087 and likewise needs somewhere to send an
+alert.
+
+**A provider's time-to-first-token.** `llm_call_duration_seconds` measures to
+the end of the stream. First-token latency is the better user-experience
+signal and would need a separate observation inside the stream loop; it is not
+here because nothing yet reads it.
+
 ## Known gap
 
 The two error paths (`sendInternalError` and the sanitised-response guard) and

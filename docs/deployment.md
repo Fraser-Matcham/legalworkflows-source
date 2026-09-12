@@ -264,6 +264,29 @@ The DSN's public key is not a secret — it is designed to ship in browser
 bundles — but it still belongs in the secrets store with everything else,
 because a leaked DSN lets a stranger fill the project's event quota.
 
+### Metrics
+
+`GET /metrics` serves Prometheus text exposition, and is **absent unless
+`METRICS_TOKEN` is set** — with no token the endpoint answers 404, the same as
+any unrouted path.
+
+That default is deliberate. A metrics endpoint is not neutral data: route
+labels enumerate the API surface, counts of 401s and 429s tell an attacker when
+a probe is working, and queue depth and token spend describe the business. 404
+rather than 401 also means a scan cannot learn the endpoint exists but is
+locked.
+
+| Variable | Default | Production |
+| --- | --- | --- |
+| `METRICS_TOKEN` | unset (endpoint absent) | A random 32-byte hex value, in the secrets store. `openssl rand -hex 32`. |
+
+Scrape it with `Authorization: Bearer $METRICS_TOKEN`. Keep the route off the
+public listener as well as behind the token — defence in depth, since the token
+is the only thing standing between a scan and the exposition.
+
+What is collected, and the cardinality rule that keeps it bounded, is in
+[docs/observability.md](observability.md#metrics).
+
 ## Authentication email
 
 Supabase Auth sends signup, email-change, and password-recovery messages.

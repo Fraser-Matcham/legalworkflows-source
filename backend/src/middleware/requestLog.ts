@@ -37,6 +37,7 @@
  */
 
 import type { NextFunction, Request, Response } from "express";
+import { recordHttpRequest } from "../lib/metrics/serviceMetrics";
 import { safePathForLog } from "../lib/safeError";
 
 export interface RequestLogLine {
@@ -76,12 +77,26 @@ function unmatchedPath(req: Request): string {
  * on the way in, no route has been matched yet.
  */
 function matchedRoute(req: Request, fallback: string): string {
+    return routeOf(req, fallback).route;
+}
+
+/**
+ * The same resolution, but saying whether Express actually matched.
+ *
+ * The log line does not care — it wants the probed path either way. A metric
+ * label cares a great deal: the fallback is attacker-controlled text, and each
+ * distinct value would be a series retained for the life of the process. See
+ * safeRouteLabel in lib/metrics/serviceMetrics.ts.
+ */
+function routeOf(req: Request, fallback: string): { route: string; matched: boolean } {
     const route = (req as Request & { route?: { path?: unknown } }).route;
     const pattern = typeof route?.path === "string" ? route.path : null;
-    if (!pattern) return fallback;
+    if (!pattern) return { route: fallback, matched: false };
     const mount = typeof req.baseUrl === "string" ? req.baseUrl : "";
     const joined = `${mount}${pattern === "/" ? "" : pattern}`;
-    return joined.length > 0 ? joined : fallback;
+    return joined.length > 0
+        ? { route: joined, matched: true }
+        : { route: fallback, matched: false };
 }
 
 export function buildRequestLogLine(
@@ -126,6 +141,19 @@ export function requestLog(req: Request, res: Response, next: NextFunction): voi
                     buildRequestLogLine(req, res, Math.round(durationMs * 100) / 100, aborted),
                 ),
             );
+            // Same chokepoint, same numbers: this is where route, status and
+            // duration are already known. Inside the existing try/catch for
+            // the reason its comment gives — a throw in a response event
+            // handler is an uncaught exception, so instrumentation must never
+            // be able to take the process down.
+            const resolved = routeOf(req, "");
+            recordHttpRequest({
+                method: req.method,
+                route: resolved.route,
+                matched: resolved.matched,
+                status: res.statusCode,
+                durationMs,
+            });
         } catch (err) {
             console.error("[http/request-log] failed to emit line:", (err as Error)?.name);
         }

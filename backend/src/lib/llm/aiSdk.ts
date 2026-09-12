@@ -10,6 +10,10 @@ import type {
   StreamChatParams,
   StreamChatResult,
 } from "./types";
+import {
+  recordProviderCall,
+  recordProviderTokens,
+} from "../metrics/serviceMetrics";
 import { createRawLlmStreamRecorder, logRawLlmStream } from "./rawStreamLog";
 
 const MAX_OUTPUT_TOKENS = 16_384;
@@ -268,6 +272,9 @@ export async function streamAiSdk(
   let fullText = "";
   let iteration = 0;
   const openReasoningBlocks = new Set<string>();
+  // Measured to the end of the stream, not to first token: the ticket asks
+  // for provider latency, and a stream's cost is its whole duration.
+  const startedAt = Date.now();
 
   try {
     const result = sdk.streamText({
@@ -349,6 +356,17 @@ export async function streamAiSdk(
           params.callbacks?.onToolCallStart?.(call);
           break;
         }
+        case "finish":
+          // The provider's own count, which is what a spend question needs.
+          // Absent fields record nothing rather than zero — see
+          // recordProviderTokens.
+          recordProviderTokens({
+            provider: config.provider,
+            model: config.modelId,
+            inputTokens: part.totalUsage?.inputTokens,
+            outputTokens: part.totalUsage?.outputTokens,
+          });
+          break;
         case "tool-error":
           throw new Error(errorMessage(part.error, config.label));
         case "error":
@@ -366,9 +384,21 @@ export async function streamAiSdk(
       params.callbacks?.onReasoningBlockEnd?.();
     }
     await rawStreamRecorder?.flush("completed");
+    recordProviderCall({
+      provider: config.provider,
+      model: config.modelId,
+      outcome: "ok",
+      durationMs: Date.now() - startedAt,
+    });
     return { fullText };
   } catch (error) {
     await rawStreamRecorder?.flush("error", error);
+    recordProviderCall({
+      provider: config.provider,
+      model: config.modelId,
+      outcome: "error",
+      durationMs: Date.now() - startedAt,
+    });
     throw error;
   }
 }

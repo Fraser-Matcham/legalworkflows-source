@@ -16,6 +16,7 @@
 import { createServerSupabase } from "../supabase";
 import { deleteFile } from "../storage";
 import { enqueueAppJobDelivery } from "../queue/appJobsQueue";
+import { recordJobOutcome } from "../metrics/serviceMetrics";
 import { redisEnabled } from "./driver";
 import type { Db, DbJob, DbJobHandlers } from "./types";
 
@@ -71,6 +72,9 @@ export async function processClaimedJob(
     handlers: DbJobHandlers,
     job: DbJob,
 ): Promise<void> {
+    // Every job terminates through one of the three branches below, so this is
+    // the whole of the queue's instrumentation. See lib/metrics.
+    const startedAt = Date.now();
     /**
      * FENCING TOKEN. Every write below is addressed to "the job as THIS claim
      * left it", not merely to the row id.
@@ -106,6 +110,7 @@ export async function processClaimedJob(
             }),
         );
         console.error("[dbq] unknown job kind", { id: job.id, kind: job.kind });
+        recordJobOutcome(job.kind, "unknown_kind", Date.now() - startedAt);
         return;
     }
 
@@ -119,6 +124,7 @@ export async function processClaimedJob(
                 ...(result ? { result } : {}),
             }),
         );
+        recordJobOutcome(job.kind, "done", Date.now() - startedAt);
     } catch (err) {
         const message =
             err instanceof Error ? err.message : String(err ?? "unknown");
@@ -175,6 +181,14 @@ export async function processClaimedJob(
                 ? "[dbq] job permanently failed"
                 : "[dbq] job failed; will retry",
             { id: job.id, kind: job.kind, attempts: job.attempts, message },
+        );
+        // "retry" and "failed" are separate outcomes deliberately: a queue
+        // that retries steadily and one that is losing work look identical if
+        // both are counted as failures.
+        recordJobOutcome(
+            job.kind,
+            spent ? "failed" : "retry",
+            Date.now() - startedAt,
         );
     }
 }
