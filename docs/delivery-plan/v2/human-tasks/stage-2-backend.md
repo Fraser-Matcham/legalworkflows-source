@@ -260,10 +260,15 @@ copying every file. Deciding now avoids a rebuild later.
 
 ## When all seven are done
 
-Send me the answers and I will complete Stage 2: configure the backend against
-your Supabase project, wire the AI provider, replace the spreadsheet library,
-close the remaining audit and authorisation gaps, and add the health endpoints
-the load balancer will need.
+Send me the answers and I will configure the backend against your Supabase
+project and wire in the AI provider — the last two pieces this runbook feeds.
+Everything else engineering could do without those answers is already done:
+the audit and authorisation gaps are closed, the health and readiness
+endpoints exist, and the spreadsheet library stays as it is — replacing it
+turned out to be a functional regression, not a cleanup, so that ticket is
+closed as won't-do rather than carried into this step. See
+`docs/delivery-plan/v2/plan.md`'s Stage 2 table for the full account of what
+shipped and why.
 
 Stage 3's runbook then opens — the AWS account and the infrastructure. It is
 the longest of the four, so it is worth starting it once Stage 2's answers are
