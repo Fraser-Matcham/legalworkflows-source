@@ -115,3 +115,13 @@ output "dashboard_url" {
   description = "The CloudWatch dashboard."
   value       = module.observability.dashboard_url
 }
+
+output "smtp_secret_name" {
+  description = "Secrets Manager secret with the SMTP settings to paste into Supabase once SES production access is approved (infra/modules/email/README.md)."
+  value       = module.email.smtp_secret_name
+}
+
+output "email_sender_address" {
+  description = "The From address Supabase Auth sends as."
+  value       = module.email.sender_address
+}

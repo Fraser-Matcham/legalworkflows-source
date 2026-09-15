@@ -407,10 +407,11 @@ against the same Route 53 zone that task creates.
 ### Tell me
 
 - **"SES production access requested"**, and the region you submitted it in.
-- **"SES production access approved"** once AWS's confirmation email arrives
-  — I cannot create the domain identity's DKIM records or issue SMTP
-  credentials until then, since a sandboxed identity would only prove it
-  works and then fail on real clients.
+- **"SES production access approved"** once AWS's confirmation email arrives.
+  Terraform creates the domain identity, its DKIM records and the SMTP
+  credential regardless (`infra/modules/email`), but I will not hand the SMTP
+  settings to Supabase until then: a sandboxed identity would prove it works
+  for your own verified address and then fail on the first real client.
 
 ---
 

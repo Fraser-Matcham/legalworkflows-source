@@ -138,3 +138,18 @@ variable "urgent_sms_number" {
   default     = null
   nullable    = true
 }
+
+# --- email -----------------------------------------------------------------
+
+variable "dmarc_policy" {
+  description = "DMARC policy published for domain_name: none to start, quarantine once reports show alignment, then reject. See infra/modules/email/README.md."
+  type        = string
+  default     = "none"
+}
+
+variable "dmarc_report_address" {
+  description = "Mailbox for DMARC aggregate reports. Null omits the tag."
+  type        = string
+  default     = null
+  nullable    = true
+}

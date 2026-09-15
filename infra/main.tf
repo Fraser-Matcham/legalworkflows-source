@@ -120,3 +120,17 @@ module "observability" {
   backend_log_group_name           = module.backend.log_group_name
   cloudfront_distribution_id       = module.frontend.distribution_id
 }
+
+module "email" {
+  source = "./modules/email"
+
+  name_prefix = local.name_prefix
+  region      = data.aws_region.current.region
+  account_id  = data.aws_caller_identity.current.account_id
+
+  domain_name          = var.domain_name
+  zone_id              = module.dns.zone_id
+  dmarc_policy         = var.dmarc_policy
+  dmarc_report_address = var.dmarc_report_address
+  event_topic_arn      = module.observability.informational_topic_arn
+}

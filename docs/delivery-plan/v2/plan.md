@@ -166,6 +166,7 @@ can be destroyed and rebuilt from this repository.**
 | 3.10 | Verify the signed-URL round trip against real S3 | 2044 |
 | 3.11 | Backups configured and a restore actually proven | 2094, 2095 |
 | 3.12 | Runbooks for the common failure modes | 2096 |
+| 3.13 | ✅ `email` module (architecture decision 6) — SES domain identity with Easy DKIM, custom MAIL FROM with SPF, DMARC at `p=none`, a TLS-required configuration set with bounce/complaint suppression and events to the alerts topic, and an IAM SMTP user scoped to sending from the domain, its settings stored in Secrets Manager for the Supabase paste-in | new |
 
 ### Done when
 
