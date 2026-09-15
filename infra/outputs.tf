@@ -31,3 +31,8 @@ output "documents_endpoint_url" {
   description = "R2_ENDPOINT_URL for the backend."
   value       = module.storage.endpoint_url
 }
+
+output "operator_secret_name" {
+  description = "Secrets Manager secret to populate with the operator-held values (infra/modules/secrets/README.md)."
+  value       = module.secrets.operator_secret_name
+}
