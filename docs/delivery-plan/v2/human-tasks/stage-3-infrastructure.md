@@ -159,17 +159,15 @@ by hand, and everything else is created by Terraform.
 6. Under **Bucket Versioning**, choose **Enable**. This means a corrupted state
    file can be rolled back.
 7. Leave everything else as default and click **Create bucket**.
-8. Now use the search bar to find **DynamoDB** and open it.
-9. Click **Create table**.
-10. **Table name:** `legalworkflows-terraform-locks`
-11. **Partition key:** type `LockID` exactly, and leave the type as **String**.
-12. Leave everything else as default and click **Create table**.
+
+That is the whole task. An earlier draft also had you create a DynamoDB table
+for state locking; Terraform now locks with a small lock file in this same
+bucket, so there is one fewer thing to create and one fewer thing to pay for.
 
 ### Tell me
 
 - The exact bucket name you created.
 - The exact region.
-- **"Lock table created"**.
 
 ---
 

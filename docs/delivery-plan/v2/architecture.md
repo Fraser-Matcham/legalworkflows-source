@@ -186,10 +186,10 @@ caching its static assets. Stage 3 provisions both services from one module.
 | `secrets` | Secrets Manager entries, IAM task role and execution role |
 | `observability` | CloudWatch log groups, retention, alarms, SNS topic |
 
-Terraform state lives in a versioned S3 bucket with a DynamoDB lock table,
-created once by hand because state has to live somewhere before Terraform can
-manage anything. That is the only resource created outside Terraform, and
-Stage 3 says so explicitly.
+Terraform state lives in a versioned S3 bucket, locked with Terraform's native
+S3 lock file rather than a DynamoDB table, created once by hand because state
+has to live somewhere before Terraform can manage anything. That is the only
+resource created outside Terraform, and Stage 3 says so explicitly.
 
 ## What stays outside AWS
 
