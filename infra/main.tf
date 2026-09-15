@@ -164,3 +164,15 @@ module "deploy" {
   log_group_names             = [module.backend.log_group_name, module.frontend.log_group_name]
   cloudfront_distribution_arn = module.frontend.distribution_arn
 }
+
+module "backup" {
+  source = "./modules/backup"
+
+  name_prefix = local.name_prefix
+  account_id  = data.aws_caller_identity.current.account_id
+
+  source_bucket_name = module.storage.versioned_bucket_id
+  source_bucket_arn  = module.storage.bucket_arn
+  source_kms_key_arn = module.storage.kms_key_arn
+  retention_days     = var.backup_retention_days
+}

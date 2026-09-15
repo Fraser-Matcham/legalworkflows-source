@@ -27,10 +27,14 @@ rotated and every use is logged; the bucket key keeps the KMS bill trivial
 despite the many small objects. Deleting the key makes every object
 unreadable, so its deletion window is the 30-day maximum.
 
-**No versioning.** A versioned bucket keeps deleted bytes as noncurrent
-versions, which would make "deleting a document removes the file" false.
-Backups of content are a separate question for row 3.11 and are not answered
-by versioning.
+**Versioning, with a one-day tail.** Every AWS mechanism that can back a
+bucket up — replication, AWS Backup — requires versioning, and ticket 2095
+requires a backup. `docs/data-retention.md` promises that deleting a document
+removes the file, so a lifecycle rule expires noncurrent versions after one
+day, the shortest S3 allows, and clears the delete markers left behind. The
+live bucket therefore holds deleted bytes for at most a day; the `backup`
+module's bucket holds them for its retention window, and the retention
+document says so.
 
 **TLS only.** The bucket policy denies any request over plain HTTP. Presigned
 URLs and the SDK are both HTTPS, so this only ever blocks a misconfiguration.

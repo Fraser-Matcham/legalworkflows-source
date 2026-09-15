@@ -130,3 +130,8 @@ output "deploy_role_arn" {
   description = "AWS_ROLE_ARN for the repository's Actions variables (Stage 4, Task 1)."
   value       = module.deploy.role_arn
 }
+
+output "documents_backup_bucket_name" {
+  description = "Where to restore documents from (docs/runbooks/restore.md)."
+  value       = module.backup.bucket_name
+}

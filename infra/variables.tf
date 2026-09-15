@@ -179,3 +179,11 @@ variable "deploy_role_name" {
   type        = string
   default     = "github-actions-deploy"
 }
+
+# --- backup ----------------------------------------------------------------
+
+variable "backup_retention_days" {
+  description = "Days a deleted or overwritten document version is kept in the backup bucket. See infra/modules/backup/README.md and docs/data-retention.md."
+  type        = number
+  default     = 35
+}

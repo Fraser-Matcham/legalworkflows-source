@@ -31,3 +31,8 @@ output "secret_access_key" {
   value       = aws_iam_access_key.storage.secret
   sensitive   = true
 }
+
+output "versioned_bucket_id" {
+  description = "The bucket name, but known only once versioning is enabled — the backup module's replication configuration uses this so it cannot be applied first."
+  value       = aws_s3_bucket_versioning.documents.id
+}
