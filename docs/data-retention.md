@@ -216,7 +216,12 @@ Stated plainly because a client questionnaire will find them anyway.
   version rows, so an interrupted generation that uploaded bytes before
   writing its row leaves an orphan nothing will ever collect.
   `extracted-text/` is keyed by version id rather than by user and is
-  likewise reachable only through the row.
+  likewise reachable only through the row. One prefix is now swept
+  bucket-side as well: the production bucket (`infra/modules/storage`)
+  expires anything left under `upload-sessions/` after eight days, a backstop
+  behind the backend's own cleanup of staging and sealed upload objects. That
+  rule is scoped to the scratch prefix alone — the content prefixes above are
+  deliberately not in it, so "nothing expires content" remains true.
 - **`deleteOrphanedUserStorage` swallows its errors** by design, as documented
   best-effort cleanup. A failure there used to be invisible; ticket 2087
   closed that specific gap — see below.

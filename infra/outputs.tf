@@ -21,3 +21,13 @@ output "nat_gateway_public_ips" {
   description = "Fixed egress addresses of the private subnets, should a third party want to allow-list them."
   value       = module.network.nat_gateway_public_ips
 }
+
+output "documents_bucket_name" {
+  description = "R2_BUCKET_NAME for the backend."
+  value       = module.storage.bucket_name
+}
+
+output "documents_endpoint_url" {
+  description = "R2_ENDPOINT_URL for the backend."
+  value       = module.storage.endpoint_url
+}
