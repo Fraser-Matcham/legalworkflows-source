@@ -155,7 +155,7 @@ can be destroyed and rebuilt from this repository.**
 | # | Work | Ticket |
 | --- | --- | --- |
 | 3.1 | ✅ `infra/` Terraform skeleton, remote state, provider pinning — Terraform 1.16 / AWS 6.x pinned, S3 backend with native lock file (no DynamoDB table), `fmt` + `validate` gated in CI by `.github/workflows/infra.yml` | 2045, 2047 |
-| 3.2 | `network` module | new |
+| 3.2 | ✅ `network` module — VPC, two public + two private subnets, one NAT (toggle to per-AZ), free S3 gateway endpoint, and the three security groups that make the ALB reachable from CloudFront's prefix list only | new |
 | 3.3 | `storage` module — document bucket, CORS, lifecycle | 2042, 2043 |
 | 3.4 | `secrets` module — Secrets Manager, task roles, least privilege | 2045, 2046 |
 | 3.5 | `backend` module — ECR, ECS, Fargate service, ALB | 2049, 2050, 2051 |

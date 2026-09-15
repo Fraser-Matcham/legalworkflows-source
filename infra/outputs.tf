@@ -12,3 +12,12 @@ output "name_prefix" {
   description = "Prefix shared by every resource name, for cross-referencing in the console."
   value       = local.name_prefix
 }
+
+output "vpc_id" {
+  value = module.network.vpc_id
+}
+
+output "nat_gateway_public_ips" {
+  description = "Fixed egress addresses of the private subnets, should a third party want to allow-list them."
+  value       = module.network.nat_gateway_public_ips
+}

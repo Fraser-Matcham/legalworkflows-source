@@ -31,3 +31,17 @@ variable "domain_name" {
   type        = string
   default     = "legalworkflows.co.uk"
 }
+
+# --- network ---------------------------------------------------------------
+
+variable "vpc_cidr" {
+  description = "Address range for the VPC. See modules/network."
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "single_nat_gateway" {
+  description = "One NAT gateway shared across AZs (the cost-table default) rather than one per AZ. See modules/network/README.md."
+  type        = bool
+  default     = true
+}
