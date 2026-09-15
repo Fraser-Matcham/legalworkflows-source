@@ -154,7 +154,7 @@ can be destroyed and rebuilt from this repository.**
 
 | # | Work | Ticket |
 | --- | --- | --- |
-| 3.1 | `infra/` Terraform skeleton, remote state, provider pinning | 2045, 2047 |
+| 3.1 | ✅ `infra/` Terraform skeleton, remote state, provider pinning — Terraform 1.16 / AWS 6.x pinned, S3 backend with native lock file (no DynamoDB table), `fmt` + `validate` gated in CI by `.github/workflows/infra.yml` | 2045, 2047 |
 | 3.2 | `network` module | new |
 | 3.3 | `storage` module — document bucket, CORS, lifecycle | 2042, 2043 |
 | 3.4 | `secrets` module — Secrets Manager, task roles, least privilege | 2045, 2046 |

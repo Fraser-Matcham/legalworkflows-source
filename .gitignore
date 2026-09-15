@@ -33,3 +33,16 @@ backend/supabase/*
 .current-issue.md
 .implementation-plan.md
 .implement-config
+
+# Terraform (infra/). The lock file .terraform.lock.hcl IS committed: it pins
+# provider checksums so every machine and CI resolve the same builds.
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+*.tfvars
+!*.tfvars.example
+backend.hcl
+!backend.hcl.example

@@ -1,0 +1,9 @@
+# Copy to terraform.tfvars (gitignored). Every value has a sensible default in
+# variables.tf; this file exists to make an override explicit and reviewable
+# rather than typed on the command line. Never put a secret in it — secret
+# values reach the service through Secrets Manager (the `secrets` module), not
+# through Terraform variables.
+project     = "legalworkflows"
+environment = "production"
+aws_region  = "eu-west-2"
+domain_name = "legalworkflows.co.uk"
