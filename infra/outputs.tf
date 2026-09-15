@@ -125,3 +125,8 @@ output "email_sender_address" {
   description = "The From address Supabase Auth sends as."
   value       = module.email.sender_address
 }
+
+output "deploy_role_arn" {
+  description = "AWS_ROLE_ARN for the repository's Actions variables (Stage 4, Task 1)."
+  value       = module.deploy.role_arn
+}

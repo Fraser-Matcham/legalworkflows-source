@@ -134,3 +134,33 @@ module "email" {
   dmarc_report_address = var.dmarc_report_address
   event_topic_arn      = module.observability.informational_topic_arn
 }
+
+module "deploy" {
+  source = "./modules/deploy"
+
+  name_prefix = local.name_prefix
+  region      = data.aws_region.current.region
+  account_id  = data.aws_caller_identity.current.account_id
+
+  github_repository   = var.github_repository
+  deploy_branches     = var.deploy_branches
+  deploy_environments = var.deploy_environments
+  role_name           = var.deploy_role_name
+
+  ecr_repository_arns = [
+    module.backend.ecr_repository_arn,
+    module.frontend.ecr_repository_arn,
+  ]
+  cluster_name             = module.backend.cluster_name
+  cluster_arn              = module.backend.cluster_arn
+  service_names            = [module.backend.service_name, module.frontend.service_name]
+  task_definition_families = [module.backend.task_definition_family, module.frontend.task_definition_family]
+  passable_role_arns = [
+    module.secrets.backend_execution_role_arn,
+    module.secrets.backend_task_role_arn,
+    module.secrets.frontend_execution_role_arn,
+    module.secrets.frontend_task_role_arn,
+  ]
+  log_group_names             = [module.backend.log_group_name, module.frontend.log_group_name]
+  cloudfront_distribution_arn = module.frontend.distribution_arn
+}

@@ -38,3 +38,7 @@ output "app_url" {
   description = "The public origin, as served."
   value       = "https://${var.domain_name}"
 }
+
+output "ecr_repository_arn" {
+  value = aws_ecr_repository.frontend.arn
+}

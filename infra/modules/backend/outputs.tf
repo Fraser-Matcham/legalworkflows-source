@@ -65,3 +65,7 @@ output "origin_verify_secret" {
   value       = random_password.origin_verify.result
   sensitive   = true
 }
+
+output "ecr_repository_arn" {
+  value = aws_ecr_repository.backend.arn
+}

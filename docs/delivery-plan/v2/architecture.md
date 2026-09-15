@@ -185,6 +185,7 @@ caching its static assets. Stage 3 provisions both services from one module.
 | `email` | SES domain identity, DKIM records, configuration set for bounce/complaint handling, IAM user scoped to `ses:SendRawEmail` for the SMTP credential |
 | `secrets` | Secrets Manager entries, IAM task role and execution role |
 | `observability` | CloudWatch log groups, retention, alarms, SNS topic |
+| `deploy` | GitHub's OIDC identity provider and the `github-actions-deploy` role (both created by hand in Stage 3 Task 5, then imported), trust narrowed to this repository's `main` and `production` environment, least-privilege deploy policy |
 
 Terraform state lives in a versioned S3 bucket, locked with Terraform's native
 S3 lock file rather than a DynamoDB table, created once by hand because state

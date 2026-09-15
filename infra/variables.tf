@@ -153,3 +153,29 @@ variable "dmarc_report_address" {
   default     = null
   nullable    = true
 }
+
+# --- deploy ----------------------------------------------------------------
+
+variable "github_repository" {
+  description = "owner/repo whose GitHub Actions workflows may assume the deploy role."
+  type        = string
+  default     = "Fraser-Matcham/legalworkflows"
+}
+
+variable "deploy_branches" {
+  description = "Branches whose pushes may deploy. See infra/modules/deploy/README.md."
+  type        = list(string)
+  default     = ["main"]
+}
+
+variable "deploy_environments" {
+  description = "GitHub Actions environments whose jobs may deploy."
+  type        = list(string)
+  default     = ["production"]
+}
+
+variable "deploy_role_name" {
+  description = "Name of the deploy role created by hand in Stage 3, Task 5 and imported by infra/imports.tf."
+  type        = string
+  default     = "github-actions-deploy"
+}
