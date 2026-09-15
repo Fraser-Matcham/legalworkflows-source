@@ -114,3 +114,11 @@ variable "backend_extra_secret_keys" {
   type        = list(string)
   default     = []
 }
+
+# --- frontend --------------------------------------------------------------
+
+variable "frontend_image_tag" {
+  description = "Tag in the frontend's ECR repository that the Terraform-managed task definition points at. As backend_image_tag."
+  type        = string
+  default     = "bootstrap"
+}

@@ -71,3 +71,32 @@ output "alb_dns_name" {
   description = "The load balancer's own hostname, for debugging the origin directly. Requests without CloudFront's origin header get a 403 by design."
   value       = module.backend.alb_dns_name
 }
+
+output "app_url" {
+  description = "The public origin, as served by CloudFront."
+  value       = module.frontend.app_url
+}
+
+output "cloudfront_distribution_id" {
+  description = "For cache invalidations and the observability module."
+  value       = module.frontend.distribution_id
+}
+
+output "cloudfront_domain_name" {
+  description = "The distribution's own hostname, which the apex records alias to."
+  value       = module.frontend.distribution_domain_name
+}
+
+output "frontend_ecr_repository_url" {
+  description = "Where the Stage 4 deploy workflow pushes frontend images."
+  value       = module.frontend.ecr_repository_url
+}
+
+output "frontend_service_name" {
+  description = "ECS service the deploy workflow updates."
+  value       = module.frontend.service_name
+}
+
+output "frontend_log_group_name" {
+  value = module.frontend.log_group_name
+}

@@ -71,3 +71,31 @@ module "backend" {
   workflows_ref            = var.workflows_ref
   image_tag                = var.backend_image_tag
 }
+
+module "frontend" {
+  source = "./modules/frontend"
+
+  name_prefix = local.name_prefix
+  region      = data.aws_region.current.region
+
+  vpc_id                     = module.network.vpc_id
+  private_subnet_ids         = module.network.private_subnet_ids
+  frontend_security_group_id = module.network.frontend_security_group_id
+
+  execution_role_arn = module.secrets.frontend_execution_role_arn
+  task_role_arn      = module.secrets.frontend_task_role_arn
+
+  cluster_arn                   = module.backend.cluster_arn
+  cluster_name                  = module.backend.cluster_name
+  service_connect_namespace_arn = module.backend.service_connect_namespace_arn
+  api_base_url                  = module.backend.service_connect_backend_url
+  https_listener_arn            = module.backend.https_listener_arn
+  origin_verify_secret          = module.backend.origin_verify_secret
+  origin_fqdn                   = module.dns.origin_fqdn
+
+  domain_name          = var.domain_name
+  zone_id              = module.dns.zone_id
+  apex_certificate_arn = module.dns.apex_certificate_arn
+
+  image_tag = var.frontend_image_tag
+}
