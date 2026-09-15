@@ -157,7 +157,7 @@ can be destroyed and rebuilt from this repository.**
 | 3.1 | ✅ `infra/` Terraform skeleton, remote state, provider pinning — Terraform 1.16 / AWS 6.x pinned, S3 backend with native lock file (no DynamoDB table), `fmt` + `validate` gated in CI by `.github/workflows/infra.yml` | 2045, 2047 |
 | 3.2 | ✅ `network` module — VPC, two public + two private subnets, one NAT (toggle to per-AZ), free S3 gateway endpoint, and the three security groups that make the ALB reachable from CloudFront's prefix list only | new |
 | 3.3 | ✅ `storage` module — document bucket with SSE-KMS (customer key, bucket key on), TLS-only policy, CORS from the bare domain, a lifecycle backstop on `upload-sessions/` only (content never expires, per `docs/data-retention.md`), and a least-privilege IAM user + key for the static-credential client | 2042, 2043 |
-| 3.4 | `secrets` module — Secrets Manager, task roles, least privilege | 2045, 2046 |
+| 3.4 | ✅ `secrets` module — three Secrets Manager secrets (Terraform-generated tokens, operator-held values set out of band and never through a variable, the storage key), separate backend/frontend execution roles with only the backend's able to read secrets, minimal task roles, `aws:SourceAccount` on every trust policy | 2045, 2046 |
 | 3.5 | `backend` module — ECR, ECS, Fargate service, ALB | 2049, 2050, 2051 |
 | 3.6 | `frontend` module — Fargate service, CloudFront, path routing | new |
 | 3.7 | `dns` module — Route 53, ACM, validation | new |

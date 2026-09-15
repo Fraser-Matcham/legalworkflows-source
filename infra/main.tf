@@ -16,3 +16,13 @@ module "storage" {
   account_id      = data.aws_caller_identity.current.account_id
   allowed_origins = ["https://${var.domain_name}"]
 }
+
+module "secrets" {
+  source = "./modules/secrets"
+
+  name_prefix               = local.name_prefix
+  account_id                = data.aws_caller_identity.current.account_id
+  region                    = data.aws_region.current.region
+  storage_access_key_id     = module.storage.access_key_id
+  storage_secret_access_key = module.storage.secret_access_key
+}
