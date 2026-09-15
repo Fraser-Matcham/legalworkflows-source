@@ -181,7 +181,7 @@ caching its static assets. Stage 3 provisions both services from one module.
 | `storage` | S3 document bucket, SSE-KMS, lifecycle, CORS, block-public-access |
 | `backend` | ECR repository, ECS cluster, Fargate service, task definition, ALB, target group, autoscaling |
 | `frontend` | ECR repository, Fargate service, target group, CloudFront distribution, cache and path routing |
-| `dns` | Route 53 zone, ACM certificate, validation records, aliases |
+| `dns` | Route 53 zone (created by hand in Stage 3 Task 7, then imported), the two ACM certificates (apex in us-east-1 for CloudFront, `origin.` regional for the ALB) and their validation records; alias records live with the ALB and CloudFront in `backend` and `frontend` |
 | `email` | SES domain identity, DKIM records, configuration set for bounce/complaint handling, IAM user scoped to `ses:SendRawEmail` for the SMTP credential |
 | `secrets` | Secrets Manager entries, IAM task role and execution role |
 | `observability` | CloudWatch log groups, retention, alarms, SNS topic |

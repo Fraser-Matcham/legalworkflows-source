@@ -7,3 +7,7 @@ project     = "legalworkflows"
 environment = "production"
 aws_region  = "eu-west-2"
 domain_name = "legalworkflows.co.uk"
+
+# Required, no default: the Hosted zone ID from Stage 3, Task 7. Terraform
+# imports the zone the operator created rather than making a second one.
+route53_zone_id = "Z0123456789ABCDEFGHIJ"

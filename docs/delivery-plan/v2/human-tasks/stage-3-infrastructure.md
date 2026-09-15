@@ -274,7 +274,10 @@ AWS has to be able to prove it controls the domain. That means AWS DNS.
 5. Click **Create hosted zone**.
 6. The zone opens showing several records. Find the one with **Type: NS**. It
    lists four nameservers, each ending in a dot, like
-   `ns-1234.awsdns-56.org.` — copy all four.
+   `ns-1234.awsdns-56.org.` — copy all four. On the same page, near the top
+   right, copy the **Hosted zone ID** too — it starts with `Z`. Terraform
+   adopts the zone you just made rather than creating a second one, and needs
+   the ID to find it.
 7. Open your domain registrar in another tab — Cloudflare, if you followed the
    Stage 1 suggestion.
 8. Find the setting for **custom nameservers**. In Cloudflare Registrar this
@@ -290,7 +293,8 @@ AWS has to be able to prove it controls the domain. That means AWS DNS.
 
 ### Tell me
 
-- **"Nameservers switched"**, and the four Route 53 nameservers.
+- **"Nameservers switched"**, the four Route 53 nameservers, and the
+  **Hosted zone ID**.
 - Tell me again once whatsmydns.net shows them worldwide, as I cannot request
   the certificate until then.
 

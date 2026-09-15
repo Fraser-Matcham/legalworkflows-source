@@ -32,6 +32,11 @@ output "documents_endpoint_url" {
   value       = module.storage.endpoint_url
 }
 
+output "name_servers" {
+  description = "The zone's nameservers; must match what the registrar points at (Stage 3, Task 7)."
+  value       = module.dns.name_servers
+}
+
 output "operator_secret_name" {
   description = "Secrets Manager secret to populate with the operator-held values (infra/modules/secrets/README.md)."
   value       = module.secrets.operator_secret_name

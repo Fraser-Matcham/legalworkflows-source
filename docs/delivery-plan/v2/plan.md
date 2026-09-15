@@ -160,7 +160,7 @@ can be destroyed and rebuilt from this repository.**
 | 3.4 | ✅ `secrets` module — three Secrets Manager secrets (Terraform-generated tokens, operator-held values set out of band and never through a variable, the storage key), separate backend/frontend execution roles with only the backend's able to read secrets, minimal task roles, `aws:SourceAccount` on every trust policy | 2045, 2046 |
 | 3.5 | `backend` module — ECR, ECS, Fargate service, ALB | 2049, 2050, 2051 |
 | 3.6 | `frontend` module — Fargate service, CloudFront, path routing | new |
-| 3.7 | `dns` module — Route 53, ACM, validation | new |
+| 3.7 | ✅ `dns` module — the hand-created hosted zone imported and `prevent_destroy`-protected, two DNS-validated ACM certificates (apex in us-east-1 for CloudFront, `origin.<domain>` regional for the ALB), consumers bind the validated ARN | new |
 | 3.8 | `observability` module — log groups, alarms, SNS | 2085 |
 | 3.9 | GitHub OIDC role, so deploys use no long-lived AWS keys | new |
 | 3.10 | Verify the signed-URL round trip against real S3 | 2044 |

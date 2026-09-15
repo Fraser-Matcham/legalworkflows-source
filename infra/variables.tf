@@ -32,6 +32,24 @@ variable "domain_name" {
   default     = "legalworkflows.co.uk"
 }
 
+# --- dns -------------------------------------------------------------------
+
+variable "route53_zone_id" {
+  description = "Hosted zone ID of the zone for domain_name, created by hand in Stage 3 Task 7 and imported by infra/imports.tf. Starts with Z."
+  type        = string
+
+  validation {
+    condition     = can(regex("^Z[A-Z0-9]{8,32}$", var.route53_zone_id))
+    error_message = "route53_zone_id must be a Route 53 hosted zone ID (starts with Z), as shown on the zone's page in the console."
+  }
+}
+
+variable "origin_subdomain" {
+  description = "Label for the load balancer's hostname under domain_name. See modules/dns/README.md."
+  type        = string
+  default     = "origin"
+}
+
 # --- network ---------------------------------------------------------------
 
 variable "vpc_cidr" {
