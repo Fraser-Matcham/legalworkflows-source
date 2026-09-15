@@ -39,3 +39,35 @@ module "secrets" {
   storage_access_key_id     = module.storage.access_key_id
   storage_secret_access_key = module.storage.secret_access_key
 }
+
+module "backend" {
+  source = "./modules/backend"
+
+  name_prefix = local.name_prefix
+  region      = data.aws_region.current.region
+
+  vpc_id                     = module.network.vpc_id
+  public_subnet_ids          = module.network.public_subnet_ids
+  private_subnet_ids         = module.network.private_subnet_ids
+  alb_security_group_id      = module.network.alb_security_group_id
+  backend_security_group_id  = module.network.backend_security_group_id
+  frontend_security_group_id = module.network.frontend_security_group_id
+
+  execution_role_arn = module.secrets.backend_execution_role_arn
+  task_role_arn      = module.secrets.backend_task_role_arn
+  ecs_secrets        = module.secrets.backend_ecs_secrets
+  extra_secret_keys  = var.backend_extra_secret_keys
+
+  certificate_arn = module.dns.origin_certificate_arn
+  zone_id         = module.dns.zone_id
+  origin_fqdn     = module.dns.origin_fqdn
+  domain_name     = var.domain_name
+
+  supabase_url             = var.supabase_url
+  supabase_publishable_key = var.supabase_publishable_key
+  storage_endpoint_url     = module.storage.endpoint_url
+  storage_bucket_name      = module.storage.bucket_name
+  workflows_repository     = var.workflows_repository
+  workflows_ref            = var.workflows_ref
+  image_tag                = var.backend_image_tag
+}
