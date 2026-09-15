@@ -43,10 +43,11 @@ role — no long-lived key at all — needs the code to stop passing credentials
 so the SDK default chain takes over; that is scheduled after row 3.10 proves
 the bucket end to end, and the policy moves to the role unchanged.
 
-**Region.** `storage.ts` signs with `region: "auto"`, an R2 convention.
-Real S3 rejects that at signature verification, so a small code change to
-make the region configurable is due before row 3.10. Nothing in this module
-depends on it; it is recorded here so it is not rediscovered at apply time.
+**Region.** `storage.ts` used to sign with `region: "auto"`, an R2
+convention that real S3 rejects at signature verification. The backend now
+reads `R2_REGION` (`backend/src/lib/storageRegion.ts`, default `auto`), and
+the `backend` module sets it to the footprint's region. Nothing in this module
+depends on it; it is recorded here because this is where the question arises.
 
 ## Wiring to the backend
 

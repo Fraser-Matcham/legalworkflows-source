@@ -89,7 +89,7 @@ optional operator values (`ERROR_TRACKING_DSN`, `MIKE_WORKFLOWS_GITHUB_TOKEN`,
 | `NODE_ENV`, `PORT`, `TRUST_PROXY_HOPS` | `production`, `3001`, `2` |
 | `FRONTEND_URL`, `API_PUBLIC_URL` | `https://<domain>`, `https://<domain>/api` (docs/deployment.md) |
 | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | root variables |
-| `R2_ENDPOINT_URL`, `R2_BUCKET_NAME` | `storage` module outputs |
+| `R2_ENDPOINT_URL`, `R2_BUCKET_NAME`, `R2_REGION` | `storage` module outputs, and the footprint's region — real S3 rejects R2's `auto` (`backend/src/lib/storageRegion.ts`) |
 | `MIKE_WORKFLOWS_REPOSITORY`, `MIKE_WORKFLOWS_REF` | root variables — your fork, and a pinned SHA |
 | `RATE_LIMIT_*` | the production column of docs/deployment.md's table, as `rate_limits` |
 | `ERROR_TRACKING_ENVIRONMENT`, `_RELEASE`, `_SERVER_NAME` | `production`, the image tag, `<prefix>-backend` |

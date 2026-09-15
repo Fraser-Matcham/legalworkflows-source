@@ -76,6 +76,9 @@ locals {
 
       R2_ENDPOINT_URL = var.storage_endpoint_url
       R2_BUCKET_NAME  = var.storage_bucket_name
+      # Real S3 rejects R2's "auto" at signature verification
+      # (backend/src/lib/storageRegion.ts).
+      R2_REGION = var.region
 
       MIKE_WORKFLOWS_REPOSITORY = var.workflows_repository
       MIKE_WORKFLOWS_REF        = var.workflows_ref

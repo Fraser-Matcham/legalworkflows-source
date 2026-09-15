@@ -7,6 +7,8 @@
  *   R2_ACCESS_KEY_ID    — R2 API token (Access Key ID)
  *   R2_SECRET_ACCESS_KEY — R2 API token (Secret Access Key)
  *   R2_BUCKET_NAME      — bucket name (default: "mike")
+ *   R2_REGION           — signing region; "auto" for R2 (default), the bucket's
+ *                         region for real S3 (see ./storageRegion.ts)
  */
 
 import {
@@ -18,6 +20,7 @@ import {
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import * as S3Commands from "@aws-sdk/client-s3";
+import { storageRegion } from "./storageRegion";
 import { getSignedUrl as awsGetSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
@@ -43,7 +46,7 @@ const CHECKSUM_DEFAULTS = {
 function getClient(): S3Client {
   if (!cachedClient) {
     cachedClient = new S3Client({
-      region: "auto",
+      region: storageRegion(),
       endpoint: process.env.R2_ENDPOINT_URL!,
       forcePathStyle: true,
       ...CHECKSUM_DEFAULTS,
@@ -63,7 +66,7 @@ function getUploadSigningClient(): S3Client {
     return cachedUploadSigningClient.client;
   }
   const client = new S3Client({
-    region: "auto",
+    region: storageRegion(),
     endpoint,
     forcePathStyle: true,
     ...CHECKSUM_DEFAULTS,
