@@ -100,3 +100,18 @@ output "frontend_service_name" {
 output "frontend_log_group_name" {
   value = module.frontend.log_group_name
 }
+
+output "alerts_urgent_topic_arn" {
+  description = "SNS topic for the alarms that mean the site is down."
+  value       = module.observability.urgent_topic_arn
+}
+
+output "alerts_topic_arn" {
+  description = "SNS topic for everything else."
+  value       = module.observability.informational_topic_arn
+}
+
+output "dashboard_url" {
+  description = "The CloudWatch dashboard."
+  value       = module.observability.dashboard_url
+}

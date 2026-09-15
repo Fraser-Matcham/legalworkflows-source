@@ -99,3 +99,24 @@ module "frontend" {
 
   image_tag = var.frontend_image_tag
 }
+
+module "observability" {
+  source = "./modules/observability"
+
+  name_prefix = local.name_prefix
+  region      = data.aws_region.current.region
+  account_id  = data.aws_caller_identity.current.account_id
+
+  alert_email       = var.alert_email
+  urgent_sms_number = var.urgent_sms_number
+
+  alb_arn_suffix                   = module.backend.alb_arn_suffix
+  backend_target_group_arn_suffix  = module.backend.backend_target_group_arn_suffix
+  frontend_target_group_arn_suffix = module.frontend.target_group_arn_suffix
+  cluster_name                     = module.backend.cluster_name
+  cluster_arn                      = module.backend.cluster_arn
+  backend_service_name             = module.backend.service_name
+  frontend_service_name            = module.frontend.service_name
+  backend_log_group_name           = module.backend.log_group_name
+  cloudfront_distribution_id       = module.frontend.distribution_id
+}

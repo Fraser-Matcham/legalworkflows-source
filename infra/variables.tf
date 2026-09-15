@@ -122,3 +122,19 @@ variable "frontend_image_tag" {
   type        = string
   default     = "bootstrap"
 }
+
+# --- observability ---------------------------------------------------------
+
+variable "alert_email" {
+  description = "Address operational alerts go to (Stage 3, Task 9). Null until the operator names one; the alarms exist regardless. SNS sends a confirmation link that must be clicked."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "urgent_sms_number" {
+  description = "E.164 mobile number for the urgent alarms only (Task 9's \"wake me\"). Null for email only."
+  type        = string
+  default     = null
+  nullable    = true
+}
