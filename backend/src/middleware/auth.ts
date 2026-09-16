@@ -55,7 +55,24 @@ async function enforceLoginMfaIfEnabled(
       error: error.message,
       code: error.code,
     });
-    if (error.code === "42703") return true;
+    if (error.code === "42703") {
+      // undefined_column: this deployment's schema predates
+      // 20260610_02_user_profile_mfa_on_login.sql. Enforcement is skipped
+      // rather than refused, because failing closed on a missing column locks
+      // every user out of the product over a schema that is merely behind.
+      //
+      // But skipping it means a security control has stopped applying to
+      // everyone, and devLog above is a no-op in production
+      // (isDev = NODE_ENV !== "production"), so nothing said so. The path
+      // immediately below this one logs with console.error and fails closed;
+      // this one did neither. console.error is what makes it visible: the
+      // error-tracking bridge reports it and counts it in loggedErrors.
+      console.error(
+        "[auth/mfa] mfa_on_login is missing, so login MFA enforcement is skipped for every user until the migration runs",
+        { code: error.code },
+      );
+      return true;
+    }
     sendInternalError(res, error);
     return false;
   }
