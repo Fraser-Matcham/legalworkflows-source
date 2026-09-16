@@ -215,7 +215,7 @@ describe("reportError", () => {
 });
 
 describe("the console.error bridge", () => {
-    it("still prints exactly what it was given", () => {
+    it("keeps the label and the context it was given", () => {
         const { send } = recorder();
         installErrorTracking({
             env: { ERROR_TRACKING_DSN: DSN },
@@ -226,10 +226,39 @@ describe("the console.error bridge", () => {
         const error = new Error("boom");
         console.error("[http/internal-error]", { requestId: "req-9", error });
 
-        expect(consoleErrorSpy).toHaveBeenCalledWith("[http/internal-error]", {
-            requestId: "req-9",
-            error,
+        // The label survives verbatim and the context keeps its shape; the
+        // error inside it is reduced, which is what the next test is about.
+        const call = consoleErrorSpy.mock.calls.at(-1);
+        expect(call?.[0]).toBe("[http/internal-error]");
+        expect(call?.[1]).toMatchObject({ requestId: "req-9" });
+    });
+
+    it("does not print a provider error's request body or its key", () => {
+        // The leak this module's header describes for unhandled rejections
+        // reaches stdout the same way through a deliberate call site: a
+        // provider SDK error carries the outgoing request on `error.request`,
+        // and that body is the prompt — the client's document.
+        const { send } = recorder();
+        installErrorTracking({
+            env: { ERROR_TRACKING_DSN: DSN },
+            send,
+            globalHandlers: false,
         });
+
+        const error: Error & { request?: unknown; status?: number } = new Error(
+            "Incorrect API key provided: sk-ant-CANARYKEY000000000000",
+        );
+        error.status = 401;
+        error.request = { body: { prompt: "PRIVILEGED CLIENT DOCUMENT TEXT" } };
+
+        console.error("[chat/stream] model stream failed", error);
+
+        const printed = JSON.stringify(consoleErrorSpy.mock.calls.at(-1));
+        expect(printed).not.toContain("sk-ant-CANARYKEY");
+        expect(printed).not.toContain("PRIVILEGED CLIENT DOCUMENT TEXT");
+        // Still useful to whoever is debugging.
+        expect(printed).toContain("[chat/stream] model stream failed");
+        expect(printed).toContain("status=401");
     });
 
     it("captures an existing call site without that site being changed", async () => {
