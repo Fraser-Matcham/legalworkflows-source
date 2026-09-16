@@ -566,7 +566,37 @@ jobs:
           REASON=$(aws ecs describe-tasks --cluster "$NAME_PREFIX" --tasks "$TASK" --query 'tasks[0].stoppedReason' --output text)
           echo "exit code: $EXIT ($REASON)"
           if [ "$EXIT" != "0" ]; then
-            echo "::error::The catalogue sync exited $EXIT. Logs: /ecs/$NAME_PREFIX-backend, stream backend/backend/${TASK##*/}"
+            # Print the task's own output rather than only saying where it
+            # lives. The role already holds logs:GetLogEvents on this group
+            # (infra/modules/deploy/policy.tf, ReadServiceLogs), so a failed
+            # release does not need a second trip to CloudWatch to find out
+            # what it said. The awslogs driver can lag the task's stop by a
+            # second or two, hence the retry.
+            #
+            # What lands here is redacted: every console.error in the service
+            # goes through the error-tracking bridge, which reduces what it
+            # prints with safeErrorForLog — a provider error's request body
+            # and any secret-shaped string are dropped before stdout. That is
+            # what makes it safe to copy into a CI log anyone with read access
+            # can open.
+            STREAM="backend/backend/${TASK##*/}"
+            echo "--- last 100 lines of $STREAM ---"
+            for attempt in 1 2 3; do
+              LINES=$(aws logs get-log-events \
+                --log-group-name "/ecs/$NAME_PREFIX-backend" \
+                --log-stream-name "$STREAM" \
+                --limit 100 --start-from-head \
+                --query 'events[].message' --output text 2>/dev/null || true)
+              [ -n "$LINES" ] && break
+              sleep 3
+            done
+            if [ -n "$LINES" ]; then
+              printf '%s\n' "$LINES"
+            else
+              echo "(no log events yet — read them at /ecs/$NAME_PREFIX-backend, stream $STREAM)"
+            fi
+            echo "--- end of task output ---"
+            echo "::error::The catalogue sync exited $EXIT. Its output is above; the stream is /ecs/$NAME_PREFIX-backend $STREAM"
             exit 1
           fi
 
