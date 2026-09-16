@@ -51,11 +51,14 @@ key region. `docs/runbooks/restore.md` names this as an accepted risk.
 
 ## Who can write
 
-Only the replication role. The bucket policy denies `PutObject`,
-`DeleteObject`, `DeleteObjectVersion` and the configuration calls to every
-principal except that role and the account root (Terraform). A restore is a
-*read* from here and a write to the live bucket, which is why the storage
-user does not need — and does not have — any permission on this bucket.
+Only the replication role writes objects. The bucket policy denies
+`PutObject`, `DeleteObject`, `DeleteObjectVersion` and the tagging writes to
+every principal except that role, whatever IAM would otherwise allow. Bucket
+configuration is left to IAM on purpose: Terraform runs as an ordinary user,
+not the account root, and must keep managing the bucket it created. A
+restore is a *read* from here and a write to the live bucket, which is why
+the storage user does not need — and does not have — any permission on this
+bucket.
 
 ## Restoring
 

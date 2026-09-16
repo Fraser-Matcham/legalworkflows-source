@@ -112,10 +112,12 @@ resource "aws_s3_bucket_lifecycle_configuration" "backup" {
   depends_on = [aws_s3_bucket_versioning.backup]
 }
 
-# Only S3 replication writes here. The storage user, the tasks and anyone
-# else with account access can read for a restore but cannot put, delete or
-# change versions — which is the property that makes this a backup rather
-# than a copy.
+# Only S3 replication writes objects here. The storage user, the tasks and
+# anyone else with account access can read for a restore but cannot put,
+# delete or change versions — which is the property that makes this a backup
+# rather than a copy. Bucket configuration (lifecycle, versioning, policy) is
+# deliberately NOT denied: Terraform runs as an ordinary IAM user, not the
+# account root, and must keep being able to manage the bucket it created.
 data "aws_iam_policy_document" "backup_bucket" {
   statement {
     sid    = "DenyInsecureTransport"
@@ -134,7 +136,7 @@ data "aws_iam_policy_document" "backup_bucket" {
   }
 
   statement {
-    sid    = "OnlyReplicationWrites"
+    sid    = "OnlyReplicationWritesObjects"
     effect = "Deny"
     principals {
       type        = "*"
@@ -142,27 +144,23 @@ data "aws_iam_policy_document" "backup_bucket" {
     }
     actions = [
       "s3:PutObject",
+      "s3:PutObjectAcl",
+      "s3:PutObjectTagging",
       "s3:DeleteObject",
       "s3:DeleteObjectVersion",
-      "s3:PutObjectAcl",
-      "s3:PutBucketVersioning",
-      "s3:PutLifecycleConfiguration",
-      "s3:PutBucketPolicy",
-      "s3:DeleteBucketPolicy",
-      "s3:DeleteBucket",
+      "s3:DeleteObjectTagging",
+      "s3:DeleteObjectVersionTagging",
     ]
-    resources = [aws_s3_bucket.backup.arn, "${aws_s3_bucket.backup.arn}/*"]
+    resources = ["${aws_s3_bucket.backup.arn}/*"]
     condition {
       test     = "ArnNotEquals"
       variable = "aws:PrincipalArn"
-      values = [
-        aws_iam_role.replication.arn,
-        # Terraform itself must still manage the bucket's configuration.
-        "arn:aws:iam::${var.account_id}:root",
-      ]
+      values   = [aws_iam_role.replication.arn]
     }
-    # Lifecycle and replication act as the service, not as a principal, and
-    # are unaffected by this statement.
+    # Replication writes with s3:Replicate* actions, and the lifecycle rule
+    # acts as the service rather than as a principal; neither is affected.
+    # The role is exempted anyway so a future change to how replication is
+    # authorised cannot silently stop the backup.
   }
 }
 
