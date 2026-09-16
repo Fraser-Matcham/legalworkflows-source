@@ -34,6 +34,11 @@ merge to main
 One deploy runs at a time (`concurrency: production-deploy`); a second merge
 waits for the first rather than cancelling it.
 
+Until the `AWS_ROLE_ARN` variable exists (Stage 4, Task 1), every job is
+skipped and a single notice says so — a merge to `main` before the
+footprint is applied must not produce a red run and an email. From the
+moment it exists, every step below is strict.
+
 ## Each step, and the reason for its position
 
 **Gate.** `push` to `main` fires this workflow and every CI workflow at the

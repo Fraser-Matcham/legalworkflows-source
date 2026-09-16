@@ -51,9 +51,23 @@ env:
   ECR_REGISTRY: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com
 
 jobs:
+  # Until Stage 4, Task 1 has set the AWS variables there is nothing to deploy
+  # to. Skipping — rather than failing — keeps every merge to main from
+  # producing a red run and an email while the footprint is still being built.
+  # Once AWS_ROLE_ARN exists, everything below is strict.
+  not-configured:
+    name: Deploy pipeline not configured yet
+    if: vars.AWS_ROLE_ARN == ''
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "::notice::AWS_ROLE_ARN is not set, so this commit was not deployed. Complete Stage 4, Task 1 (docs/delivery-plan/v2/human-tasks/stage-4-launch.md) to switch the pipeline on."
+          echo "Not deployed: the pipeline is not configured yet (Stage 4, Task 1)." >> "$GITHUB_STEP_SUMMARY"
+
   # ---------------------------------------------------------------------------
   gate:
     name: Wait for CI on this commit
+    if: vars.AWS_ROLE_ARN != ''
     runs-on: ubuntu-latest
     outputs:
       sha: ${{ steps.meta.outputs.sha }}
@@ -77,13 +91,22 @@ jobs:
         with:
           script: |
             const sha = context.sha;
-            const ourRun = context.runId;
             const deadline = Date.now() + 45 * 60 * 1000;
+            // Every job of this workflow run is itself a check run on the
+            // commit, queued from the moment the run starts. They must be
+            // excluded — by id, and by name in case an earlier Deploy run on
+            // the same commit is still around — or the gate would wait on its
+            // own downstream jobs until the deadline.
+            const ourJobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
+              owner: context.repo.owner, repo: context.repo.repo, run_id: context.runId, per_page: 100,
+            });
+            const ourIds = new Set(ourJobs.map(j => j.id));
+            const ourNames = new Set(ourJobs.map(j => j.name));
             for (;;) {
               const runs = await github.paginate(github.rest.checks.listForRef, {
                 owner: context.repo.owner, repo: context.repo.repo, ref: sha, per_page: 100,
               });
-              const others = runs.filter(r => !(r.name === context.job && r.app?.slug === 'github-actions' && String(r.html_url || '').includes(`/runs/${ourRun}/`)) && !r.name.startsWith('Deploy /') && r.name !== 'Wait for CI on this commit');
+              const others = runs.filter(r => !ourIds.has(r.id) && !ourNames.has(r.name));
               if (others.length === 0) {
                 core.setFailed(`No check runs found on ${sha}. CI has not started; refusing to deploy an unverified commit.`);
                 return;
