@@ -109,7 +109,9 @@ function checks({ appUrl, albHost, bucket, albUrl, bucketUrl }) {
             skip: albTarget ? null : "no --alb-host given",
             async run() {
                 const res = await get(albTarget, { redirect: "manual" });
-                // The listener's default action with no matching rule. Anything
+                // 403 is the listener's own default action when no rule
+                // matches: a fixed-response "Forbidden" (modules/backend/alb.tf).
+                // Checked against the Terraform rather than assumed. Anything
                 // 2xx means the header gate is not gating.
                 return {
                     ok: res.status === 403,
@@ -122,7 +124,19 @@ function checks({ appUrl, albHost, bucket, albUrl, bucketUrl }) {
             why: "It holds client documents. A public-read bucket is the single worst outcome available to this deployment.",
             skip: bucketTarget ? null : "no --bucket given",
             async run() {
-                const res = await get(bucketTarget, { redirect: "manual" });
+                // Redirects are FOLLOWED here, unlike the origin check above.
+                // The URL uses the global endpoint, and a bucket outside
+                // us-east-1 can answer 301 pointing at its regional one.
+                // Stopping at the 301 would report "not 403" for a bucket that
+                // is correctly locked down, and — worse — would read the same
+                // way for one that is wide open behind the redirect. Following
+                // it means the status that decides is the one the bucket
+                // actually serves.
+                //
+                // 403 is what a blocked bucket returns: all four flags of
+                // aws_s3_bucket_public_access_block are set in
+                // modules/storage/main.tf.
+                const res = await get(bucketTarget, { redirect: "follow" });
                 return {
                     ok: res.status === 403,
                     detail: `anonymous list → ${res.status}${res.status === 403 ? "" : " (expected 403)"}`,
@@ -178,6 +192,7 @@ function report(results, { allowSkipped }) {
 async function selfTest() {
     // A stub that answers the way a correctly configured stack does, so the
     // checks are exercised for real rather than asserted about.
+    let base = "";
     const server = createServer((req, res) => {
         const url = req.url ?? "/";
         // Two shapes of a wrongly-exposed stack, so the checks that exist to
@@ -186,6 +201,11 @@ async function selfTest() {
             res.writeHead(403).end("Forbidden");
         } else if (url === "/wide-open") {
             res.writeHead(200, { "content-type": "application/xml" }).end("<ListBucketResult/>");
+        } else if (url === "/redirect-to-open") {
+            // What the global S3 endpoint does for a bucket in another region.
+            res.writeHead(301, { location: `${base}/wide-open` }).end();
+        } else if (url === "/redirect-to-refusal") {
+            res.writeHead(301, { location: `${base}/refuses` }).end();
         } else if (url === "/api/ready") {
             res.writeHead(200, { "content-type": "application/json" }).end('{"ok":true}');
         } else if (url === "/legal") {
@@ -197,7 +217,7 @@ async function selfTest() {
     });
     await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
     const { port } = server.address();
-    const base = `http://127.0.0.1:${port}`;
+    base = `http://127.0.0.1:${port}`;
 
     // The stub speaks http, so the https-redirect check cannot pass against
     // it. That check is verified by its failure here, which is the honest
@@ -218,6 +238,19 @@ async function selfTest() {
         albUrl: `${base}/wide-open`,
         bucketUrl: `${base}/wide-open`,
     });
+    // The global S3 endpoint answers 301 for a bucket in another region. Stop
+    // at the redirect and a wide-open bucket reads the same as a locked one.
+    const redirected = await run({
+        appUrl: base,
+        albUrl: `${base}/refuses`,
+        bucketUrl: `${base}/redirect-to-open`,
+    });
+    const redirectedToRefusal = await run({
+        appUrl: base,
+        albUrl: `${base}/refuses`,
+        bucketUrl: `${base}/redirect-to-refusal`,
+    });
+    const detail = (rs, fragment) => rs.find((r) => r.name.includes(fragment)).detail;
     const state = (rs, fragment) => rs.find((r) => r.name.includes(fragment)).state;
 
     const cases = [
@@ -232,6 +265,15 @@ async function selfTest() {
         ["an origin that ANSWERS a direct request fails", state(exposed, "load balancer refuses") === "FAIL"],
         ["a bucket that refuses an anonymous list passes", state(locked, "document bucket") === "PASS"],
         ["a bucket that SERVES an anonymous list fails", state(exposed, "document bucket") === "FAIL"],
+        [
+            "a bucket that 301s to a wide-open listing fails ON THE 200, not the 301",
+            state(redirected, "document bucket") === "FAIL" &&
+                detail(redirected, "document bucket").includes("200"),
+        ],
+        [
+            "a bucket that 301s to a refusal passes, rather than false-alarming",
+            state(redirectedToRefusal, "document bucket") === "PASS",
+        ],
     ];
 
     server.close();
