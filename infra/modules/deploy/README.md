@@ -80,6 +80,42 @@ default, and adding to it means this paragraph is no longer true.
 A pull-request run gets a third subject form (`pull_request`) and is refused
 either way: CI never deploys from a branch under review.
 
+### When the role will not assume
+
+`Could not assume role with OIDC: Not authorized to perform
+sts:AssumeRoleWithWebIdentity` means the token reached AWS and was refused.
+Print what this side expects and compare it with what GitHub sent:
+
+```sh
+terraform output deploy_allowed_subjects
+```
+
+Every comparison below is **case-sensitive** — IAM condition operators do not
+fold case, and two of the three traps are nothing but capitalisation:
+
+- **The environment's name.** GitHub puts the environment in the subject
+  exactly as the repository records it, so an environment created as
+  `Production` yields `:environment:Production` and will not match
+  `deploy_environments = ["production"]`. This one hides well: a workflow's
+  `environment: production` still matches the environment, so the job's
+  variables and secrets resolve normally and only the role assumption fails.
+- **The owner and repository.** `github_repository` must be the canonical
+  spelling GitHub stores, not a lowercased or differently-cased form of it.
+- **The provider's audience.** When the account already had a GitHub OIDC
+  provider, this module looks it up rather than creating one, so its
+  `ClientIDList` is whatever the project that created it chose. If it does
+  not contain `sts.amazonaws.com`, AWS rejects the token before the trust
+  policy is consulted at all, and the error is identical:
+
+  ```sh
+  aws iam get-open-id-connect-provider \
+    --open-id-connect-provider-arn "$(terraform output -raw deploy_oidc_provider_arn)" \
+    --query '{url:Url,audiences:ClientIDList}'
+  ```
+
+  Adding an audience to a shared provider affects every project using it, so
+  read who else depends on it before changing it.
+
 ## Using it from a workflow
 
 ```yaml

@@ -131,6 +131,19 @@ output "deploy_role_arn" {
   value       = module.deploy.role_arn
 }
 
+# What a failed "Not authorized to perform sts:AssumeRoleWithWebIdentity" is
+# asking you to compare against: print this, then read the subject GitHub
+# actually sent from the run's OIDC token. They are matched case-sensitively.
+output "deploy_allowed_subjects" {
+  description = "The GitHub token subjects the deploy role's trust policy accepts."
+  value       = module.deploy.allowed_subjects
+}
+
+output "deploy_oidc_provider_arn" {
+  description = "The OIDC provider the deploy role trusts — account-wide, and possibly shared with another project."
+  value       = module.deploy.oidc_provider_arn
+}
+
 output "documents_backup_bucket_name" {
   description = "Where to restore documents from (docs/runbooks/restore.md)."
   value       = module.backup.bucket_name

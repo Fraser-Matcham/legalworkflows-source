@@ -12,6 +12,11 @@ live.
 
 ## Task 1 — Store the deployment credentials in GitHub
 
+> **✅ DONE — 16 September 2026.** All five variables and both secrets are set
+> on the `production` **environment** rather than repository-wide. The pipeline
+> reads them with the environment resolved, so either scope works; the steps
+> below now say so.
+
 **Why:** the automated pipeline needs to know which AWS account and role to
 use. These are settings, not passwords — the actual credential is proved per
 deploy using the role you created in Stage 3, Task 5.
@@ -111,6 +116,11 @@ checks first.
 
 ## Task 3 — Create the public source mirror
 
+> **✅ DONE — 16 September 2026.** `Fraser-Matcham/legalworkflows-source` is
+> public and carries `main` at `50a3461` with the release tag
+> `deploy-20260916T172229Z-50a3461`, pushed by the pipeline. The token needed
+> *Workflows* alongside *Contents*, which step 8 now asks for.
+
 **Why:** this is a legal obligation, not a nicety. The application is licensed
 under the AGPL. Section 13 requires that anyone who uses the service over a
 network can obtain its source code. That means a public repository, kept
@@ -170,6 +180,16 @@ stops at the mirror step — deliberately.
 ---
 
 ## Task 4 — Delete the temporary build credential
+
+> **✅ NOT NEEDED — the credential was never created.** Stage 3, Task 6's
+> `terraform-build` user does not exist: the footprint was applied from a
+> terminal signed in through IAM Identity Center instead, so no static
+> administrator key was ever issued. `aws iam list-access-keys --user-name
+> terraform-build` returns `NoSuchEntity`. A sweep of the account on
+> 16 September 2026 found access keys on exactly two users, both created by
+> Terraform and both scoped to one job: `legalworkflows-production-smtp`
+> (SES send, via an inline policy) and `legalworkflows-production-storage`
+> (the document bucket). Neither carries `AdministratorAccess`.
 
 **Why:** in Stage 3, Task 6 you created an access key so I could build the
 infrastructure. Deploys now run through the GitHub role instead. That key is a
