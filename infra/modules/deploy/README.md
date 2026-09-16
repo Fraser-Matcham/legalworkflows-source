@@ -90,8 +90,32 @@ Print what this side expects and compare it with what GitHub sent:
 terraform output deploy_allowed_subjects
 ```
 
-Every comparison below is **case-sensitive** — IAM condition operators do not
-fold case, and two of the three traps are nothing but capitalisation:
+The build job also prints the live subject on every run, before it tries to
+assume — `The OIDC subject this job presents` in its log. Read it there
+rather than assembling it by hand; it is the only account of what GitHub
+actually sent.
+
+**Immutable subject claims move the goalposts silently.** Where an
+organisation has them enabled, GitHub appends each part's immutable numeric
+id to the repository in the subject, and only in the subject:
+
+```
+sub:        repo:Fraser-Matcham@326009546/legalworkflows@1361216855:environment:production
+repository: Fraser-Matcham/legalworkflows
+```
+
+The `repository` claim, the settings pages and the URL all keep the plain
+name, so nothing a person can look at contradicts a trust policy written
+against it — and IAM matches `sub` alone. That is why `github_repository`
+here is the subject's spelling rather than the repository's: it is the string
+that has to match. Keeping the ids is the stronger posture and the point of
+the feature. Renaming the organisation or the repository, or deleting and
+recreating either, will then break the deploy rather than quietly handing
+this role to whoever claims the freed name; fix it by re-reading the printed
+subject and re-applying.
+
+The remaining comparisons are **case-sensitive** — IAM condition operators do
+not fold case, and two of them are nothing but capitalisation:
 
 - **The environment's name.** GitHub puts the environment in the subject
   exactly as the repository records it, so an environment created as
