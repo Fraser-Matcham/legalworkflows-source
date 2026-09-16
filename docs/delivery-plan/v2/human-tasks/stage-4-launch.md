@@ -241,8 +241,8 @@ npm run smoke -- --app-url https://legalworkflows.co.uk \
                  --bucket <the document bucket's name>
 ```
 
-The load balancer's DNS name and the bucket name are both outputs of
-`terraform apply` in `infra/`. It reads nothing private and writes nothing —
+Both come from `terraform output` in `infra/`: `alb_dns_name` and
+`documents_bucket_name`. It reads nothing private and writes nothing —
 every request is an anonymous GET to a public surface — so it is safe to point
 at production, which is the point of it.
 

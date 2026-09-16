@@ -179,6 +179,32 @@ you have them, and add their names to `backend_extra_secret_keys` in
 > workflow log, so the next failure says which of the two it was instead of
 > naming a log stream.
 
+**Check the signed-URL round trip against real S3** (plan row 3.10). The
+storage client was written for Cloudflare R2, which signs with the region
+`auto`. Real S3 rejects a presigned URL signed for the wrong region, and the
+failure looks like a permissions problem rather than a signing one, so it is
+worth ten minutes now instead of during a launch.
+
+The code half is done: `backend/src/lib/storageRegion.ts` resolves the signing
+region from `R2_REGION`, defaulting to `auto` for R2, and it is covered by
+`backend/src/lib/__tests__/storageRegion.test.ts`. What that cannot prove is
+how a real S3 endpoint treats the signature.
+
+Confirm `R2_REGION` is the bucket's own region and not `auto`:
+
+```sh
+terraform output -raw documents_bucket_name
+aws s3api get-bucket-location --bucket "$(terraform output -raw documents_bucket_name)"
+```
+
+Then exercise the round trip through the running application rather than by
+hand — it is the same code path the product uses, and a hand-rolled `aws s3
+presign` proves something slightly different. Stage 4, Task 5 already walks it:
+step 4 uploads a document and step 7 downloads one. If both work against the
+deployed stack, this row is satisfied. If the upload fails with a 403 whose
+body mentions the signature or the region, `R2_REGION` is wrong — correct it in
+`terraform.tfvars`, apply, and let the service roll.
+
 **Collect the outputs.** These are the GitHub settings from Stage 4, Task 1:
 
 ```sh
