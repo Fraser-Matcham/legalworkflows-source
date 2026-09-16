@@ -229,6 +229,37 @@ whether the product is usable. You are the first person who will find out.
 
 **Before you start:** I will tell you the application is live at your domain.
 
+### First, the automated smoke test
+
+Before spending an hour or two on this by hand, spend one minute proving the
+stack is actually serving and its gates hold. From a checkout of this
+repository:
+
+```bash
+npm run smoke -- --app-url https://legalworkflows.co.uk \
+                 --alb-host <the load balancer's DNS name> \
+                 --bucket <the document bucket's name>
+```
+
+The load balancer's DNS name and the bucket name are both outputs of
+`terraform apply` in `infra/`. It reads nothing private and writes nothing —
+every request is an anonymous GET to a public surface — so it is safe to point
+at production, which is the point of it.
+
+It checks six things: that http redirects to https, that the site serves, that
+`/api/ready` answers through the edge, that `/legal` offers the source (an
+AGPL-3.0 section 13 obligation, live from the first visitor), that the load
+balancer **refuses** a request that did not come through CloudFront, and that
+the document bucket refuses an anonymous listing.
+
+Those last two are the ones worth running it for. Until now they have only
+ever been asserted from the Terraform. If you leave out `--alb-host` or
+`--bucket` it reports them as **NOT CHECKED** and fails rather than passing
+quietly — a green run that skipped the security checks would be worse than no
+run at all.
+
+Anything that is not `ok`, stop and tell me before continuing.
+
 ### Steps
 
 Work through this in order, on the real site, using a real document. Use a

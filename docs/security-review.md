@@ -109,8 +109,19 @@ have it.
 2. **Finding 2 needs `terraform apply`** before the running services stop
    accepting an exec session.
 3. **The review is static.** Nothing here was tested against the running
-   deployment — no authenticated probing of the deployed API, no check that the
-   origin header gate actually refuses a direct ALB request in production.
-   That belongs with the cutover smoke test (row 4.13).
+   deployment. The origin header gate refusing a direct ALB request, and the
+   document bucket refusing an anonymous listing, are both asserted from the
+   Terraform and never observed.
+
+   `scripts/smoke-test.mjs` (row 4.13, `npm run smoke`) now checks exactly
+   those two, from outside, against the deployed stack — and reports NOT
+   CHECKED rather than success when it is run without the arguments they need.
+   It is written and self-tested in both directions; it has not yet been run
+   against a deployment, because there is not one. Running it is part of
+   cutover, Stage 4 Task 5.
+
+   What it still does not cover: any authenticated probing of the deployed
+   API. Every request it makes is anonymous, so tenancy and authorisation on
+   the live system remain covered by the test suite alone.
 4. **`buffers@0.1.1`** ships with no declared licence. Tracked as a licence
    item rather than a security one, in `docs/licence-compliance.md`.

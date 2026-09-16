@@ -254,6 +254,14 @@ jobs:
 
       - run: npm run frontend-boundary
 
+      # The cutover smoke test (scripts/smoke-test.mjs, plan row 4.13)
+      # needs a deployed stack, so CI runs only its self-test: that the
+      # checks pass against a stub that is configured correctly, FAIL
+      # against one that answers a direct origin request or serves the
+      # document bucket to anonymous callers, and report NOT CHECKED
+      # rather than success when the operator leaves an argument out.
+      - run: npm run smoke:self-test
+
   api-contract:
     name: API contract
     runs-on: ubuntu-latest
