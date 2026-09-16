@@ -139,9 +139,24 @@ current with what is actually deployed.
    longest offered (you will be reminded to renew it); under **Repository
    access** choose **Only select repositories** and pick
    `legalworkflows-source`; under **Permissions → Repository permissions**
-   set **Contents** to **Read and write** and leave everything else at
-   *No access*. Click **Generate token** and copy it — it is shown once.
-   This is the `SOURCE_MIRROR_TOKEN` secret in Task 1.
+   set **both** of these to **Read and write**, leaving everything else at
+   *No access*:
+   - **Contents** — to push the tree and its history.
+   - **Workflows** — because the mirror is a complete copy and therefore
+     contains `.github/workflows/`. GitHub refuses to let *any* token write a
+     workflow file without this, whatever its Contents permission, and the
+     push is rejected per-ref with *"refusing to allow a Personal Access
+     Token to create or update workflow ... without `workflow` scope"*.
+     Stripping the workflows from the mirror is not the alternative: AGPL-3.0
+     section 1 counts the scripts that control building and installation as
+     part of the Corresponding Source.
+
+   Click **Generate token** and copy it — it is shown once. This is the
+   `SOURCE_MIRROR_TOKEN` secret in Task 1.
+
+   *If you have already made the token and need to add a permission, edit it
+   rather than regenerating: changing a token's permissions does not change
+   its value, so the stored secret stays correct.*
 
 ### Tell me
 
