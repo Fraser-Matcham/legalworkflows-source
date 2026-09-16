@@ -17,8 +17,11 @@ infra/
   providers.tf     AWS provider, default tags, account/region data sources
   variables.tf     root inputs, all with production defaults
   locals.tf        name prefix and the tag set every resource carries
-  outputs.tf       values later stages need (account id, region)
-  modules/         one module per row of the Stage 3 table in plan.md
+  outputs.tf       values later stages need (account id, region, names, URLs)
+  imports.tf       the hand-created resources Terraform adopts (zone, OIDC provider, deploy role)
+  modules/         one module per row of the Stage 3 table in plan.md:
+                   network, storage, backup, secrets, dns, backend, frontend,
+                   observability, email, deploy — each with its own README
 ```
 
 Each module in `modules/` maps to one row of the Stage 3 engineering table in

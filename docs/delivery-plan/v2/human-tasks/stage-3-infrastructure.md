@@ -417,16 +417,19 @@ against the same Route 53 zone that task creates.
 
 ## When all ten are done
 
-Send me the answers and I will build the infrastructure: the network, the
-storage, the container services, the load balancer, the CDN, the certificate,
-the secrets, the SES domain identity and SMTP credential, and the alarms —
-all as Terraform code in the repository, reviewed in a pull request before
-anything is created.
+The infrastructure is already written and reviewed: the network, the
+storage and its backup, the container services, the load balancer, the CDN,
+the certificates, the secrets, the SES domain identity and SMTP credential,
+the alarms and the deploy role, as Terraform code under `infra/` with a
+README per module. Your answers are its inputs — the zone ID, the account,
+the state bucket — and the tasks above are the only things it cannot do for
+you.
 
-I will then run it against your account, prove a document can be uploaded and
-downloaded through real S3, prove a database restore works, and give you the
-handful of SMTP settings to paste into Supabase's **Authentication → SMTP
-Settings** so sign-in emails send from your own domain — the step Task 5 in
-Stage 2's runbook pointed here for.
+Send me the answers and I will run it against your account, prove a document
+can be uploaded and downloaded through real S3, prove a database restore
+works (`docs/runbooks/restore.md`), and give you the handful of SMTP settings
+to paste into Supabase's **Authentication → SMTP Settings** so sign-in emails
+send from your own domain — the step Task 5 in Stage 2's runbook pointed here
+for.
 
 Stage 4's runbook is the last one: it covers going live.
