@@ -10,6 +10,9 @@ this page is why it is shaped the way it is. Stage 4 of
 merge to main
    │
    ▼
+ config    the deployment settings, read once, with the environment resolved
+   │       ── AWS_ROLE_ARN not set → nothing deploys, and the summary says what was visible
+   ▼
  gate      every other check on this commit is green — or we wait, or we stop
    │
    ▼
@@ -34,10 +37,19 @@ merge to main
 One deploy runs at a time (`concurrency: production-deploy`); a second merge
 waits for the first rather than cancelling it.
 
-Until the `AWS_ROLE_ARN` variable exists (Stage 4, Task 1), every job is
-skipped and a single notice says so — a merge to `main` before the
-footprint is applied must not produce a red run and an email. From the
-moment it exists, every step below is strict.
+Until the `AWS_ROLE_ARN` variable exists (Stage 4, Task 1), every job after
+`config` is skipped and the run summary lists which settings the run could
+see — a merge to `main` before the footprint is applied must not produce a red
+run and an email. From the moment it exists, every step below is strict.
+
+That check is a job rather than a condition on each job because a job-level
+`if:` is evaluated *before* the job's environment is resolved, and so sees
+only repository- and organisation-scoped variables. With the five settings on
+the `production` environment — where they naturally belong, since every job
+that touches AWS names it — such a condition reads empty and the pipeline
+skips itself in silence while the settings page shows everything present.
+Reading them inside a job that declares the environment works at either scope,
+and the values other jobs need travel from there as job outputs.
 
 ## Each step, and the reason for its position
 
@@ -135,6 +147,11 @@ are the first two things to do once it is.
 | variable | `SOURCE_MIRROR_REPOSITORY` | `owner/repo` of the public mirror (Stage 4, Task 3) |
 | secret | `SUPABASE_DB_URL` | the project's **session pooler** connection string |
 | secret | `SOURCE_MIRROR_TOKEN` | a fine-grained token with *Contents: read and write* on the mirror repository only |
+
+Either scope works: the repository's own **Secrets and variables → Actions**
+tabs, or the `production` environment's. Nothing outside a job that declares
+`environment: production` reads any of them, which is what makes the choice
+free — see `config` above.
 
 Runtime secrets — the Supabase service key, the model provider key — are
 **not** GitHub secrets. They live in Secrets Manager and reach the tasks

@@ -1,9 +1,11 @@
 # Release pipeline: a merge to main becomes the running production service.
 #
-#   gate ──▶ mirror ──▶ build (backend, frontend) ──▶ migrate ──▶ backend ──▶ frontend ──▶ summary
+#   config ──▶ gate ──▶ mirror ──▶ build (backend, frontend) ──▶ migrate ──▶ backend ──▶ frontend ──▶ summary
 #
 # The order is the point (docs/release-pipeline.md explains each step):
 #
+#   config   reads the deployment settings, and is the only place that
+#            decides whether there is anywhere to deploy to;
 #   gate     nothing deploys unless every CI check on this exact commit is
 #            green (ticket 2052);
 #   mirror   the Corresponding Source is published BEFORE anything runs, so a
@@ -26,6 +28,10 @@
 #   secrets    SUPABASE_DB_URL (session-pooler connection string),
 #              SOURCE_MIRROR_TOKEN (fine-grained PAT: contents write on the
 #              mirror only)
+#
+# Either scope works: repository, or the `production` environment. Which one
+# is used is invisible here because nothing below reads a variable outside a
+# job that has resolved the environment — see the `config` job.
 name: Deploy
 
 on:
@@ -45,29 +51,101 @@ permissions:
   checks: read # the gate reads this commit's check runs
   actions: read
 
+# Only what is constant. A workflow-level `env` is evaluated without a job's
+# environment resolved, so anything fed by a variable is read by `config`
+# instead and reaches the jobs that need it as an output.
 env:
-  AWS_REGION: ${{ vars.AWS_REGION }}
   NAME_PREFIX: legalworkflows-production
-  ECR_REGISTRY: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com
 
 jobs:
-  # Until Stage 4, Task 1 has set the AWS variables there is nothing to deploy
-  # to. Skipping — rather than failing — keeps every merge to main from
-  # producing a red run and an email while the footprint is still being built.
-  # Once AWS_ROLE_ARN exists, everything below is strict.
-  not-configured:
-    name: Deploy pipeline not configured yet
-    if: vars.AWS_ROLE_ARN == ''
+  # Where the deployment settings are read, and the only place that decides
+  # whether there is anywhere to deploy to.
+  #
+  # It declares `environment: production`, and that is the whole point. A
+  # job-level `if: vars.AWS_ROLE_ARN != ''` sees only repository- and
+  # organisation-scoped variables, because GitHub evaluates `if` before it
+  # resolves the job's environment. A repository whose values live on the
+  # `production` environment — the natural place for them, given four jobs
+  # below name it — then looks exactly like a repository with nothing
+  # configured at all, and every deploy job skips in silence. Reading them
+  # here works whichever scope they were added at.
+  #
+  # Values other jobs need travel from here as outputs rather than being
+  # re-read from `vars`, so there is one answer per run to what is configured.
+  # Secrets never travel that way: a job that needs one names the environment.
+  #
+  # Skipping rather than failing when nothing is set keeps a merge to main
+  # from producing a red run and an email while the footprint is still being
+  # built. Once AWS_ROLE_ARN exists, everything below is strict.
+  config:
+    name: Read the deployment configuration
     runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      configured: ${{ steps.read.outputs.configured }}
+      mirror_repository: ${{ steps.read.outputs.mirror_repository }}
+      ecr_registry: ${{ steps.read.outputs.ecr_registry }}
     steps:
-      - run: |
-          echo "::notice::AWS_ROLE_ARN is not set, so this commit was not deployed. Complete Stage 4, Task 1 (docs/delivery-plan/v2/human-tasks/stage-4-launch.md) to switch the pipeline on."
-          echo "Not deployed: the pipeline is not configured yet (Stage 4, Task 1)." >> "$GITHUB_STEP_SUMMARY"
+      - id: read
+        env:
+          IN_AWS_REGION: ${{ vars.AWS_REGION }}
+          IN_AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          IN_AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+          IN_APP_URL: ${{ vars.APP_URL }}
+          IN_SOURCE_MIRROR_REPOSITORY: ${{ vars.SOURCE_MIRROR_REPOSITORY }}
+          SET_SOURCE_MIRROR_TOKEN: ${{ secrets.SOURCE_MIRROR_TOKEN != '' }}
+          SET_SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL != '' }}
+        run: |
+          set -u
+
+          if [ -n "$IN_AWS_ROLE_ARN" ]; then
+            {
+              echo "configured=true"
+              echo "mirror_repository=$IN_SOURCE_MIRROR_REPOSITORY"
+              echo "ecr_registry=${IN_AWS_ACCOUNT_ID}.dkr.ecr.${IN_AWS_REGION}.amazonaws.com"
+            } >> "$GITHUB_OUTPUT"
+            echo "deploying to $IN_AWS_ACCOUNT_ID in $IN_AWS_REGION"
+            exit 0
+          fi
+
+          echo "configured=false" >> "$GITHUB_OUTPUT"
+
+          # Names and set/unset only, never values. Without this, a missing
+          # setting and a setting this run cannot read look identical.
+          {
+            echo "## Not deployed: the pipeline is not configured yet"
+            echo
+            echo "\`AWS_ROLE_ARN\` is empty, so every deploy job was skipped. This job reads"
+            echo "the settings with the \`production\` environment resolved, so it sees the"
+            echo "repository, organisation and environment scopes alike."
+            echo
+            echo "| Setting | Kind | Seen |"
+            echo "| --- | --- | --- |"
+            for name in AWS_REGION AWS_ACCOUNT_ID AWS_ROLE_ARN APP_URL SOURCE_MIRROR_REPOSITORY; do
+              ref="IN_$name"
+              [ -n "${!ref}" ] && seen="yes" || seen="NO"
+              echo "| \`$name\` | variable | $seen |"
+            done
+            for name in SUPABASE_DB_URL SOURCE_MIRROR_TOKEN; do
+              ref="SET_$name"
+              [ "${!ref}" = "true" ] && seen="yes" || seen="NO"
+              echo "| \`$name\` | secret | $seen |"
+            done
+            echo
+            echo "Every row NO, with values on the settings page, means they are scoped"
+            echo "where even this job cannot read them: an organisation that has not"
+            echo "granted this repository access, or a different repository from the one"
+            echo "that ran."
+            echo
+            echo "See docs/delivery-plan/v2/human-tasks/stage-4-launch.md, Task 1."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice::AWS_ROLE_ARN is empty, so nothing was deployed. The run summary lists which settings this run could see."
 
   # ---------------------------------------------------------------------------
   gate:
     name: Wait for CI on this commit
-    if: vars.AWS_ROLE_ARN != ''
+    needs: config
+    if: needs.config.outputs.configured == 'true'
     runs-on: ubuntu-latest
     outputs:
       sha: ${{ steps.meta.outputs.sha }}
@@ -134,6 +212,9 @@ jobs:
     name: Publish the Corresponding Source
     needs: gate
     runs-on: ubuntu-latest
+    # SOURCE_MIRROR_REPOSITORY and SOURCE_MIRROR_TOKEN are read below; without
+    # this line they are invisible when they are scoped to the environment.
+    environment: production
     steps:
       - uses: actions/checkout@v7
         with:
@@ -168,9 +249,11 @@ jobs:
   # ---------------------------------------------------------------------------
   build:
     name: Build and scan (${{ matrix.service }})
-    needs: [gate, mirror]
+    needs: [config, gate, mirror]
     runs-on: ubuntu-latest
     environment: production
+    env:
+      ECR_REGISTRY: ${{ needs.config.outputs.ecr_registry }}
     strategy:
       fail-fast: true
       matrix:
@@ -301,9 +384,11 @@ jobs:
   # ---------------------------------------------------------------------------
   backend:
     name: Deploy the backend
-    needs: [gate, migrate]
+    needs: [config, gate, migrate]
     runs-on: ubuntu-latest
     environment: production
+    env:
+      ECR_REGISTRY: ${{ needs.config.outputs.ecr_registry }}
     outputs:
       revision: ${{ steps.register.outputs.revision }}
     steps:
@@ -389,9 +474,11 @@ jobs:
   # ---------------------------------------------------------------------------
   frontend:
     name: Deploy the frontend
-    needs: [gate, backend]
+    needs: [config, gate, backend]
     runs-on: ubuntu-latest
     environment: production
+    env:
+      ECR_REGISTRY: ${{ needs.config.outputs.ecr_registry }}
     outputs:
       revision: ${{ steps.register.outputs.revision }}
     steps:
@@ -442,7 +529,7 @@ jobs:
   # ---------------------------------------------------------------------------
   summary:
     name: Record the release
-    needs: [gate, backend, frontend]
+    needs: [config, gate, backend, frontend]
     runs-on: ubuntu-latest
     steps:
       - run: |
@@ -455,7 +542,7 @@ jobs:
             echo "| tag | \`${{ needs.gate.outputs.tag }}\` |"
             echo "| backend task definition | \`legalworkflows-production-backend:${{ needs.backend.outputs.revision }}\` |"
             echo "| frontend task definition | \`legalworkflows-production-frontend:${{ needs.frontend.outputs.revision }}\` |"
-            echo "| source | https://github.com/${{ vars.SOURCE_MIRROR_REPOSITORY }}/tree/${{ needs.gate.outputs.sha }} |"
+            echo "| source | https://github.com/${{ needs.config.outputs.mirror_repository }}/tree/${{ needs.gate.outputs.sha }} |"
             echo
             echo "To undo: run the Rollback workflow with the revisions from the release before this one."
           } >> "$GITHUB_STEP_SUMMARY"

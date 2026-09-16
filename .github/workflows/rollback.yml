@@ -32,8 +32,10 @@ permissions:
   id-token: write
   contents: read
 
+# The region is not here: a workflow-level `env` is evaluated without a job's
+# environment resolved, so a variable scoped to `production` reads empty. The
+# job below takes it from `vars` directly, which works at either scope.
 env:
-  AWS_REGION: ${{ vars.AWS_REGION }}
   NAME_PREFIX: legalworkflows-production
 
 jobs:
