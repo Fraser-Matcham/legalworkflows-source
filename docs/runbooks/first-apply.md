@@ -156,8 +156,7 @@ you have them, and add their names to `backend_extra_secret_keys` in
 > **Decide about the workflow catalogue before your first release.** The
 > release pipeline runs the catalogue sync from the new image and treats its
 > exit code as the verdict, so this is not a setting you can leave for later
-> and discover at the worst moment. Deploy run 12 on `main` failed exactly
-> here.
+> and discover at the worst moment.
 >
 > Pick one:
 >
