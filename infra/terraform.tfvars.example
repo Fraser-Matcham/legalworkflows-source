@@ -20,6 +20,10 @@ supabase_publishable_key = "sb_publishable_..."
 
 # The workflow catalogue the release job syncs. Point at your own fork, and pin
 # a commit SHA for a reproducible release.
+# The workflow catalogue. The release pipeline syncs it from the new image and
+# fails the deploy if it cannot — so if you point this at a repository the
+# deployment cannot read, every release stops there. Set it to "" if you do not
+# want a catalogue: the sync is then skipped and the release continues.
 workflows_repository = "Open-Legal-Products/mike-workflows"
 workflows_ref        = "main"
 

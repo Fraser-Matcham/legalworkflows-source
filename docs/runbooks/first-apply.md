@@ -153,31 +153,34 @@ keeps the command out of your shell history. Add `ERROR_TRACKING_DSN`,
 you have them, and add their names to `backend_extra_secret_keys` in
 `terraform.tfvars` on the next apply so the task reads them.
 
-> **The workflow catalogue is not as optional as it looks.** Everything in
-> this repository treats `MIKE_WORKFLOWS_GITHUB_TOKEN` as an extra:
-> `backend_extra_secret_keys` defaults to `[]`, the line above says "if you
-> have them", and `terraform.tfvars.example` has it commented out. The release
-> pipeline does not agree. `.github/workflows/deploy.yml` runs the catalogue
-> sync as a release job from the new image and, in its own words, "its exit
-> code is the verdict" — so a sync that cannot reach its catalogue fails the
-> deploy, after the images are built and before any traffic moves.
+> **Decide about the workflow catalogue before your first release.** The
+> release pipeline runs the catalogue sync from the new image and treats its
+> exit code as the verdict, so this is not a setting you can leave for later
+> and discover at the worst moment. Deploy run 12 on `main` failed exactly
+> here.
 >
-> Deploy run 12 on `main` failed exactly there. Before your first release,
-> decide which you want:
+> Pick one:
 >
 > - **A catalogue.** Point `workflows_repository` at a repository this
 >   deployment can read — AGENTS.md rule 2 asks for your own fork, since the
 >   variable name is configuration and the value is ownership — and, if it is
->   private, write `MIKE_WORKFLOWS_GITHUB_TOKEN` into the operator secret and
->   list it in `backend_extra_secret_keys`. Add the name only after writing
+>   private, write `MIKE_WORKFLOWS_GITHUB_TOKEN` into the operator secret above
+>   and list it in `backend_extra_secret_keys`. Add the name only after writing
 >   the value: a referenced key that is absent stops the task from starting.
-> - **No catalogue yet.** Then the sync step will fail the release as things
->   stand, and that needs deciding rather than discovering. See the note in
->   `docs/deployment.md`.
+> - **No catalogue.** Set `workflows_repository = ""`. The sync job exits 78,
+>   the pipeline reads that as a skip rather than a failure, and the release
+>   summary records `skipped (no catalogue configured)` so nobody later mistakes
+>   it for a sync that ran.
 >
-> Since deploy run 12, a failing sync prints the task's own output into the
-> workflow log, so the next failure says which of the two it was instead of
-> naming a log stream.
+> **Leaving the default is neither.** It resolves to the upstream
+> `Open-Legal-Products/mike-workflows`, which is a real catalogue your
+> deployment may not be able to read — and a release that cannot sync it stops.
+> That is deliberate: skipping on an unset value would hide a misconfiguration
+> behind a green release.
+>
+> If a sync does fail, the step now prints the task's own last hundred lines
+> into the workflow log, so the reason is in the run rather than a log stream
+> you have to go and find.
 
 **Check the signed-URL round trip against real S3** (plan row 3.10). The
 storage client was written for Cloudflare R2, which signs with the region
