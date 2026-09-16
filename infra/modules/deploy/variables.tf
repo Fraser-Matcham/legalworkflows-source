@@ -24,9 +24,18 @@ variable "github_repository" {
 }
 
 variable "deploy_branches" {
-  description = "Branches whose workflow runs may assume the role. A pull-request run has a different subject and is refused — CI never deploys from a branch under review."
+  description = <<-EOT
+    Branches whose workflow runs may assume the role *without declaring a
+    GitHub environment*. Empty by default, and that is the security property:
+    a branch subject would let any job on that branch assume the role while
+    skipping the environment's protection rules, so the environment approval
+    would be advisory rather than a gate. Every job in deploy.yml and
+    rollback.yml that touches AWS declares `environment: production`, so
+    nothing needs a branch subject. Add one only if you accept that the
+    approval can be bypassed, and correct the README if you do.
+  EOT
   type        = list(string)
-  default     = ["main"]
+  default     = []
 }
 
 variable "deploy_environments" {

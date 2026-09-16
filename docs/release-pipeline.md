@@ -141,10 +141,13 @@ Runtime secrets — the Supabase service key, the model provider key — are
 from there (`infra/modules/secrets/README.md`); the pipeline never sees
 them.
 
-Jobs that touch AWS run in the `production` GitHub environment. The deploy
-role's trust policy accepts that environment's token subject and pushes to
-`main`, so protection rules on the environment (a required reviewer, a wait
-timer) gate the deploy at GitHub's side if the operator wants one.
+Jobs that touch AWS run in the `production` GitHub environment, and the
+deploy role's trust policy accepts **only** that environment's token
+subject — not a bare push to `main`. A job that omitted the `environment:`
+line would get a subject the policy does not list and would fail to assume
+the role. That is what makes protection rules on the environment (a required
+reviewer, a wait timer) an actual gate on production access rather than a
+convention; `infra/modules/deploy/README.md` has the reasoning.
 
 ## What it deliberately does not do
 

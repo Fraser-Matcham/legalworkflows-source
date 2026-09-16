@@ -12,6 +12,12 @@ resource "aws_iam_openid_connect_provider" "github" {
   tags = { Name = "github-actions" }
 }
 
+# The token subjects the role accepts. GitHub gives a job the environment
+# subject when it declares `environment:`, and the branch subject otherwise.
+# Accepting both would mean the environment's protection rules (required
+# reviewers, wait timer) could be skipped by a job that simply omits the
+# environment, so deploy_branches is empty by default and the environment
+# subject is the only way in.
 locals {
   github_subjects = concat(
     [for b in var.deploy_branches : "repo:${var.github_repository}:ref:refs/heads/${b}"],
@@ -51,4 +57,14 @@ resource "aws_iam_role" "github_actions" {
   max_session_duration = 3600
 
   tags = { Name = var.role_name }
+
+  lifecycle {
+    # Both lists empty would produce a StringLike over no values, which
+    # matches nothing: a role nothing can assume, discovered at the first
+    # deploy rather than here.
+    precondition {
+      condition     = length(local.github_subjects) > 0
+      error_message = "deploy_branches and deploy_environments cannot both be empty: the role would accept no token at all."
+    }
+  }
 }

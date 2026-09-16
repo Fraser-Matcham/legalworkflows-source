@@ -163,9 +163,9 @@ variable "github_repository" {
 }
 
 variable "deploy_branches" {
-  description = "Branches whose pushes may deploy. See infra/modules/deploy/README.md."
+  description = "Branches whose pushes may assume the deploy role without declaring a GitHub environment. Empty on purpose — see infra/modules/deploy/README.md, \"Who may assume it\"."
   type        = list(string)
-  default     = ["main"]
+  default     = []
 }
 
 variable "deploy_environments" {
