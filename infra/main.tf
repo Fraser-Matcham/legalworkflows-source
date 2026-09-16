@@ -17,6 +17,19 @@ module "storage" {
   allowed_origins = ["https://${var.domain_name}"]
 }
 
+module "dns" {
+  source = "./modules/dns"
+
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
+
+  name_prefix      = local.name_prefix
+  domain_name      = var.domain_name
+  origin_subdomain = var.origin_subdomain
+}
+
 module "secrets" {
   source = "./modules/secrets"
 
