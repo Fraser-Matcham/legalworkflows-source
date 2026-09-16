@@ -153,6 +153,32 @@ keeps the command out of your shell history. Add `ERROR_TRACKING_DSN`,
 you have them, and add their names to `backend_extra_secret_keys` in
 `terraform.tfvars` on the next apply so the task reads them.
 
+> **The workflow catalogue is not as optional as it looks.** Everything in
+> this repository treats `MIKE_WORKFLOWS_GITHUB_TOKEN` as an extra:
+> `backend_extra_secret_keys` defaults to `[]`, the line above says "if you
+> have them", and `terraform.tfvars.example` has it commented out. The release
+> pipeline does not agree. `.github/workflows/deploy.yml` runs the catalogue
+> sync as a release job from the new image and, in its own words, "its exit
+> code is the verdict" — so a sync that cannot reach its catalogue fails the
+> deploy, after the images are built and before any traffic moves.
+>
+> Deploy run 12 on `main` failed exactly there. Before your first release,
+> decide which you want:
+>
+> - **A catalogue.** Point `workflows_repository` at a repository this
+>   deployment can read — AGENTS.md rule 2 asks for your own fork, since the
+>   variable name is configuration and the value is ownership — and, if it is
+>   private, write `MIKE_WORKFLOWS_GITHUB_TOKEN` into the operator secret and
+>   list it in `backend_extra_secret_keys`. Add the name only after writing
+>   the value: a referenced key that is absent stops the task from starting.
+> - **No catalogue yet.** Then the sync step will fail the release as things
+>   stand, and that needs deciding rather than discovering. See the note in
+>   `docs/deployment.md`.
+>
+> Since deploy run 12, a failing sync prints the task's own output into the
+> workflow log, so the next failure says which of the two it was instead of
+> naming a log stream.
+
 **Collect the outputs.** These are the GitHub settings from Stage 4, Task 1:
 
 ```sh

@@ -47,6 +47,35 @@ job exits. Run this as a release job before directing traffic to the new
 backend; backend startup itself only reads the database. Docker Compose runs
 this sequence automatically for local/self-hosted deployments.
 
+### The sync gates the release, and the catalogue is configured as optional
+
+`.github/workflows/deploy.yml` runs this job on ECS from the newly built image
+and treats its exit code as the verdict: a sync that cannot reach its catalogue
+fails the deploy, after both images are built and before any traffic moves.
+
+Everything around it says the opposite. `MIKE_WORKFLOWS_GITHUB_TOKEN` is an
+optional operator secret — `backend_extra_secret_keys` defaults to `[]`, it is
+commented out in `infra/terraform.tfvars.example`, and
+`docs/runbooks/first-apply.md` says to add it "if you have them".
+`workflows_repository` defaults to the upstream
+`Open-Legal-Products/mike-workflows`, which a given deployment may or may not
+be able to read. So an operator can follow the setup exactly as written and
+still have every release fail at this step — which is what happened to deploy
+run 12 on `main`.
+
+The two are not reconciled yet, and reconciling them is a decision rather than
+a bug fix. Either the catalogue becomes a documented prerequisite of
+deploying, or the sync learns the difference between "not configured" — skip,
+and say so — and "configured and failing" — stop the release. The second is
+the better shape, because a catalogue that was never set up is not a release
+failure, while a token that expired certainly is. It needs a way to tell those
+apart that does not exist today: there is no "no catalogue" value, only a
+default pointing at somebody else's repository.
+
+Until it is settled, treat the catalogue as required. A failing sync now
+prints the task's own output into the workflow log, so the reason is in the
+run rather than a log stream you have to go and find.
+
 ## Environment
 
 Copy the maintained examples:
