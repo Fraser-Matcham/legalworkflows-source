@@ -146,7 +146,15 @@ are the first two things to do once it is.
 | variable | `APP_URL` | `https://legalworkflows.co.uk` |
 | variable | `SOURCE_MIRROR_REPOSITORY` | `owner/repo` of the public mirror (Stage 4, Task 3) |
 | secret | `SUPABASE_DB_URL` | the project's **session pooler** connection string |
-| secret | `SOURCE_MIRROR_TOKEN` | a fine-grained token with *Contents: read and write* on the mirror repository only |
+| secret | `SOURCE_MIRROR_TOKEN` | a fine-grained token on the mirror repository only, with *Contents: read and write* **and** *Workflows: read and write* |
+
+Both token permissions are needed, not just Contents: the mirror is a
+complete copy of the tree, so it carries `.github/workflows/`, and GitHub
+rejects a push that writes a workflow file from a token without workflow
+permission — per ref, with *"refusing to allow a Personal Access Token to
+create or update workflow ... without `workflow` scope"*. Publishing them is
+not optional either: AGPL-3.0 section 1 counts the scripts controlling build
+and installation as part of the Corresponding Source.
 
 Either scope works: the repository's own **Secrets and variables → Actions**
 tabs, or the `production` environment's. Nothing outside a job that declares
