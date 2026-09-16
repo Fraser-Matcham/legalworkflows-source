@@ -1,10 +1,11 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import LegalNoticesPage from "./page";
 import {
     COPYRIGHT_HOLDER,
     LICENCE_URL,
     MODIFICATION_DATE,
+    UPSTREAM_URL,
 } from "@/app/lib/legalNotice";
 
 /**
@@ -48,5 +49,38 @@ describe("Legal notices page", () => {
         expect(
             screen.getByText(new RegExp(MODIFICATION_DATE)),
         ).toBeInTheDocument();
+    });
+});
+
+/**
+ * Section 13: a prominent offer of the Corresponding Source of the version
+ * being served. The release pipeline sets NEXT_PUBLIC_SOURCE_URL to the
+ * public mirror at the deployed commit; without it the page must still show
+ * a working offer rather than a broken link.
+ */
+describe("Corresponding Source offer", () => {
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
+    it("links to the source of this build when the release set it", () => {
+        const url =
+            "https://github.com/example/legalworkflows-source/tree/0123456789abcdef0123456789abcdef01234567";
+        vi.stubEnv("NEXT_PUBLIC_SOURCE_URL", url);
+        render(<LegalNoticesPage />);
+        const offer = screen.getByTestId("source-offer");
+        expect(offer).toHaveTextContent(/Corresponding Source/);
+        expect(offer).toHaveTextContent(/no charge/);
+        expect(screen.getByRole("link", { name: url })).toHaveAttribute(
+            "href",
+            url,
+        );
+    });
+
+    it("falls back to the upstream repository when nothing was set", () => {
+        vi.stubEnv("NEXT_PUBLIC_SOURCE_URL", "");
+        render(<LegalNoticesPage />);
+        const offer = screen.getByTestId("source-offer");
+        expect(offer.querySelector("a")).toHaveAttribute("href", UPSTREAM_URL);
     });
 });

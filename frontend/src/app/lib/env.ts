@@ -1,7 +1,7 @@
 /**
  * The frontend's environment contract, in one place.
  *
- * The frontend reads exactly three variables (`frontend/.env.example`
+ * The frontend reads exactly four variables (`frontend/.env.example`
  * documents them). Until this module existed, each was validated — or not —
  * at its point of use, with two consequences worth stating plainly:
  *
@@ -60,6 +60,7 @@ export type FrontendEnv = {
     API_BASE_URL?: string | undefined;
     NEXT_PUBLIC_APP_URL?: string | undefined;
     NEXT_PUBLIC_WORKFLOW_CONTRIBUTIONS_ENABLED?: string | undefined;
+    NEXT_PUBLIC_SOURCE_URL?: string | undefined;
 };
 
 /** Where a local backend answers when nothing is configured. */
@@ -168,6 +169,29 @@ export function checkFrontendEnv(
             severity: "warning",
             problem: `is ${JSON.stringify(appUrl)}, whose trailing slash produces double-slashed URLs in metadata.`,
             hint: "Remove the trailing slash.",
+        });
+    }
+
+    // The AGPL section 13 offer: where the Corresponding Source of THIS build
+    // is. The release pipeline passes it as a build argument; a production
+    // build without it falls back to the upstream repository, which is a
+    // true statement about the licence but not about this version, so say
+    // so. Never fatal: the e2e suite and local builds have no mirror.
+    const sourceUrl = env.NEXT_PUBLIC_SOURCE_URL?.trim();
+    if (!sourceUrl) {
+        issues.push({
+            name: "NEXT_PUBLIC_SOURCE_URL",
+            severity: "warning",
+            problem:
+                "is not set, so the Corresponding Source link on /legal points at the upstream repository rather than at this build's source.",
+            hint: "Set it at build time to the public mirror at this commit, for example https://github.com/<owner>/<mirror>/tree/<sha>. The release pipeline does this.",
+        });
+    } else if (!parseHttpUrl(sourceUrl)) {
+        issues.push({
+            name: "NEXT_PUBLIC_SOURCE_URL",
+            severity: escalate("fatal"),
+            problem: `is ${JSON.stringify(sourceUrl)}, which is not an absolute http or https URL.`,
+            hint: "Include the scheme, for example https://github.com/<owner>/<mirror>/tree/<sha>.",
         });
     }
 

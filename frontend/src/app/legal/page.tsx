@@ -10,6 +10,7 @@ import {
     UPSTREAM_NAME,
     UPSTREAM_ORG,
     UPSTREAM_URL,
+    correspondingSourceUrl,
 } from "@/app/lib/legalNotice";
 
 /**
@@ -32,6 +33,10 @@ export const metadata: Metadata = {
 };
 
 export default function LegalNoticesPage() {
+    // The literal expression is required: Next substitutes NEXT_PUBLIC_* at
+    // build time by textual match on exactly this form.
+    const sourceUrl = correspondingSourceUrl(process.env.NEXT_PUBLIC_SOURCE_URL);
+
     return (
         <main className="mx-auto w-full max-w-2xl px-6 py-16">
             <div className="mb-10">
@@ -71,6 +76,19 @@ export default function LegalNoticesPage() {
                     but <strong>WITHOUT ANY WARRANTY</strong>; without even the
                     implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
                     PURPOSE. See the {LICENCE_NAME} for more details.
+                </p>
+
+                <p data-testid="source-offer">
+                    The complete source code of the version of this program you
+                    are using — its Corresponding Source, as the licence calls
+                    it — is available at no charge at{" "}
+                    <Link
+                        href={sourceUrl}
+                        className="break-all underline underline-offset-2 hover:text-gray-900"
+                    >
+                        {sourceUrl}
+                    </Link>
+                    .
                 </p>
 
                 <p data-testid="third-party-notices">

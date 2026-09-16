@@ -16,6 +16,7 @@ const VALID = {
     API_BASE_URL: "http://backend:3001",
     NEXT_PUBLIC_APP_URL: "https://example.com",
     NEXT_PUBLIC_WORKFLOW_CONTRIBUTIONS_ENABLED: "false",
+    NEXT_PUBLIC_SOURCE_URL: "https://github.com/example/source/tree/abc1234",
 };
 
 const named = (issues: EnvIssue[], name: string) =>
@@ -239,6 +240,7 @@ describe("checkFrontendEnv", () => {
         expect(issues.map((issue) => issue.name)).toEqual([
             "API_BASE_URL",
             "NEXT_PUBLIC_APP_URL",
+            "NEXT_PUBLIC_SOURCE_URL",
             "NEXT_PUBLIC_WORKFLOW_CONTRIBUTIONS_ENABLED",
         ]);
     });
@@ -279,5 +281,38 @@ describe("formatEnvIssues", () => {
 
         expect(report).toContain("Frontend environment warnings:");
         expect(report).not.toContain("not usable");
+    });
+});
+
+describe("checkFrontendEnv: NEXT_PUBLIC_SOURCE_URL", () => {
+    it("warns, never dies, when the source offer URL is unset in production", () => {
+        // A build without a mirror (e2e, local) must still boot; the page
+        // falls back to the upstream repository and the log says so.
+        const issues = named(
+            checkFrontendEnv({ ...VALID, NEXT_PUBLIC_SOURCE_URL: undefined }, PROD),
+            "NEXT_PUBLIC_SOURCE_URL",
+        );
+
+        expect(issues).toHaveLength(1);
+        expect(issues[0].severity).toBe("warning");
+        expect(issues[0].problem).toContain("upstream repository");
+    });
+
+    it("is fatal in production when the source offer URL is malformed", () => {
+        // Nobody sets a broken URL on purpose, and a broken offer is worse
+        // than the fallback.
+        const issues = named(
+            checkFrontendEnv({ ...VALID, NEXT_PUBLIC_SOURCE_URL: "github.com/x" }, PROD),
+            "NEXT_PUBLIC_SOURCE_URL",
+        );
+
+        expect(issues).toHaveLength(1);
+        expect(issues[0].severity).toBe("fatal");
+    });
+
+    it("accepts a well-formed source offer URL", () => {
+        expect(
+            named(checkFrontendEnv(VALID, PROD), "NEXT_PUBLIC_SOURCE_URL"),
+        ).toHaveLength(0);
     });
 });

@@ -28,6 +28,7 @@ export function register() {
             NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
             NEXT_PUBLIC_WORKFLOW_CONTRIBUTIONS_ENABLED:
                 process.env.NEXT_PUBLIC_WORKFLOW_CONTRIBUTIONS_ENABLED,
+            NEXT_PUBLIC_SOURCE_URL: process.env.NEXT_PUBLIC_SOURCE_URL,
         },
         { production: process.env.NODE_ENV === "production" },
     );
