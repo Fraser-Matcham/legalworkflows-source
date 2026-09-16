@@ -17,8 +17,11 @@ infra/
   providers.tf     AWS provider, default tags, account/region data sources
   variables.tf     root inputs, all with production defaults
   locals.tf        name prefix and the tag set every resource carries
-  outputs.tf       values later stages need (account id, region)
-  modules/         one module per row of the Stage 3 table in plan.md
+  outputs.tf       values later stages need (account id, region, names, URLs)
+  imports.tf       the hand-created resources Terraform adopts (zone, OIDC provider, deploy role)
+  modules/         one module per row of the Stage 3 table in plan.md:
+                   network, storage, backup, secrets, dns, backend, frontend,
+                   observability, email, deploy — each with its own README
 ```
 
 Each module in `modules/` maps to one row of the Stage 3 engineering table in
@@ -91,10 +94,10 @@ step.
   is the ACM certificate CloudFront requires in `us-east-1`, which the `dns`
   module handles with an aliased provider and says so.
 - **Storage credentials**: the backend's S3 client (`backend/src/lib/storage.ts`)
-  currently reads static `R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY` values and
-  signs with `region: "auto"`, an R2-ism that real S3 rejects. The `storage`
-  and `secrets` modules therefore provision an IAM access key for the bucket,
-  and a small code change to make the region configurable is scheduled before
-  the signed-URL round trip in row 3.10. Moving to the task role afterwards
-  removes the long-lived key; that is a follow-up, not part of the first
-  footprint.
+  currently reads static `R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY` values, so
+  the `storage` and `secrets` modules provision an IAM access key for the
+  bucket. Its signing region comes from `R2_REGION`
+  (`backend/src/lib/storageRegion.ts`), which the `backend` module sets to the
+  footprint's region because real S3 rejects R2's `auto`. Moving to the task
+  role afterwards removes the long-lived key; that is a follow-up, not part
+  of the first footprint.

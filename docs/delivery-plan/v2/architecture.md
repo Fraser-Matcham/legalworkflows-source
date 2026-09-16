@@ -106,7 +106,8 @@ individually verified addresses until AWS approves a production-access
 request, a manual form with no fixed turnaround. Stage 3, Task 10 is that
 request, submitted as early in that stage as the domain allows so the wait
 overlaps with the rest of the infrastructure build rather than sitting on the
-critical path at the end.
+critical path at the end. **AWS approved it on 16 September 2026**, so the
+sandbox is no longer a constraint on anything.
 
 Task 5 in the Stage 2 runbook now points here and to Stage 3, Task 10 rather
 than repeating Resend's steps. The domain identity, DKIM records and SMTP
@@ -185,6 +186,7 @@ caching its static assets. Stage 3 provisions both services from one module.
 | `email` | SES domain identity, DKIM records, configuration set for bounce/complaint handling, IAM user scoped to `ses:SendRawEmail` for the SMTP credential |
 | `secrets` | Secrets Manager entries, IAM task role and execution role |
 | `observability` | CloudWatch log groups, retention, alarms, SNS topic |
+| `deploy` | GitHub's OIDC identity provider and the `github-actions-deploy` role (both created by hand in Stage 3 Task 5, then imported), trust narrowed to this repository's `main` and `production` environment, least-privilege deploy policy |
 
 Terraform state lives in a versioned S3 bucket, locked with Terraform's native
 S3 lock file rather than a DynamoDB table, created once by hand because state

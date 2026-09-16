@@ -41,3 +41,97 @@ output "operator_secret_name" {
   description = "Secrets Manager secret to populate with the operator-held values (infra/modules/secrets/README.md)."
   value       = module.secrets.operator_secret_name
 }
+
+output "origin_fqdn" {
+  description = "The load balancer's hostname, which CloudFront connects to."
+  value       = module.dns.origin_fqdn
+}
+
+output "backend_ecr_repository_url" {
+  description = "Where the Stage 4 deploy workflow pushes backend images."
+  value       = module.backend.ecr_repository_url
+}
+
+output "ecs_cluster_name" {
+  description = "Cluster both services run in; the deploy workflow needs it."
+  value       = module.backend.cluster_name
+}
+
+output "backend_service_name" {
+  description = "ECS service the deploy workflow updates."
+  value       = module.backend.service_name
+}
+
+output "backend_log_group_name" {
+  description = "Where the backend's logs go."
+  value       = module.backend.log_group_name
+}
+
+output "alb_dns_name" {
+  description = "The load balancer's own hostname, for debugging the origin directly. Requests without CloudFront's origin header get a 403 by design."
+  value       = module.backend.alb_dns_name
+}
+
+output "app_url" {
+  description = "The public origin, as served by CloudFront."
+  value       = module.frontend.app_url
+}
+
+output "cloudfront_distribution_id" {
+  description = "For cache invalidations and the observability module."
+  value       = module.frontend.distribution_id
+}
+
+output "cloudfront_domain_name" {
+  description = "The distribution's own hostname, which the apex records alias to."
+  value       = module.frontend.distribution_domain_name
+}
+
+output "frontend_ecr_repository_url" {
+  description = "Where the Stage 4 deploy workflow pushes frontend images."
+  value       = module.frontend.ecr_repository_url
+}
+
+output "frontend_service_name" {
+  description = "ECS service the deploy workflow updates."
+  value       = module.frontend.service_name
+}
+
+output "frontend_log_group_name" {
+  value = module.frontend.log_group_name
+}
+
+output "alerts_urgent_topic_arn" {
+  description = "SNS topic for the alarms that mean the site is down."
+  value       = module.observability.urgent_topic_arn
+}
+
+output "alerts_topic_arn" {
+  description = "SNS topic for everything else."
+  value       = module.observability.informational_topic_arn
+}
+
+output "dashboard_url" {
+  description = "The CloudWatch dashboard."
+  value       = module.observability.dashboard_url
+}
+
+output "smtp_secret_name" {
+  description = "Secrets Manager secret with the SMTP settings to paste into Supabase once SES production access is approved (infra/modules/email/README.md)."
+  value       = module.email.smtp_secret_name
+}
+
+output "email_sender_address" {
+  description = "The From address Supabase Auth sends as."
+  value       = module.email.sender_address
+}
+
+output "deploy_role_arn" {
+  description = "AWS_ROLE_ARN for the repository's Actions variables (Stage 4, Task 1)."
+  value       = module.deploy.role_arn
+}
+
+output "documents_backup_bucket_name" {
+  description = "Where to restore documents from (docs/runbooks/restore.md)."
+  value       = module.backup.bucket_name
+}

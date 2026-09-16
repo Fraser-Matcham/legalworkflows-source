@@ -27,10 +27,14 @@ rotated and every use is logged; the bucket key keeps the KMS bill trivial
 despite the many small objects. Deleting the key makes every object
 unreadable, so its deletion window is the 30-day maximum.
 
-**No versioning.** A versioned bucket keeps deleted bytes as noncurrent
-versions, which would make "deleting a document removes the file" false.
-Backups of content are a separate question for row 3.11 and are not answered
-by versioning.
+**Versioning, with a one-day tail.** Every AWS mechanism that can back a
+bucket up — replication, AWS Backup — requires versioning, and ticket 2095
+requires a backup. `docs/data-retention.md` promises that deleting a document
+removes the file, so a lifecycle rule expires noncurrent versions after one
+day, the shortest S3 allows, and clears the delete markers left behind. The
+live bucket therefore holds deleted bytes for at most a day; the `backup`
+module's bucket holds them for its retention window, and the retention
+document says so.
 
 **TLS only.** The bucket policy denies any request over plain HTTP. Presigned
 URLs and the SDK are both HTTPS, so this only ever blocks a misconfiguration.
@@ -43,10 +47,11 @@ role — no long-lived key at all — needs the code to stop passing credentials
 so the SDK default chain takes over; that is scheduled after row 3.10 proves
 the bucket end to end, and the policy moves to the role unchanged.
 
-**Region.** `storage.ts` signs with `region: "auto"`, an R2 convention.
-Real S3 rejects that at signature verification, so a small code change to
-make the region configurable is due before row 3.10. Nothing in this module
-depends on it; it is recorded here so it is not rediscovered at apply time.
+**Region.** `storage.ts` used to sign with `region: "auto"`, an R2
+convention that real S3 rejects at signature verification. The backend now
+reads `R2_REGION` (`backend/src/lib/storageRegion.ts`, default `auto`), and
+the `backend` module sets it to the footprint's region. Nothing in this module
+depends on it; it is recorded here because this is where the question arises.
 
 ## Wiring to the backend
 

@@ -27,3 +27,24 @@ export const UPSTREAM_URL = "https://github.com/open-legal-products/mike";
 
 export const LICENCE_NAME = "GNU Affero General Public License v3.0";
 export const LICENCE_URL = "https://www.gnu.org/licenses/agpl-3.0.html";
+
+/**
+ * Where the Corresponding Source of the running version can be obtained —
+ * the "prominent offer" AGPL-3.0 section 13 requires of a service used over
+ * a network.
+ *
+ * The release pipeline (`.github/workflows/deploy.yml`) builds the frontend
+ * with `NEXT_PUBLIC_SOURCE_URL` set to the public mirror at exactly the
+ * commit being deployed, so the link is version-accurate (ticket 2076). A
+ * build made without it — local, e2e — falls back to the upstream
+ * repository, which satisfies the letter for an unmodified tree and is the
+ * honest thing to show rather than a broken link.
+ *
+ * Takes the value as an argument rather than reading `process.env` itself:
+ * Next inlines `NEXT_PUBLIC_*` only on the literal expression
+ * `process.env.NEXT_PUBLIC_SOURCE_URL`, so the caller must write that out.
+ */
+export function correspondingSourceUrl(configured: string | undefined): string {
+    const value = configured?.trim();
+    return value ? value : UPSTREAM_URL;
+}

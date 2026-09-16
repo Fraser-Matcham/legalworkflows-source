@@ -225,10 +225,14 @@ Stated plainly because a client questionnaire will find them anyway.
 - **`deleteOrphanedUserStorage` swallows its errors** by design, as documented
   best-effort cleanup. A failure there used to be invisible; ticket 2087
   closed that specific gap — see below.
-- **Backups are out of scope of this document.** Deletion here means deletion
-  from the live database and bucket. Whatever your Supabase and object-storage
-  backup retention is, deleted content persists in it until those backups age
-  out; that window belongs in any answer about erasure timelines.
+- **Backups keep deleted content for a bounded window.** Deletion here means
+  deletion from the live database and bucket. In the production footprint
+  (`infra/`), the document bucket is versioned so it can be backed up, and a
+  deleted or replaced file's bytes remain there as a noncurrent version for at
+  most **one day** before a lifecycle rule removes them; the replicated backup
+  bucket keeps that version for **35 days** (`infra/modules/backup`). Supabase's
+  automated database backups follow the plan's retention (seven days of daily
+  backups on Pro). Those windows belong in any answer about erasure timelines.
 
 ### Disposition of each silent failure path (ticket 2087)
 

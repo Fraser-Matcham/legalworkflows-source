@@ -158,14 +158,15 @@ can be destroyed and rebuilt from this repository.**
 | 3.2 | ✅ `network` module — VPC, two public + two private subnets, one NAT (toggle to per-AZ), free S3 gateway endpoint, and the three security groups that make the ALB reachable from CloudFront's prefix list only | new |
 | 3.3 | ✅ `storage` module — document bucket with SSE-KMS (customer key, bucket key on), TLS-only policy, CORS from the bare domain, a lifecycle backstop on `upload-sessions/` only (content never expires, per `docs/data-retention.md`), and a least-privilege IAM user + key for the static-credential client | 2042, 2043 |
 | 3.4 | ✅ `secrets` module — three Secrets Manager secrets (Terraform-generated tokens, operator-held values set out of band and never through a variable, the storage key), separate backend/frontend execution roles with only the backend's able to read secrets, minimal task roles, `aws:SourceAccount` on every trust policy | 2045, 2046 |
-| 3.5 | `backend` module — ECR, ECS, Fargate service, ALB | 2049, 2050, 2051 |
-| 3.6 | `frontend` module — Fargate service, CloudFront, path routing | new |
+| 3.5 | ✅ `backend` module — ECR with scan-on-push and a keep-ten lifecycle, ECS cluster with Container Insights, Fargate service (1 vCPU / 2 GB, circuit breaker, CPU autoscaling to two tasks, deploys and desired count owned outside Terraform), task definition with the production environment from `docs/deployment.md` and secrets injected from Secrets Manager, the ALB behind two gates (CloudFront prefix list on the security group, secret `X-Origin-Verify` header on the listener with a 403 default), `/health` target group, `origin.<domain>` record, and a Service Connect name so the frontend has a real `API_BASE_URL` | 2049, 2050, 2051 |
+| 3.6 | ✅ `frontend` module — ECR, Fargate service (0.5 vCPU / 1 GB) on the shared cluster and listener, CloudFront distribution on the bare domain with the apex A/AAAA records: `/api/*` to the backend origin with the prefix stripped by a CloudFront function, everything else to the frontend origin, `/_next/static/*` cached, every viewer header forwarded, both origins carrying the secret `X-Origin-Verify` header the ALB requires | new |
 | 3.7 | ✅ `dns` module — the hand-created hosted zone imported and `prevent_destroy`-protected, two DNS-validated ACM certificates (apex in us-east-1 for CloudFront, `origin.<domain>` regional for the ALB), consumers bind the validated ARN | new |
-| 3.8 | `observability` module — log groups, alarms, SNS | 2085 |
-| 3.9 | GitHub OIDC role, so deploys use no long-lived AWS keys | new |
+| 3.8 | ✅ `observability` module — two SNS topics (urgent: site down, with optional SMS; informational: email), thirteen alarms on the load balancer, the ECS services and a readiness-failure log filter, an EventBridge rule for a rolled-back deploy, and the one-page dashboard that is the charting half of 2086; log groups live with their services | 2085 |
+| 3.9 | ✅ `deploy` module — the hand-made GitHub OIDC provider and `github-actions-deploy` role imported, trust narrowed to pushes to `main` and jobs in the `production` environment of this repository, `AdministratorAccess` removed by an exclusive-attachments resource, and a least-privilege inline policy: push to the two ECR repositories, register task definitions, update the two services, run the release job, pass the four task roles, invalidate the distribution, read the service logs | new |
 | 3.10 | Verify the signed-URL round trip against real S3 | 2044 |
-| 3.11 | Backups configured and a restore actually proven | 2094, 2095 |
-| 3.12 | Runbooks for the common failure modes | 2096 |
+| 3.11 | Backups: ✅ configured — the document bucket is versioned with a one-day noncurrent tail and continuously replicated into a write-locked `backup` bucket under its own key with 35-day retention (`infra/modules/backup`); Supabase's daily backups cover the database. ⏳ The restore drill (`docs/runbooks/restore.md`) runs once the footprint is applied | 2094, 2095 |
+| 3.12 | ✅ Runbooks in `docs/runbooks/` — site down, deploy rolled back, database unreachable, storage failure, backend errors, high resource usage, queue backlog, model provider outage, failed migration, certificate expiry, email delivery, and the restore procedure with the drill checklist; every alarm's description names its runbook | 2096 |
+| 3.13 | ✅ `email` module (architecture decision 6) — SES domain identity with Easy DKIM, custom MAIL FROM with SPF, DMARC at `p=none`, a TLS-required configuration set with bounce/complaint suppression and events to the alerts topic, and an IAM SMTP user scoped to sending from the domain, its settings stored in Secrets Manager for the Supabase paste-in | new |
 
 ### Done when
 
@@ -189,13 +190,13 @@ going live has been rehearsed rather than attempted.**
 
 | # | Work | Ticket |
 | --- | --- | --- |
-| 4.1 | Frontend production environment values, resolved against the real CloudFront origin | stage-1 carryover |
-| 4.2 | Build-and-push workflow for both images, on merge to `main` | 2050 |
-| 4.3 | Deploy workflow: migrate, then start, then health-gate, then shift traffic | 2051, 2052 |
-| 4.4 | Rollback that has been tested by rolling back | 2052 |
+| 4.1 | ✅ Frontend production values — `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_SOURCE_URL` are build arguments in `frontend/Dockerfile`, passed by the release pipeline from the `APP_URL` and mirror variables; `API_BASE_URL` is the backend's Service Connect name from Terraform | stage-1 carryover |
+| 4.2 | ✅ `.github/workflows/deploy.yml` builds both images on merge to `main`, pushes them to ECR as `<sha>` and `main`, and refuses an image whose ECR scan has a high or critical finding | 2050 |
+| 4.3 | ✅ Same workflow: CI gate on the exact commit → migrations newer than the SSM record, once, behind an advisory lock → catalogue-sync release job from the new revision → rolling update → `/api/ready` through the edge → frontend → `/`. `docs/release-pipeline.md`. ⏳ First real run needs the footprint applied and Stage 4, Task 1 | 2051, 2052 |
+| 4.4 | Rollback: ✅ `.github/workflows/rollback.yml` (revision numbers from the previous release's summary). ⏳ The test-by-rolling-back needs the footprint applied | 2052 |
 | 4.5 | ✅ Make the security suites required checks — done directly in GitHub's branch protection settings for `main`, not by engineering in this repo | 2024, 2025 |
-| 4.6 | Corresponding Source mirror pipeline, and gate deploys on it | 2073, 2074, 2075 |
-| 4.7 | Serve the source offer from the running UI | 2076 |
+| 4.6 | Mirror: ✅ the pipeline tags each release and pushes the tree and its history to the public mirror *before* building, and stops if that push fails or the mirror is unconfigured. ⏳ Needs the mirror repository and its token (Stage 4, Tasks 1 and 3) | 2073, 2074, 2075 |
+| 4.7 | ✅ `/legal` offers the Corresponding Source at `NEXT_PUBLIC_SOURCE_URL` — the mirror at the deployed commit, baked in at build time — and falls back to the upstream repository for a build without one; the start-up guard warns when it is unset | 2076 |
 | 4.8 | k6 SSE load scenario against production configuration | 2097, 2098 |
 | 4.9 | Address what the load test surfaces | 2099 |
 | 4.10 | Full suite against production configuration | 2101, 2102 |

@@ -1,0 +1,92 @@
+# Roll a service back to an earlier task definition revision.
+#
+# The deploy workflow's summary records the revision each release registered
+# for each service. To undo a release, run this with those numbers from the
+# release BEFORE it. ECS does the rest: a rolling replacement, the same
+# health checks, and the circuit breaker if the older revision is itself
+# unhealthy.
+#
+# This does not undo a database migration. Migrations are forward-only by
+# design (docs/runbooks/failed-migration.md); a rollback of the code runs the
+# previous release against the newer schema, which every migration is written
+# to allow.
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      backend_revision:
+        description: "Backend task definition revision to roll back to (a number), or blank to leave the backend as it is"
+        required: false
+        type: string
+      frontend_revision:
+        description: "Frontend task definition revision to roll back to (a number), or blank to leave the frontend as it is"
+        required: false
+        type: string
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  NAME_PREFIX: legalworkflows-production
+
+jobs:
+  rollback:
+    name: Roll back
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Check the inputs
+        run: |
+          if [ -z "${{ inputs.backend_revision }}" ] && [ -z "${{ inputs.frontend_revision }}" ]; then
+            echo "::error::Nothing to do: give at least one revision."
+            exit 1
+          fi
+          for r in "${{ inputs.backend_revision }}" "${{ inputs.frontend_revision }}"; do
+            if [ -n "$r" ] && ! [[ "$r" =~ ^[0-9]+$ ]]; then
+              echo "::error::Revisions are numbers; got '$r'."
+              exit 1
+            fi
+          done
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Roll back the backend
+        if: inputs.backend_revision != ''
+        run: |
+          set -euo pipefail
+          TD="$NAME_PREFIX-backend:${{ inputs.backend_revision }}"
+          aws ecs describe-task-definition --task-definition "$TD" --query 'taskDefinition.containerDefinitions[0].image' --output text
+          aws ecs update-service --cluster "$NAME_PREFIX" --service "$NAME_PREFIX-backend" --task-definition "$TD" >/dev/null
+          aws ecs wait services-stable --cluster "$NAME_PREFIX" --services "$NAME_PREFIX-backend"
+          echo "backend now on $TD" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Roll back the frontend
+        if: inputs.frontend_revision != ''
+        run: |
+          set -euo pipefail
+          TD="$NAME_PREFIX-frontend:${{ inputs.frontend_revision }}"
+          aws ecs describe-task-definition --task-definition "$TD" --query 'taskDefinition.containerDefinitions[0].image' --output text
+          aws ecs update-service --cluster "$NAME_PREFIX" --service "$NAME_PREFIX-frontend" --task-definition "$TD" >/dev/null
+          aws ecs wait services-stable --cluster "$NAME_PREFIX" --services "$NAME_PREFIX-frontend"
+          echo "frontend now on $TD" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check the site answers
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 12); do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' "${{ vars.APP_URL }}/api/ready" || true)
+            if [ "$code" = "200" ]; then echo "ready: $code"; exit 0; fi
+            echo "attempt $i: /api/ready returned $code"; sleep 10
+          done
+          echo "::error::/api/ready did not return 200 within two minutes after the rollback."
+          exit 1

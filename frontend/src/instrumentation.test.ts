@@ -58,6 +58,13 @@ describe("register", () => {
         vi.stubEnv("API_BASE_URL", "http://localhost:3001");
         vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://example.com");
         vi.stubEnv("NEXT_PUBLIC_WORKFLOW_CONTRIBUTIONS_ENABLED", "false");
+        // A complete production environment includes the AGPL section 13
+        // source offer, which the release pipeline sets at build time. Its
+        // absence is a warning, not a failure — see app/lib/env.test.ts.
+        vi.stubEnv(
+            "NEXT_PUBLIC_SOURCE_URL",
+            "https://github.com/example/source/tree/abc1234",
+        );
         const { exit, error, warn } = arrange();
 
         register();

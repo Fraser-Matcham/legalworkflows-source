@@ -7,10 +7,9 @@ down; tasks 4 to 6 give me the access I need to build the infrastructure;
 tasks 7 to 9 connect the domain and turn on billing safety; task 10 requests
 production email sending.
 
-**Total time: about 3 hours**, spread over two days because Task 10 waits on
-an email from AWS approving production access for SES — submit it as soon as
-Task 7's domain work is done, so the wait runs alongside everything else
-rather than sitting at the end.
+**Total time: about 3 hours.** Task 10 is already done — AWS approved
+production access for SES on 16 September 2026 — so nothing in this runbook
+now waits on a third party.
 
 > **Two ground rules for this stage.**
 >
@@ -366,6 +365,18 @@ go that you will actually see.
 
 ## Task 10 — Request production access for Amazon SES
 
+> **✅ DONE — approved 16 September 2026.** The account can send to any
+> recipient, so nothing about email waits on AWS any more. The remaining
+> email step is mine and happens after the footprint is applied: Terraform
+> creates the domain identity, its DKIM records and the SMTP credential
+> (`infra/modules/email`), and I hand you the six settings to paste into
+> Supabase's **Authentication → SMTP Settings**. The steps below are kept as
+> the record of what was submitted.
+>
+> If the approval email named a region other than `eu-west-2`, tell me —
+> sandbox status is per-region, and the footprint sends from `eu-west-2`.
+
+
 **Why:** a brand-new SES identity starts in a sandbox that can only send to
 individually verified addresses. Production access lifts that limit so the
 service can email real clients. See decision 6 in `../architecture.md` for
@@ -407,25 +418,29 @@ against the same Route 53 zone that task creates.
 ### Tell me
 
 - **"SES production access requested"**, and the region you submitted it in.
-- **"SES production access approved"** once AWS's confirmation email arrives
-  — I cannot create the domain identity's DKIM records or issue SMTP
-  credentials until then, since a sandboxed identity would only prove it
-  works and then fail on real clients.
+- **"SES production access approved"** once AWS's confirmation email arrives.
+  Terraform creates the domain identity, its DKIM records and the SMTP
+  credential regardless (`infra/modules/email`), but I will not hand the SMTP
+  settings to Supabase until then: a sandboxed identity would prove it works
+  for your own verified address and then fail on the first real client.
 
 ---
 
 ## When all ten are done
 
-Send me the answers and I will build the infrastructure: the network, the
-storage, the container services, the load balancer, the CDN, the certificate,
-the secrets, the SES domain identity and SMTP credential, and the alarms —
-all as Terraform code in the repository, reviewed in a pull request before
-anything is created.
+The infrastructure is already written and reviewed: the network, the
+storage and its backup, the container services, the load balancer, the CDN,
+the certificates, the secrets, the SES domain identity and SMTP credential,
+the alarms and the deploy role, as Terraform code under `infra/` with a
+README per module. Your answers are its inputs — the zone ID, the account,
+the state bucket — and the tasks above are the only things it cannot do for
+you.
 
-I will then run it against your account, prove a document can be uploaded and
-downloaded through real S3, prove a database restore works, and give you the
-handful of SMTP settings to paste into Supabase's **Authentication → SMTP
-Settings** so sign-in emails send from your own domain — the step Task 5 in
-Stage 2's runbook pointed here for.
+Send me the answers and I will run it against your account, prove a document
+can be uploaded and downloaded through real S3, prove a database restore
+works (`docs/runbooks/restore.md`), and give you the handful of SMTP settings
+to paste into Supabase's **Authentication → SMTP Settings** so sign-in emails
+send from your own domain — the step Task 5 in Stage 2's runbook pointed here
+for.
 
 Stage 4's runbook is the last one: it covers going live.

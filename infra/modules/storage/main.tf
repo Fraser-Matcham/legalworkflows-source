@@ -34,10 +34,19 @@ resource "aws_s3_bucket_public_access_block" "documents" {
   restrict_public_buckets = true
 }
 
-# Versioning is deliberately NOT enabled. docs/data-retention.md and the
-# privacy policy built from it promise that deleting a document removes the
-# file. A versioned bucket would keep the bytes as a noncurrent version after
-# every delete, making that statement untrue.
+# Versioning is on for one reason: every AWS mechanism that can back an S3
+# bucket up (replication, AWS Backup) requires it. docs/data-retention.md
+# promises that deleting a document removes the file, so the lifecycle rule
+# below expires a noncurrent version after one day, the shortest S3 allows —
+# the live bucket keeps deleted bytes for at most a day, and only the backup
+# bucket (modules/backup) keeps them longer, which that document states.
+resource "aws_s3_bucket_versioning" "documents" {
+  bucket = aws_s3_bucket.documents.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "documents" {
   bucket = aws_s3_bucket.documents.id
@@ -95,6 +104,25 @@ resource "aws_s3_bucket_lifecycle_configuration" "documents" {
     }
   }
 
+  # The deletion promise, kept on a versioned bucket: a delete leaves a
+  # marker and the bytes become a noncurrent version, which this expires
+  # after one day (S3's minimum). Markers with no versions behind them are
+  # removed by the second clause so listings do not fill with ghosts.
+  rule {
+    id     = "expire-noncurrent-versions"
+    status = "Enabled"
+
+    filter {}
+
+    noncurrent_version_expiration {
+      noncurrent_days = 1
+    }
+
+    expiration {
+      expired_object_delete_marker = true
+    }
+  }
+
   # Uploads are single PUTs today, so this rule should never match anything.
   # It is here because an abandoned multipart upload is invisible in every
   # listing yet billed forever, and the rule costs nothing.
@@ -109,7 +137,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "documents" {
     }
   }
 
-  depends_on = [aws_s3_bucket_ownership_controls.documents]
+  depends_on = [
+    aws_s3_bucket_ownership_controls.documents,
+    aws_s3_bucket_versioning.documents,
+  ]
 }
 
 # Refuse plaintext. Presigned URLs are https, the SDK client is https, and a

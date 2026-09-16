@@ -30,8 +30,12 @@ compatibility shim.
 
 The browser calls `/api/*` as a **relative path**. The CDN routes that prefix
 to the backend, so the frontend and the API share one origin — see
-`docs/delivery-plan/v2/architecture.md`, decision 5. `frontend/src/app/api/[...path]/route.ts`
-is the server-side proxy that strips `/api` and forwards to `API_BASE_URL`.
+`docs/delivery-plan/v2/architecture.md`, decision 5. In production that is a
+CloudFront behaviour in `infra/modules/frontend/cloudfront.tf`, which strips
+the prefix at the edge and forwards to the backend directly; the frontend task
+never sees API traffic. `frontend/src/app/api/[...path]/route.ts` is the
+server-side proxy that does the same job — strip `/api`, forward to
+`API_BASE_URL` — for local development.
 
 The Word add-in calls the backend origin directly and is subject to the CORS
 allowlist.

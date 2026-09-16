@@ -11,3 +11,17 @@ domain_name = "legalworkflows.co.uk"
 # Required, no default: the Hosted zone ID from Stage 3, Task 7. Terraform
 # imports the zone the operator created rather than making a second one.
 route53_zone_id = "Z0123456789ABCDEFGHIJ"
+
+# Required, no default: the Supabase project from Stage 2, Task 2. Both values
+# are public by design (the browser bundle carries them); the *secret* key is
+# not, and goes in the operator secret — see infra/modules/secrets/README.md.
+supabase_url             = "https://abcdefghijkl.supabase.co"
+supabase_publishable_key = "sb_publishable_..."
+
+# The workflow catalogue the release job syncs. Point at your own fork, and pin
+# a commit SHA for a reproducible release.
+workflows_repository = "Open-Legal-Products/mike-workflows"
+workflows_ref        = "main"
+
+# Optional operator secrets to inject once they have been written:
+# backend_extra_secret_keys = ["ERROR_TRACKING_DSN", "MIKE_WORKFLOWS_GITHUB_TOKEN"]
