@@ -156,10 +156,27 @@ variable "dmarc_report_address" {
 
 # --- deploy ----------------------------------------------------------------
 
+# The repository as it appears in the OIDC token's `sub` claim, which is not
+# always how it appears anywhere else. This organisation has immutable subject
+# claims enabled, so GitHub mints the owner and repository with their immutable
+# numeric IDs appended:
+#
+#   repo:Fraser-Matcham@326009546/legalworkflows@1361216855:environment:production
+#
+# while the token's own `repository` claim, the settings pages and the URL all
+# still read Fraser-Matcham/legalworkflows. IAM matches `sub` and nothing else,
+# so `sub` is what this must mirror. The build job prints the live value on
+# every run ("The OIDC subject this job presents"); read it there rather than
+# assembling it by hand.
+#
+# Keeping the IDs is the stronger posture and is the point of the feature:
+# renaming the organisation or the repository, or deleting and recreating
+# either, then breaks the deploy instead of silently handing the role to
+# whoever claims the freed name.
 variable "github_repository" {
-  description = "owner/repo whose GitHub Actions workflows may assume the deploy role."
+  description = "The repository component of the OIDC subject the deploy role accepts — owner/repo, carrying @<id> on each part where the organisation has immutable subject claims enabled."
   type        = string
-  default     = "Fraser-Matcham/legalworkflows"
+  default     = "Fraser-Matcham@326009546/legalworkflows@1361216855"
 }
 
 variable "deploy_branches" {

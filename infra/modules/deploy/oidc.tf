@@ -28,6 +28,8 @@ data "aws_iam_openid_connect_provider" "github" {
 
 # The token subjects the role accepts. GitHub gives a job the environment
 # subject when it declares `environment:`, and the branch subject otherwise.
+# `github_repository` is the repository *as the subject spells it*, which
+# carries immutable numeric IDs under an organisation that has enabled them.
 # Accepting both would mean the environment's protection rules (required
 # reviewers, wait timer) could be skipped by a job that simply omits the
 # environment, so deploy_branches is empty by default and the environment
