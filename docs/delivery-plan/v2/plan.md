@@ -220,7 +220,7 @@ going live has been rehearsed rather than attempted.**
 | 4.8 | k6 SSE load scenario against production configuration | 2097, 2098 |
 | 4.9 | Address what the load test surfaces | 2099 |
 | 4.10 | Full suite against production configuration | 2101, 2102 |
-| 4.11 | Licence compliance sign-off | 2103 |
+| 4.11 | 🟡 Licence compliance sign-off — [`docs/licence-compliance.md`](../../licence-compliance.md) records all ten items with the command that checks each. Item 8 was failing (third-party notices five days stale after the 14 September dependency bumps); regenerated and now guarded by the `notices` job in `ci.yml`. Open: `buffers@0.1.1` declares no licence, and two deferred trademark references blocked on 2015/2016. The deployed `/legal` source link still needs confirming at cutover | 2103 |
 | 4.12 | Security review of the combined deployment | 2104 |
 | 4.13 | Cutover and smoke test | 2105, 2106 |
 | 4.14 | Post-launch monitoring window | 2107 |

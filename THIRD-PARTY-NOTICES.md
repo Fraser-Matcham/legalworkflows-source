@@ -12,7 +12,7 @@ AGPL-3.0 section 13 obliges the operator to offer.
 Development-only dependencies are excluded: they are not distributed.
 
 Generated from `frontend/package-lock.json` and `backend/package-lock.json`.
-997 distributed packages across 19 distinct licences.
+975 distributed packages across 19 distinct licences.
 
 ## Licence elections
 
@@ -50,21 +50,21 @@ each one is a question to resolve rather than a gap to ignore.
 - `tslib@2.8.1` — backend, frontend
   - Copyright (c) Microsoft Corporation.
 
-### Apache-2.0 (145)
+### Apache-2.0 (135)
 
-- `@ai-sdk/anthropic@4.0.49` — backend
+- `@ai-sdk/anthropic@4.0.53` — backend
   - Copyright 2023 Vercel, Inc.
-- `@ai-sdk/gateway@4.0.75` — backend
+- `@ai-sdk/gateway@4.0.79` — backend
   - Copyright 2023 Vercel, Inc.
-- `@ai-sdk/google@4.0.64` — backend
+- `@ai-sdk/google@4.0.68` — backend
   - Copyright 2023 Vercel, Inc.
-- `@ai-sdk/openai@4.0.60` — backend
+- `@ai-sdk/openai@4.0.66` — backend
   - Copyright 2023 Vercel, Inc.
-- `@ai-sdk/openai-compatible@3.0.44` — backend
+- `@ai-sdk/openai-compatible@3.0.48` — backend
   - Copyright 2023 Vercel, Inc.
-- `@ai-sdk/provider@4.0.10` — backend
+- `@ai-sdk/provider@4.0.14` — backend
   - Copyright 2023 Vercel, Inc.
-- `@ai-sdk/provider-utils@5.0.36` — backend
+- `@ai-sdk/provider-utils@5.0.40` — backend
 - `@aws-crypto/sha1-browser@5.2.0` — frontend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
@@ -85,7 +85,7 @@ each one is a question to resolve rather than a gap to ignore.
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright {yyyy} {name of copyright owner}
-- `@aws-sdk/checksums@3.1000.29` — backend, frontend
+- `@aws-sdk/checksums@3.1001.0` — backend, frontend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -101,7 +101,7 @@ each one is a question to resolve rather than a gap to ignore.
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-- `@aws-sdk/client-s3@3.1127.0` — backend, frontend
+- `@aws-sdk/client-s3@3.1131.0` — backend, frontend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -113,33 +113,33 @@ each one is a question to resolve rather than a gap to ignore.
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-- `@aws-sdk/core@3.977.9` — backend, frontend
+- `@aws-sdk/core@3.978.0` — backend, frontend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-- `@aws-sdk/credential-provider-env@3.972.70` — backend, frontend
+- `@aws-sdk/credential-provider-env@3.972.71` — backend, frontend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-- `@aws-sdk/credential-provider-http@3.972.72` — backend, frontend
-- `@aws-sdk/credential-provider-ini@3.973.15` — backend, frontend
+- `@aws-sdk/credential-provider-http@3.972.73` — backend, frontend
+- `@aws-sdk/credential-provider-ini@3.973.16` — backend, frontend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-- `@aws-sdk/credential-provider-login@3.972.77` — backend, frontend
-- `@aws-sdk/credential-provider-node@3.972.82` — backend, frontend
+- `@aws-sdk/credential-provider-login@3.972.78` — backend, frontend
+- `@aws-sdk/credential-provider-node@3.972.83` — backend, frontend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-- `@aws-sdk/credential-provider-process@3.972.70` — backend, frontend
+- `@aws-sdk/credential-provider-process@3.972.71` — backend, frontend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-- `@aws-sdk/credential-provider-sso@3.973.14` — backend, frontend
+- `@aws-sdk/credential-provider-sso@3.973.15` — backend, frontend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-- `@aws-sdk/credential-provider-web-identity@3.972.76` — backend, frontend
+- `@aws-sdk/credential-provider-web-identity@3.972.77` — backend, frontend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -183,7 +183,7 @@ each one is a question to resolve rather than a gap to ignore.
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-- `@aws-sdk/middleware-sdk-s3@3.972.75` — backend, frontend
+- `@aws-sdk/middleware-sdk-s3@3.972.76` — backend, frontend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -199,12 +199,12 @@ each one is a question to resolve rather than a gap to ignore.
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-- `@aws-sdk/nested-clients@3.997.44` — backend, frontend
+- `@aws-sdk/nested-clients@3.997.45` — backend, frontend
 - `@aws-sdk/region-config-resolver@3.972.48` — frontend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-- `@aws-sdk/s3-request-presigner@3.1127.0` — backend, frontend
+- `@aws-sdk/s3-request-presigner@3.1131.0` — backend, frontend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -216,7 +216,7 @@ each one is a question to resolve rather than a gap to ignore.
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-- `@aws-sdk/token-providers@3.1116.0` — backend, frontend
+- `@aws-sdk/token-providers@3.1129.0` — backend, frontend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -247,41 +247,28 @@ each one is a question to resolve rather than a gap to ignore.
 - `@aws/lambda-invoke-store@0.3.0` — backend, frontend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
-- `@cloudflare/workerd-darwin-64@1.20260903.1` — frontend
-- `@cloudflare/workerd-darwin-arm64@1.20260903.1` — frontend
-- `@cloudflare/workerd-linux-64@1.20260903.1` — frontend
-- `@cloudflare/workerd-linux-arm64@1.20260903.1` — frontend
-- `@cloudflare/workerd-windows-64@1.20260903.1` — frontend
+- `@cloudflare/workerd-darwin-64@1.20260911.1` — frontend
+- `@cloudflare/workerd-darwin-arm64@1.20260911.1` — frontend
+- `@cloudflare/workerd-linux-64@1.20260911.1` — frontend
+- `@cloudflare/workerd-linux-arm64@1.20260911.1` — frontend
+- `@cloudflare/workerd-windows-64@1.20260911.1` — frontend
 - `@e965/xlsx@0.20.3` — backend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright (C) 2012-present   SheetJS LLC
-- `@img/sharp-darwin-arm64@0.35.2` — frontend
 - `@img/sharp-darwin-arm64@0.35.4` — frontend
-- `@img/sharp-darwin-x64@0.35.2` — frontend
 - `@img/sharp-darwin-x64@0.35.4` — frontend
-- `@img/sharp-freebsd-wasm32@0.35.2` — frontend
 - `@img/sharp-freebsd-wasm32@0.35.4` — frontend
-- `@img/sharp-linux-arm@0.35.2` — frontend
 - `@img/sharp-linux-arm@0.35.4` — frontend
-- `@img/sharp-linux-arm64@0.35.2` — frontend
 - `@img/sharp-linux-arm64@0.35.4` — frontend
-- `@img/sharp-linux-ppc64@0.35.2` — frontend
 - `@img/sharp-linux-ppc64@0.35.4` — frontend
-- `@img/sharp-linux-riscv64@0.35.2` — frontend
 - `@img/sharp-linux-riscv64@0.35.4` — frontend
-- `@img/sharp-linux-s390x@0.35.2` — frontend
 - `@img/sharp-linux-s390x@0.35.4` — frontend
-- `@img/sharp-linux-x64@0.35.2` — frontend
-  - Copyright [yyyy] [name of copyright owner]
 - `@img/sharp-linux-x64@0.35.4` — frontend
   - Copyright [yyyy] [name of copyright owner]
-- `@img/sharp-linuxmusl-arm64@0.35.2` — frontend
 - `@img/sharp-linuxmusl-arm64@0.35.4` — frontend
-- `@img/sharp-linuxmusl-x64@0.35.2` — frontend
 - `@img/sharp-linuxmusl-x64@0.35.4` — frontend
   - Copyright [yyyy] [name of copyright owner]
-- `@img/sharp-webcontainers-wasm32@0.35.2` — frontend
 - `@img/sharp-webcontainers-wasm32@0.35.4` — frontend
 - `@openrouter/ai-sdk-provider@3.0.0` — backend
   - copyright notice that is included in or attached to the work
@@ -311,7 +298,11 @@ each one is a question to resolve rather than a gap to ignore.
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-- `@smithy/fetch-http-handler@5.7.2` — backend, frontend
+- `@smithy/fetch-http-handler@5.7.2` — frontend
+  - copyright notice that is included in or attached to the work
+  - copyright license to reproduce, prepare Derivative Works of,
+  - Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+- `@smithy/fetch-http-handler@5.8.0` — backend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -363,7 +354,11 @@ each one is a question to resolve rather than a gap to ignore.
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-- `@smithy/node-http-handler@4.12.0` — backend, frontend
+- `@smithy/node-http-handler@4.12.0` — frontend
+  - copyright notice that is included in or attached to the work
+  - copyright license to reproduce, prepare Derivative Works of,
+  - Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+- `@smithy/node-http-handler@4.12.1` — backend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -379,7 +374,11 @@ each one is a question to resolve rather than a gap to ignore.
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-- `@smithy/types@4.17.2` — backend, frontend
+- `@smithy/types@4.17.2` — frontend
+  - copyright notice that is included in or attached to the work
+  - copyright license to reproduce, prepare Derivative Works of,
+  - Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+- `@smithy/types@4.18.0` — backend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -448,9 +447,9 @@ each one is a question to resolve rather than a gap to ignore.
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2017 Vercel, Inc.
 - `@workflow/serde@4.1.0` — backend
-- `ai@7.0.93` — backend
+- `ai@7.0.98` — backend
   - Copyright 2023 Vercel, Inc.
-- `baseline-browser-mapping@2.11.21` — frontend
+- `baseline-browser-mapping@2.11.22` — frontend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright [yyyy] [name of copyright owner]
@@ -482,7 +481,7 @@ each one is a question to resolve rather than a gap to ignore.
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright (c) 2016-2023 Volodymyr Baydalka
-- `dompurify@3.4.14` — frontend
+- `dompurify@3.4.15` — frontend
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright [yyyy] [name of copyright owner]
@@ -501,25 +500,18 @@ each one is a question to resolve rather than a gap to ignore.
   - copyright notice that is included in or attached to the work
   - copyright license to reproduce, prepare Derivative Works of,
   - Copyright 2020 Yann Armelin
-- `sharp@0.35.2` — frontend
-  - Copyright [yyyy] [name of copyright owner]
 - `sharp@0.35.4` — frontend
   - Copyright [yyyy] [name of copyright owner]
-- `workerd@1.20260903.1` — frontend
+- `workerd@1.20260911.1` — frontend
 
-### Apache-2.0 AND LGPL-3.0-or-later (6)
+### Apache-2.0 AND LGPL-3.0-or-later (3)
 
-- `@img/sharp-win32-arm64@0.35.2` — frontend
 - `@img/sharp-win32-arm64@0.35.4` — frontend
-- `@img/sharp-win32-ia32@0.35.2` — frontend
 - `@img/sharp-win32-ia32@0.35.4` — frontend
-- `@img/sharp-win32-x64@0.35.2` — frontend
 - `@img/sharp-win32-x64@0.35.4` — frontend
 
-### Apache-2.0 AND LGPL-3.0-or-later AND MIT (2)
+### Apache-2.0 AND LGPL-3.0-or-later AND MIT (1)
 
-- `@img/sharp-wasm32@0.35.2` — frontend
-  - Copyright [yyyy] [name of copyright owner]
 - `@img/sharp-wasm32@0.35.4` — frontend
   - Copyright [yyyy] [name of copyright owner]
 
@@ -546,6 +538,7 @@ each one is a question to resolve rather than a gap to ignore.
 - `entities@6.0.1` — frontend
   - Copyright (c) Felix Böhm
 - `entities@7.0.1` — backend
+  - Copyright (c) Felix Böhm
 - `entities@8.0.0` — frontend
   - Copyright (c) Felix Böhm
 - `esprima@4.0.1` — frontend
@@ -572,6 +565,7 @@ each one is a question to resolve rather than a gap to ignore.
   - Copyright 2010-2021 Mike Bostock
   - Copyright 2001 Robert Penner
 - `deepmerge-ts@8.0.2` — backend
+  - Copyright (c) 2021, Rebecca Stevens
 - `duplexer2@0.1.4` — frontend
   - Copyright (c) 2013, Deoxxa Development
 - `fast-uri@3.1.6` — backend
@@ -625,7 +619,7 @@ each one is a question to resolve rather than a gap to ignore.
 
 - `@speed-highlight/core@1.2.24` — frontend
 
-### ISC (51)
+### ISC (52)
 
 - `@ungap/structured-clone@1.4.0` — frontend
   - Copyright (c) 2021, Andrea Giammarchi, @WebReflection
@@ -694,7 +688,7 @@ each one is a question to resolve rather than a gap to ignore.
 - `lru-cache@10.4.3` — frontend
   - Copyright (c) 2010-2023 Isaac Z. Schlueter and Contributors
   - copyright notice and this permission notice appear in all copies.
-- `lucide-react@1.41.0` — frontend
+- `lucide-react@1.45.0` — frontend
   - Copyright (c) 2026 Lucide Icons and Contributors
   - copyright notice and this permission notice appear in all copies.
   - Copyright (c) 2013-present Cole Bemis
@@ -749,7 +743,9 @@ each one is a question to resolve rather than a gap to ignore.
   - copyright notice and this permission notice appear in all copies.
 - `y18n@5.0.8` — frontend
   - Copyright (c) 2015, Contributors
-- `yaml@2.9.0` — backend, frontend
+- `yaml@2.9.0` — frontend
+  - Copyright Eemeli Aro <eemeli@gmail.com>
+- `yaml@2.9.1` — backend
   - Copyright Eemeli Aro <eemeli@gmail.com>
 - `yargs-parser@22.0.0` — frontend
   - Copyright (c) 2016, Contributors
@@ -757,30 +753,20 @@ each one is a question to resolve rather than a gap to ignore.
   - Copyright (c) 2020, Stefan Terdell
   - copyright notice and this permission notice appear in all copies.
 
-### LGPL-3.0-or-later (20)
+### LGPL-3.0-or-later (10)
 
-- `@img/sharp-libvips-darwin-arm64@1.3.1` — frontend
 - `@img/sharp-libvips-darwin-arm64@1.3.3` — frontend
-- `@img/sharp-libvips-darwin-x64@1.3.1` — frontend
 - `@img/sharp-libvips-darwin-x64@1.3.3` — frontend
-- `@img/sharp-libvips-linux-arm@1.3.1` — frontend
 - `@img/sharp-libvips-linux-arm@1.3.3` — frontend
-- `@img/sharp-libvips-linux-arm64@1.3.1` — frontend
 - `@img/sharp-libvips-linux-arm64@1.3.3` — frontend
-- `@img/sharp-libvips-linux-ppc64@1.3.1` — frontend
 - `@img/sharp-libvips-linux-ppc64@1.3.3` — frontend
-- `@img/sharp-libvips-linux-riscv64@1.3.1` — frontend
 - `@img/sharp-libvips-linux-riscv64@1.3.3` — frontend
-- `@img/sharp-libvips-linux-s390x@1.3.1` — frontend
 - `@img/sharp-libvips-linux-s390x@1.3.3` — frontend
-- `@img/sharp-libvips-linux-x64@1.3.1` — frontend
 - `@img/sharp-libvips-linux-x64@1.3.3` — frontend
-- `@img/sharp-libvips-linuxmusl-arm64@1.3.1` — frontend
 - `@img/sharp-libvips-linuxmusl-arm64@1.3.3` — frontend
-- `@img/sharp-libvips-linuxmusl-x64@1.3.1` — frontend
 - `@img/sharp-libvips-linuxmusl-x64@1.3.3` — frontend
 
-### MIT (722)
+### MIT (723)
 
 - `@ast-grep/napi@0.40.5` — frontend
   - Copyright (c) 2020 N-API for Rust
@@ -932,15 +918,15 @@ each one is a question to resolve rather than a gap to ignore.
 - `@napi-rs/canvas-linux-x64-musl@0.1.100` — backend, frontend
 - `@napi-rs/canvas-win32-arm64-msvc@0.1.100` — backend, frontend
 - `@napi-rs/canvas-win32-x64-msvc@0.1.100` — backend, frontend
-- `@next/env@16.3.4` — frontend
-- `@next/swc-darwin-arm64@16.3.4` — frontend
-- `@next/swc-darwin-x64@16.3.4` — frontend
-- `@next/swc-linux-arm64-gnu@16.3.4` — frontend
-- `@next/swc-linux-arm64-musl@16.3.4` — frontend
-- `@next/swc-linux-x64-gnu@16.3.4` — frontend
-- `@next/swc-linux-x64-musl@16.3.4` — frontend
-- `@next/swc-win32-arm64-msvc@16.3.4` — frontend
-- `@next/swc-win32-x64-msvc@16.3.4` — frontend
+- `@next/env@16.3.5` — frontend
+- `@next/swc-darwin-arm64@16.3.5` — frontend
+- `@next/swc-darwin-x64@16.3.5` — frontend
+- `@next/swc-linux-arm64-gnu@16.3.5` — frontend
+- `@next/swc-linux-arm64-musl@16.3.5` — frontend
+- `@next/swc-linux-x64-gnu@16.3.5` — frontend
+- `@next/swc-linux-x64-musl@16.3.5` — frontend
+- `@next/swc-win32-arm64-msvc@16.3.5` — frontend
+- `@next/swc-win32-x64-msvc@16.3.5` — frontend
 - `@noble/ciphers@1.3.0` — frontend
   - Copyright (c) 2022 Paul Miller (https://paulmillr.com)
   - Copyright (c) 2016 Thomas Pornin <pornin@bolet.org>
@@ -1024,7 +1010,7 @@ each one is a question to resolve rather than a gap to ignore.
 - `@reduxjs/toolkit@2.12.0` — frontend
   - Copyright (c) 2018 Mark Erikson
 - `@selderee/plugin-htmlparser2@0.12.0` — backend
-  - Copyright (c) 2021-2022 KillyMXI <killy@mxii.eu.org>
+  - Copyright (c) 2021-2026 KillyMXI <killy@mxii.eu.org>
 - `@sindresorhus/is@7.2.0` — frontend
   - Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 - `@stablelib/base64@1.0.1` — frontend
@@ -1033,21 +1019,21 @@ each one is a question to resolve rather than a gap to ignore.
   - Copyright (c) 2024 Colin McDonnell
 - `@standard-schema/utils@0.3.0` — frontend
   - Copyright (c) 2024 Fabian Hiller
-- `@supabase/auth-js@2.115.0` — backend
+- `@supabase/auth-js@2.116.0` — backend
   - Copyright (c) 2020 Supabase
-- `@supabase/functions-js@2.115.0` — backend
+- `@supabase/functions-js@2.116.0` — backend
   - Copyright (c) 2020 Supabase
 - `@supabase/phoenix@0.4.5` — backend
   - Copyright (c) 2014 Chris McCord
-- `@supabase/postgrest-js@2.115.0` — backend
+- `@supabase/postgrest-js@2.116.0` — backend
   - Copyright (c) 2020 Supabase
-- `@supabase/realtime-js@2.115.0` — backend
+- `@supabase/realtime-js@2.116.0` — backend
   - Copyright (c) 2020 Supabase
-- `@supabase/ssr@0.12.6` — backend
+- `@supabase/ssr@0.12.7` — backend
   - Copyright (c) 2022-2023 Supabase, Inc.
-- `@supabase/storage-js@2.115.0` — backend
+- `@supabase/storage-js@2.116.0` — backend
   - Copyright (c) 2020 Supabase
-- `@supabase/supabase-js@2.115.0` — backend
+- `@supabase/supabase-js@2.116.0` — backend
   - Copyright (c) 2020 Supabase
 - `@tiptap/core@3.31.3` — frontend
   - Copyright (c) 2025, Tiptap GmbH
@@ -1161,15 +1147,15 @@ each one is a question to resolve rather than a gap to ignore.
   - Copyright (c) Microsoft Corporation.
 - `@types/node@25.9.5` — backend, frontend
   - Copyright (c) Microsoft Corporation.
-- `@types/node@26.4.1` — frontend
+- `@types/node@26.5.1` — frontend
   - Copyright (c) Microsoft Corporation.
 - `@types/node-fetch@2.6.13` — frontend
   - Copyright (c) Microsoft Corporation.
 - `@types/prismjs@1.26.6` — frontend
   - Copyright (c) Microsoft Corporation.
-- `@types/react@19.2.18` — frontend
+- `@types/react@19.3.0` — frontend
   - Copyright (c) Microsoft Corporation.
-- `@types/react-dom@19.2.7` — frontend
+- `@types/react-dom@19.3.0` — frontend
   - Copyright (c) Microsoft Corporation.
 - `@types/regenerator-runtime@0.13.8` — frontend
   - Copyright (c) Microsoft Corporation.
@@ -1334,7 +1320,7 @@ each one is a question to resolve rather than a gap to ignore.
 - `crc32-stream@4.0.3` — frontend
   - Copyright (c) 2014 Chris Talkington, contributors.
 - `cron-parser@5.10.0` — backend
-  - Copyright (c) 2014-2016 Harri Siirak
+  - Copyright (c) 2014-2023 Harri Siirak
 - `cross-spawn@7.0.6` — backend, frontend
   - Copyright (c) 2018 Made With MOXY Lda <hello@moxy.studio>
 - `css-selector-parser@3.3.0` — frontend
@@ -1575,17 +1561,18 @@ each one is a question to resolve rather than a gap to ignore.
   - Copyright (c) 2017 Evgeny Poberezkin
 - `jstat@1.9.6` — frontend
   - Copyright (c) 2013 jStat
-- `jszip@3.10.1` — backend, frontend
+- `jszip@3.10.1` — frontend
+- `jszip@3.10.2` — backend
 - `katex@0.16.47` — frontend
   - Copyright (c) 2013-2020 Khan Academy and other contributors
-- `katex@0.18.6` — frontend
+- `katex@0.18.7` — frontend
   - Copyright (c) 2013-2020 Khan Academy and other contributors
 - `kleur@4.1.5` — frontend
   - Copyright (c) Luke Edwards <luke.edwards05@gmail.com> (lukeed.com)
 - `lazystream@1.0.1` — frontend
   - Copyright (c) 2013 J. Pommerening, contributors.
 - `leac@0.7.0` — backend
-  - Copyright (c) 2021-2022 KillyMXI <killy@mxii.eu.org>
+  - Copyright (c) 2021-2025 KillyMXI <killy@mxii.eu.org>
 - `libreoffice-convert@1.8.2` — backend
   - Copyright (c) 2020 René Rössler
 - `lie@3.3.0` — backend, frontend
@@ -1644,7 +1631,7 @@ each one is a question to resolve rather than a gap to ignore.
   - Copyright (c) 2014 Vitaly Puzrin, Alex Kocharin.
 - `markdown-table@3.0.4` — frontend
   - Copyright (c) Titus Wormer <tituswormer@gmail.com>
-- `marked@18.0.11` — frontend
+- `marked@18.0.12` — frontend
   - Copyright (c) 2018+, MarkedJS (https://github.com/markedjs/)
   - Copyright (c) 2011-2018, Christopher Jeffrey (https://github.com/chjj/)
   - Copyright © 2004, John Gruber
@@ -1766,7 +1753,7 @@ each one is a question to resolve rather than a gap to ignore.
   - Copyright (c) 2015 Douglas Christopher Wilson <doug@somethingdoug.com>
 - `mimic-fn@2.1.0` — frontend
   - Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
-- `miniflare@5.20260903.0-alpha` — frontend
+- `miniflare@5.20260911.0-alpha` — frontend
 - `minimist@1.2.8` — frontend
   - COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 - `mkdirp@0.5.6` — frontend
@@ -1791,7 +1778,7 @@ each one is a question to resolve rather than a gap to ignore.
   - Copyright (c) 2012-2014 Federico Romero
   - Copyright (c) 2012-2014 Isaac Z. Schlueter
   - Copyright (c) 2014-2015 Douglas Christopher Wilson
-- `next@16.3.4` — frontend
+- `next@16.3.5` — frontend
   - Copyright (c) 2025 Vercel, Inc.
 - `nextjs-toploader@3.9.17` — frontend
   - Copyright (c) 2025 Shri Ganesh Jha
@@ -1833,7 +1820,7 @@ each one is a question to resolve rather than a gap to ignore.
 - `parse5@8.0.1` — frontend
   - Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
 - `parseley@0.13.1` — backend
-  - Copyright (c) 2021-2022 KillyMXI <killy@mxii.eu.org>
+  - Copyright (c) 2021-2025 KillyMXI <killy@mxii.eu.org>
 - `parseurl@1.3.3` — backend, frontend
   - Copyright (c) 2014 Jonathan Ong <me@jongleberry.com>
   - Copyright (c) 2014-2017 Douglas Christopher Wilson <doug@somethingdoug.com>
@@ -1852,7 +1839,7 @@ each one is a question to resolve rather than a gap to ignore.
   - Copyright Joyent, Inc. and other Node contributors.
   - Copyright (c) 2023-present Fabio Spampinato
 - `peberminta@0.10.0` — backend
-  - Copyright (c) 2021-2022 KillyMXI <killy@mxii.eu.org>
+  - Copyright (c) 2021-2025 KillyMXI <killy@mxii.eu.org>
 - `picomatch@4.0.7` — frontend
   - Copyright (c) 2017-present, Jon Schlinkert.
 - `pkce-challenge@5.0.1` — backend
@@ -1905,11 +1892,11 @@ each one is a question to resolve rather than a gap to ignore.
 - `raw-body@3.0.2` — backend, frontend
   - Copyright (c) 2013-2014 Jonathan Ong <me@jongleberry.com>
   - Copyright (c) 2014-2022 Douglas Christopher Wilson <doug@somethingdoug.com>
-- `react@19.2.8` — frontend
+- `react@19.3.0` — frontend
   - Copyright (c) Meta Platforms, Inc. and affiliates.
 - `react-day-picker@10.0.1` — frontend
   - Copyright (c) 2014-2026 Giampaolo Bellavite <io@gpbl.dev> and contributors
-- `react-dom@19.2.8` — frontend
+- `react-dom@19.3.0` — frontend
   - Copyright (c) Meta Platforms, Inc. and affiliates.
 - `react-is@16.13.1` — frontend
   - Copyright (c) Facebook, Inc. and its affiliates.
@@ -1980,7 +1967,7 @@ each one is a question to resolve rather than a gap to ignore.
   - Copyright (c) Vsevolod Strukchinsky <floatdrop@gmail.com> (github.com/floatdrop)
 - `reselect@5.2.0` — frontend
   - Copyright (c) 2015-2018 Reselect Contributors
-- `resend@6.26.0` — frontend
+- `resend@6.28.0` — frontend
   - Copyright (c) 2023 Plus Five Five, Inc.
 - `rope-sequence@1.3.4` — frontend
   - Copyright (C) 2016 by Marijn Haverbeke <marijn@haverbeke.berlin>
@@ -1993,10 +1980,10 @@ each one is a question to resolve rather than a gap to ignore.
   - Copyright (c) Feross Aboukhadijeh
 - `safer-buffer@2.1.2` — backend, frontend
   - Copyright (c) 2018 Nikita Skovoroda <chalkerx@gmail.com>
-- `scheduler@0.27.0` — frontend
+- `scheduler@0.28.0` — frontend
   - Copyright (c) Meta Platforms, Inc. and affiliates.
 - `selderee@0.12.0` — backend
-  - Copyright (c) 2021-2022 KillyMXI <killy@mxii.eu.org>
+  - Copyright (c) 2021-2026 KillyMXI <killy@mxii.eu.org>
 - `send@1.2.1` — backend, frontend
   - Copyright (c) 2012 TJ Holowaychuk
   - Copyright (c) 2014-2022 Douglas Christopher Wilson
@@ -2099,7 +2086,7 @@ each one is a question to resolve rather than a gap to ignore.
   - Copyright (c) Matteo Collina and Undici contributors
 - `undici-types@8.10.2` — frontend
   - Copyright (c) Matteo Collina and Undici contributors
-- `undici-types@8.3.0` — frontend
+- `undici-types@8.9.0` — frontend
   - Copyright (c) Matteo Collina and Undici contributors
 - `unenv@2.0.0-rc.24` — frontend
   - Copyright (c) Pooya Parsa <pooya@pi0.io>
@@ -2156,7 +2143,7 @@ each one is a question to resolve rather than a gap to ignore.
   - Copyright (c) 2016 Diwank Singh Tomer
 - `whatwg-url@5.0.0` — frontend
   - Copyright (c) 2015–2016 Sebastian Mayr
-- `wrangler@4.129.0` — frontend
+- `wrangler@4.131.1` — frontend
 - `wrap-ansi@9.0.2` — frontend
   - Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 - `ws@8.21.0` — frontend
@@ -2264,7 +2251,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 ### Apache-2.0
 
-As distributed with `@ai-sdk/anthropic@4.0.49`:
+As distributed with `@ai-sdk/anthropic@4.0.53`:
 
 ```
 Copyright 2023 Vercel, Inc.
@@ -2284,7 +2271,7 @@ limitations under the License.
 
 ### Apache-2.0 AND LGPL-3.0-or-later AND MIT
 
-As distributed with `@img/sharp-wasm32@0.35.2`:
+As distributed with `@img/sharp-wasm32@0.35.4`:
 
 ```
 Apache License
