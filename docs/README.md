@@ -35,6 +35,9 @@ The fork rules that constrain every change here are at the top of
   where, for how long, and what deletion actually does, with its known gaps
 - [Rebrand verification](rebrand-verification.md) — the naming convention, and
   the per-screen checklist for the manual pass CI cannot do
+- [Licence compliance sign-off](licence-compliance.md) — the ten obligations
+  the licence position rests on, what checks each one, and which three no
+  build enforces
 
 ## Features and clients
 

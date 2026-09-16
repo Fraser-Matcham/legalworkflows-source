@@ -2,8 +2,9 @@ resource "aws_ecr_repository" "backend" {
   name                 = "${var.name_prefix}-backend"
   image_tag_mutability = "MUTABLE"
 
-  # Ticket 2050: scan on push. Basic scanning is free; the deploy workflow
-  # (Stage 4) reads the findings and fails on high or critical.
+  # Ticket 2050. Kept for a registry still on basic scanning; where the
+  # registry is set to ENHANCED (infra/scanning.tf) this repository-level
+  # setting is superseded by the registry's rules and has no effect.
   image_scanning_configuration {
     scan_on_push = true
   }

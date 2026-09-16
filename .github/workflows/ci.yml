@@ -170,6 +170,40 @@ jobs:
       # a customer does. Regenerate with: npm run brand-assets
       - run: npm run brand-assets:check
 
+  notices:
+    name: Third-party notices
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      # THIRD-PARTY-NOTICES.md is what discharges the attribution clauses of
+      # every dependency licence we ship under — Apache-2.0 section 4(c), the
+      # BSD and MIT notice requirements, and the LGPL relinking notices. NOTICE
+      # at the repository root points at it by name, so a stale file is not an
+      # untidy artefact: it is the product asserting attributions that no
+      # longer match what it ships.
+      #
+      # It drifts silently without this. The file was generated on 9 September
+      # and four Dependabot production bumps on 14 September moved the licence
+      # mix under it — Apache-2.0 from 145 packages to 135, LGPL-3.0-or-later
+      # from 20 to 10 — with nothing to notice. `npm run notices` regenerates.
+      #
+      # The four installs are not optional: the generator takes package names
+      # and licence ids from the lockfiles, but the licence TEXT it reproduces
+      # comes from each installed package's own LICENSE file. Without
+      # node_modules it would emit a file with every text missing and fail
+      # against a correct one.
+      - run: npm ci --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund --prefix backend
+      - run: npm ci --no-audit --no-fund --prefix frontend
+      - run: npm ci --no-audit --no-fund --prefix word-addin
+
+      - run: npm run notices:check
+
   schema-privileges:
     name: Schema privileges
     runs-on: ubuntu-latest

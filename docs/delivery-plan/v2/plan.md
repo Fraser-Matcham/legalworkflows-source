@@ -211,7 +211,7 @@ going live has been rehearsed rather than attempted.**
 | # | Work | Ticket |
 | --- | --- | --- |
 | 4.1 | ✅ Frontend production values — `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_SOURCE_URL` are build arguments in `frontend/Dockerfile`, passed by the release pipeline from the `APP_URL` and mirror variables; `API_BASE_URL` is the backend's Service Connect name from Terraform | stage-1 carryover |
-| 4.2 | ✅ `.github/workflows/deploy.yml` builds both images on merge to `main`, pushes them to ECR as `<sha>` and `main`, and refuses an image whose ECR scan has a high or critical finding | 2050 |
+| 4.2 | ✅ `.github/workflows/deploy.yml` builds both images on merge to `main`, pushes them to ECR as `<sha>` and `main`, and refuses an image whose Amazon Inspector scan has a high or critical finding with a fix available | 2050 |
 | 4.3 | ✅ Same workflow: CI gate on the exact commit → migrations newer than the SSM record, once, behind an advisory lock → catalogue-sync release job from the new revision → rolling update → `/api/ready` through the edge → frontend → `/`. `docs/release-pipeline.md`. ⏳ The first real run is in progress: `config`, `gate` and `mirror` are green on `50a3461`; `build` is blocked assuming the deploy role (`sts:AssumeRoleWithWebIdentity` refused — `infra/modules/deploy/README.md`, "When the role will not assume") | 2051, 2052 |
 | 4.4 | Rollback: ✅ `.github/workflows/rollback.yml` (revision numbers from the previous release's summary). ⏳ The test-by-rolling-back needs the footprint applied | 2052 |
 | 4.5 | ✅ Make the security suites required checks — done directly in GitHub's branch protection settings for `main`, not by engineering in this repo | 2024, 2025 |
@@ -220,7 +220,7 @@ going live has been rehearsed rather than attempted.**
 | 4.8 | k6 SSE load scenario against production configuration | 2097, 2098 |
 | 4.9 | Address what the load test surfaces | 2099 |
 | 4.10 | Full suite against production configuration | 2101, 2102 |
-| 4.11 | Licence compliance sign-off | 2103 |
+| 4.11 | 🟡 Licence compliance sign-off — [`docs/licence-compliance.md`](../../licence-compliance.md) records all ten items with the command that checks each. Item 8 was failing (third-party notices five days stale after the 14 September dependency bumps); regenerated and now guarded by the `notices` job in `ci.yml`. Open: `buffers@0.1.1` declares no licence, and two deferred trademark references blocked on 2015/2016. The deployed `/legal` source link still needs confirming at cutover | 2103 |
 | 4.12 | Security review of the combined deployment | 2104 |
 | 4.13 | Cutover and smoke test | 2105, 2106 |
 | 4.14 | Post-launch monitoring window | 2107 |
