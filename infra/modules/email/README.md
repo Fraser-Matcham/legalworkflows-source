@@ -23,7 +23,10 @@ given.
 
 A new SES identity is in the **sandbox**: it can send only to addresses that
 have themselves been verified in SES. Stage 3, Task 10 is the operator's
-request to leave it; approval is manual on AWS's side.
+request to leave it. **That request was approved on 16 September 2026**, so
+the account is out of the sandbox and step 2 below is already satisfied —
+the sequence is kept because it is the order to follow if this is ever
+rebuilt in another region, where sandbox status starts again.
 
 Nothing here waits for that approval. The identity, DNS, configuration set
 and credential can all be created first, and DKIM verification (which needs

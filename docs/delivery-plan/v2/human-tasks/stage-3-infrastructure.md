@@ -7,10 +7,9 @@ down; tasks 4 to 6 give me the access I need to build the infrastructure;
 tasks 7 to 9 connect the domain and turn on billing safety; task 10 requests
 production email sending.
 
-**Total time: about 3 hours**, spread over two days because Task 10 waits on
-an email from AWS approving production access for SES — submit it as soon as
-Task 7's domain work is done, so the wait runs alongside everything else
-rather than sitting at the end.
+**Total time: about 3 hours.** Task 10 is already done — AWS approved
+production access for SES on 16 September 2026 — so nothing in this runbook
+now waits on a third party.
 
 > **Two ground rules for this stage.**
 >
@@ -365,6 +364,18 @@ go that you will actually see.
 ---
 
 ## Task 10 — Request production access for Amazon SES
+
+> **✅ DONE — approved 16 September 2026.** The account can send to any
+> recipient, so nothing about email waits on AWS any more. The remaining
+> email step is mine and happens after the footprint is applied: Terraform
+> creates the domain identity, its DKIM records and the SMTP credential
+> (`infra/modules/email`), and I hand you the six settings to paste into
+> Supabase's **Authentication → SMTP Settings**. The steps below are kept as
+> the record of what was submitted.
+>
+> If the approval email named a region other than `eu-west-2`, tell me —
+> sandbox status is per-region, and the footprint sends from `eu-west-2`.
+
 
 **Why:** a brand-new SES identity starts in a sandbox that can only send to
 individually verified addresses. Production access lifts that limit so the

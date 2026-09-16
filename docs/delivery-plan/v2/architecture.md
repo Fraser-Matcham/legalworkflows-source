@@ -106,7 +106,8 @@ individually verified addresses until AWS approves a production-access
 request, a manual form with no fixed turnaround. Stage 3, Task 10 is that
 request, submitted as early in that stage as the domain allows so the wait
 overlaps with the rest of the infrastructure build rather than sitting on the
-critical path at the end.
+critical path at the end. **AWS approved it on 16 September 2026**, so the
+sandbox is no longer a constraint on anything.
 
 Task 5 in the Stage 2 runbook now points here and to Stage 3, Task 10 rather
 than repeating Resend's steps. The domain identity, DKIM records and SMTP
