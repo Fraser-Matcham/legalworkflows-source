@@ -165,7 +165,7 @@ can be destroyed and rebuilt from this repository.**
 | 3.9 | ✅ `deploy` module — the hand-made GitHub OIDC provider and `github-actions-deploy` role imported, trust narrowed to pushes to `main` and jobs in the `production` environment of this repository, `AdministratorAccess` removed by an exclusive-attachments resource, and a least-privilege inline policy: push to the two ECR repositories, register task definitions, update the two services, run the release job, pass the four task roles, invalidate the distribution, read the service logs | new |
 | 3.10 | Verify the signed-URL round trip against real S3 | 2044 |
 | 3.11 | Backups: ✅ configured — the document bucket is versioned with a one-day noncurrent tail and continuously replicated into a write-locked `backup` bucket under its own key with 35-day retention (`infra/modules/backup`); Supabase's daily backups cover the database. ⏳ The restore drill (`docs/runbooks/restore.md`) runs once the footprint is applied | 2094, 2095 |
-| 3.12 | Runbooks for the common failure modes | 2096 |
+| 3.12 | ✅ Runbooks in `docs/runbooks/` — site down, deploy rolled back, database unreachable, storage failure, backend errors, high resource usage, queue backlog, model provider outage, failed migration, certificate expiry, email delivery, and the restore procedure with the drill checklist; every alarm's description names its runbook | 2096 |
 | 3.13 | ✅ `email` module (architecture decision 6) — SES domain identity with Easy DKIM, custom MAIL FROM with SPF, DMARC at `p=none`, a TLS-required configuration set with bounce/complaint suppression and events to the alerts topic, and an IAM SMTP user scoped to sending from the domain, its settings stored in Secrets Manager for the Supabase paste-in | new |
 
 ### Done when

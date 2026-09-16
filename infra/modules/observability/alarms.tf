@@ -27,7 +27,7 @@ resource "aws_cloudwatch_metric_alarm" "unhealthy_targets" {
   for_each = local.target_groups
 
   alarm_name          = "${var.name_prefix}-${each.key}-unhealthy-targets"
-  alarm_description   = "URGENT: a ${each.key} task is failing the load balancer's health check."
+  alarm_description   = "URGENT: a ${each.key} task is failing the load balancer's health check. Runbook: docs/runbooks/site-down.md"
   namespace           = "AWS/ApplicationELB"
   metric_name         = "UnHealthyHostCount"
   statistic           = "Maximum"
@@ -52,7 +52,7 @@ resource "aws_cloudwatch_metric_alarm" "no_running_tasks" {
   for_each = local.services
 
   alarm_name          = "${var.name_prefix}-${each.key}-no-running-tasks"
-  alarm_description   = "URGENT: the ${each.key} service has no running task."
+  alarm_description   = "URGENT: the ${each.key} service has no running task. Runbook: docs/runbooks/site-down.md"
   namespace           = "ECS/ContainerInsights"
   metric_name         = "RunningTaskCount"
   statistic           = "Minimum"
@@ -78,7 +78,7 @@ resource "aws_cloudwatch_metric_alarm" "no_running_tasks" {
 # from the user's point of view.
 resource "aws_cloudwatch_metric_alarm" "elb_5xx" {
   alarm_name          = "${var.name_prefix}-alb-5xx"
-  alarm_description   = "URGENT: the load balancer is answering 5xx itself, meaning no target is responding."
+  alarm_description   = "URGENT: the load balancer is answering 5xx itself, meaning no target is responding. Runbook: docs/runbooks/site-down.md"
   namespace           = "AWS/ApplicationELB"
   metric_name         = "HTTPCode_ELB_5XX_Count"
   statistic           = "Sum"
@@ -117,7 +117,7 @@ resource "aws_cloudwatch_log_metric_filter" "readiness_failures" {
 
 resource "aws_cloudwatch_metric_alarm" "readiness_failures" {
   alarm_name          = "${var.name_prefix}-backend-readiness"
-  alarm_description   = "URGENT: the backend cannot reach a dependency (database or storage). The failing check is named in the log group."
+  alarm_description   = "URGENT: the backend cannot reach a dependency (database or storage). The failing check is named in the log group. Runbook: docs/runbooks/database-unreachable.md or storage-failure.md, by the check field"
   namespace           = var.name_prefix
   metric_name         = "ReadinessFailures"
   statistic           = "Sum"
@@ -164,7 +164,7 @@ resource "aws_cloudwatch_event_target" "deployment_failed" {
       service = "$.resources[0]"
       reason  = "$.detail.reason"
     }
-    input_template = "\"URGENT: an ECS deployment failed and was rolled back. Service: <service>. Reason: <reason>\""
+    input_template = "\"URGENT: an ECS deployment failed and was rolled back. Service: <service>. Reason: <reason>. Runbook: docs/runbooks/deploy-rolled-back.md\""
   }
 }
 
@@ -172,7 +172,7 @@ resource "aws_cloudwatch_event_target" "deployment_failed" {
 
 resource "aws_cloudwatch_metric_alarm" "backend_5xx" {
   alarm_name          = "${var.name_prefix}-backend-5xx"
-  alarm_description   = "The backend returned ${var.backend_5xx_per_5m} or more 5xx responses in five minutes. Check the error tracker and the request log."
+  alarm_description   = "The backend returned ${var.backend_5xx_per_5m} or more 5xx responses in five minutes. Runbook: docs/runbooks/backend-errors.md"
   namespace           = "AWS/ApplicationELB"
   metric_name         = "HTTPCode_Target_5XX_Count"
   statistic           = "Sum"
@@ -192,7 +192,7 @@ resource "aws_cloudwatch_metric_alarm" "backend_5xx" {
 
 resource "aws_cloudwatch_metric_alarm" "backend_latency" {
   alarm_name          = "${var.name_prefix}-backend-latency"
-  alarm_description   = "Backend p95 response time over ${var.backend_p95_latency_seconds}s for fifteen minutes."
+  alarm_description   = "Backend p95 response time over ${var.backend_p95_latency_seconds}s for fifteen minutes. Runbook: docs/runbooks/backend-errors.md"
   namespace           = "AWS/ApplicationELB"
   metric_name         = "TargetResponseTime"
   extended_statistic  = "p95"
@@ -217,7 +217,7 @@ resource "aws_cloudwatch_metric_alarm" "service_cpu" {
   for_each = local.services
 
   alarm_name          = "${var.name_prefix}-${each.key}-cpu-high"
-  alarm_description   = "The ${each.key} service has averaged over 85% CPU for fifteen minutes. If it is already at max_count, it needs a bigger task or a higher ceiling."
+  alarm_description   = "The ${each.key} service has averaged over 85% CPU for fifteen minutes. Runbook: docs/runbooks/high-resource-usage.md"
   namespace           = "AWS/ECS"
   metric_name         = "CPUUtilization"
   statistic           = "Average"
@@ -242,7 +242,7 @@ resource "aws_cloudwatch_metric_alarm" "service_memory" {
   for_each = local.services
 
   alarm_name          = "${var.name_prefix}-${each.key}-memory-high"
-  alarm_description   = "The ${each.key} service has averaged over 85% memory for fifteen minutes."
+  alarm_description   = "The ${each.key} service has averaged over 85% memory for fifteen minutes. Runbook: docs/runbooks/high-resource-usage.md"
   namespace           = "AWS/ECS"
   metric_name         = "MemoryUtilization"
   statistic           = "Average"

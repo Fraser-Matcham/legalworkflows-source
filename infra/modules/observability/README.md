@@ -25,6 +25,9 @@ requires the destination number to be verified in the SNS console first.
 
 ## What fires, and why
 
+Every alarm's description ends with the runbook that answers it; the index
+is [`docs/runbooks/README.md`](../../../docs/runbooks/README.md).
+
 **Urgent.**
 
 | Alarm | Condition | Reading |

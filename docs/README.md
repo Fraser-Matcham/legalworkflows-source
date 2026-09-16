@@ -19,6 +19,8 @@ The fork rules that constrain every change here are at the top of
 - [Manual and production deployment](deployment.md) — managed infrastructure,
   environment variables, database upgrades, and deployment safety
 - [Troubleshooting](troubleshooting.md) — common local and production problems
+- [Runbooks](runbooks/README.md) — one page per production failure mode, each
+  reached from the alarm that fires for it; includes the restore procedure
 - [Safe local testing](safe-local-testing.md) — disposable resources, synthetic
   documents, and secret handling
 - [API contract](api-contract.md) — what the HTTP surface promises its
