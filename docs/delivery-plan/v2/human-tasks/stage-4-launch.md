@@ -28,6 +28,14 @@ deploy using the role you created in Stage 3, Task 5.
 3. In the left sidebar click **Secrets and variables**, then **Actions**.
 4. Click the **Variables** tab, then **New repository variable**. Add these one
    at a time — click **Add variable** after each:
+
+   *If you would rather keep them with the environment — **Settings** →
+   **Environments** → **production**, then **Add environment variable** and
+   **Add environment secret** — that works too, and gives the same names the
+   same meaning. The pipeline reads them with the environment resolved, so it
+   does not mind which you choose. What it cannot do is find them under a
+   different repository, or under an organisation that has not granted this
+   repository access.*
    - Name `AWS_REGION`, value: your region, for example `eu-west-2`
    - Name `AWS_ROLE_ARN`, value: the role ARN from Stage 3, Task 5
    - Name `AWS_ACCOUNT_ID`, value: your 12-digit account number
@@ -35,8 +43,8 @@ deploy using the role you created in Stage 3, Task 5.
    - Name `SOURCE_MIRROR_REPOSITORY`, value: the mirror from Task 3 below, in
      the form `owner/repository` — for example
      `Fraser-Matcham/legalworkflows-source`
-5. Now click the **Secrets** tab, then **New repository secret**. Add these
-   one at a time:
+5. Now click the **Secrets** tab, then **New repository secret** — or the
+   `production` environment, as above. Add these one at a time:
    - Name `SUPABASE_DB_URL`, value: the database connection string the
      pipeline applies migrations with. In the Supabase dashboard click
      **Connect** at the top of the project, choose **Session pooler**, copy
