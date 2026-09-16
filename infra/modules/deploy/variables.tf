@@ -14,12 +14,16 @@ variable "account_id" {
 # --- who may assume the role ---------------------------------------------------------
 
 variable "github_repository" {
-  description = "owner/repo whose workflows may assume the role. Nothing else on GitHub can."
+  description = "The repository as the OIDC token's `sub` claim spells it: owner/repo, each half optionally carrying @<numeric id> where the organisation has immutable subject claims enabled. Nothing else on GitHub can assume the role."
   type        = string
 
+  # Each half is a GitHub name, optionally followed by the immutable numeric id
+  # GitHub appends under immutable subject claims. Anything else — a leading
+  # `repo:`, a trailing path, a non-numeric id — is a hand-assembled subject
+  # that will never match, so it is refused here rather than at assume time.
   validation {
-    condition     = can(regex("^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", var.github_repository))
-    error_message = "github_repository must use the owner/repository form."
+    condition     = can(regex("^[A-Za-z0-9_.-]+(@[0-9]+)?/[A-Za-z0-9_.-]+(@[0-9]+)?$", var.github_repository))
+    error_message = "github_repository must be owner/repository, with an optional @<numeric id> on either part (for example Fraser-Matcham@326009546/legalworkflows@1361216855)."
   }
 }
 
