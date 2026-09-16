@@ -1,5 +1,6 @@
 resource "aws_lb_target_group" "frontend" {
-  name        = "${var.name_prefix}-frontend"
+  # Short prefix: the ELB API caps this at 32 characters (infra/locals.tf).
+  name        = "${var.short_name_prefix}-frontend"
   port        = var.container_port
   protocol    = "HTTP"
   target_type = "ip"

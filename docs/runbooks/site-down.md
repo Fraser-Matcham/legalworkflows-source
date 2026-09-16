@@ -58,7 +58,7 @@ aws ecs describe-services --cluster legalworkflows-production \
 
   ```sh
   aws elbv2 describe-target-health --target-group-arn "$(aws elbv2 describe-target-groups \
-    --names legalworkflows-production-backend --query 'TargetGroups[0].TargetGroupArn' --output text)"
+    --names legalworkflows-prod-backend --query 'TargetGroups[0].TargetGroupArn' --output text)"
   ```
 
   `Target.Timeout` with a healthy-looking log usually means the security

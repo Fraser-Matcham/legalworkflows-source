@@ -43,8 +43,9 @@ module "secrets" {
 module "backend" {
   source = "./modules/backend"
 
-  name_prefix = local.name_prefix
-  region      = data.aws_region.current.region
+  name_prefix       = local.name_prefix
+  short_name_prefix = local.short_name_prefix
+  region            = data.aws_region.current.region
 
   vpc_id                     = module.network.vpc_id
   public_subnet_ids          = module.network.public_subnet_ids
@@ -75,8 +76,9 @@ module "backend" {
 module "frontend" {
   source = "./modules/frontend"
 
-  name_prefix = local.name_prefix
-  region      = data.aws_region.current.region
+  name_prefix       = local.name_prefix
+  short_name_prefix = local.short_name_prefix
+  region            = data.aws_region.current.region
 
   vpc_id                     = module.network.vpc_id
   private_subnet_ids         = module.network.private_subnet_ids

@@ -52,7 +52,7 @@ aws logs tail /ecs/legalworkflows-production-backend --since 30m --follow
 # Why the load balancer thinks a target is unhealthy
 aws elbv2 describe-target-health \
   --target-group-arn "$(aws elbv2 describe-target-groups \
-    --names legalworkflows-production-backend --query 'TargetGroups[0].TargetGroupArn' --output text)"
+    --names legalworkflows-prod-backend --query 'TargetGroups[0].TargetGroupArn' --output text)"
 ```
 
 **Two rules.**
