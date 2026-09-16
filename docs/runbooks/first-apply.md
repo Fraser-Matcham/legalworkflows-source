@@ -12,8 +12,8 @@ run by CI, and nothing here happens automatically.
 
 ## Before you start
 
-Three things must already exist, created by hand. Terraform adopts or
-depends on each of them and will fail without them.
+Two things must already exist, created by hand. Terraform adopts or
+depends on both and will fail without them.
 
 | Thing | From | Check it |
 | --- | --- | --- |
@@ -40,7 +40,9 @@ behind. Confirm propagation at whatsmydns.net before starting.
 You also need, on your machine:
 
 - Terraform `~> 1.16` (CI validates with 1.16.2)
-- The AWS CLI, configured with the administrator user from Stage 3, Task 3
+- The AWS CLI, with administrator credentials for the account — an IAM
+  Identity Center (SSO) session is fine, and is what Stage 3, Task 3's
+  separate admin user is an alternative to
 - This repository, on `main`
 
 ## 1. Configure
@@ -164,7 +166,7 @@ Terraform records what it created. Fix the cause and run
 resources by hand to "start clean" — that is how state and reality diverge,
 and the recovery is worse than the original failure.
 
-The two failures worth naming:
+The failures worth naming:
 
 - **Certificate validation timed out.** The nameservers are not propagated,
   or the registrar points elsewhere. Fix the delegation, wait, re-plan. The
