@@ -17,8 +17,9 @@
  * captures every existing site at once, and a new site added by an upstream
  * merge is captured the day it lands, without anyone remembering to wire it.
  *
- * The bridge never changes what is printed. It calls the original first, and
- * the reporting that follows cannot throw.
+ * The bridge calls the original first and the reporting that follows cannot
+ * throw. What it prints is reduced by the same helpers that guard the wire —
+ * see `printable` below for why that is worth the change in output.
  *
  * ## What this closes that nothing else did
  *
@@ -259,6 +260,53 @@ function looksLikeError(value: unknown): boolean {
 }
 
 /**
+ * What the bridge prints, reduced by the same helpers that guard the wire.
+ *
+ * The bridge used to call the original with the raw arguments, on the
+ * principle that a retrofit should not change what a call site prints. That
+ * principle cost more than it was worth. The leak this module's header
+ * describes for unhandled rejections — a provider SDK error carrying the
+ * outgoing request on `error.request`, i.e. the prompt, i.e. the client's
+ * document, plus the key in the message — reaches stdout identically through
+ * a deliberate `console.error(label, err)`. There are such call sites on the
+ * product's hot path (`lib/chat/streaming.ts` logs a failed model stream this
+ * way), and stdout is CloudWatch, which the deploy role can read.
+ *
+ * Measured before this change, against an error shaped like Anthropic's:
+ * the key and the document text reached stdout through the bridge, and did
+ * not through `handleUnhandledRejection`. Redaction was wired to one path and
+ * not the other.
+ *
+ * `safeErrorForLog` copies named fields only, so `request` and `response` are
+ * dropped rather than walked. It keeps name, message, stack, status and code,
+ * which is what a person debugging actually reads — so the stack is put back
+ * as text here instead of printing a `SafeError` object literal.
+ */
+function printable(arg: unknown): unknown {
+    if (arg instanceof Error || looksLikeError(arg)) {
+        const safe = safeErrorForLog(arg);
+        const head = safe.stack ?? `${safe.name}: ${safe.message}`;
+        const tail = [
+            safe.status === undefined ? null : `status=${safe.status}`,
+            safe.code ? `code=${safe.code}` : null,
+        ]
+            .filter(Boolean)
+            .join(" ");
+        return tail ? `${head}\n  ${tail}` : head;
+    }
+    return safeLogValue(arg);
+}
+
+/** Never throws: a bridge that can throw turns every logged error into a crash. */
+function printableArgs(args: unknown[]): unknown[] {
+    try {
+        return args.map(printable);
+    } catch {
+        return ["[error-tracking] a log argument could not be reduced for printing"];
+    }
+}
+
+/**
  * Picks the error out of a `console.error(label, detail)` call.
  *
  * Existing call sites take three shapes: a bare Error, a label plus an Error,
@@ -364,7 +412,7 @@ export function installErrorTracking(
     const original = console.error.bind(console);
     originalConsoleError = original;
     console.error = (...args: unknown[]) => {
-        original(...args);
+        original(...printableArgs(args));
         if (!state || state.reporting) return;
         state.reporting = true;
         try {

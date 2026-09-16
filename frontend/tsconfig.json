@@ -33,5 +33,16 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+        "node_modules",
+        // Parity tests that deliberately import the Word add-in's modules to
+        // check the two catalogues agree. They live outside this directory, so
+        // they are not in the Docker build context (`frontend/`) and
+        // `next build` cannot type-check them there — it fails with TS2307 and
+        // takes the release with it. Vitest still runs them from a full
+        // checkout, where the imports resolve, so a parity regression is still
+        // caught; only static checking of these three files is given up.
+        // scripts/check-frontend-boundary.mjs holds the other half of this.
+        "src/wordAddin/**"
+    ]
 }

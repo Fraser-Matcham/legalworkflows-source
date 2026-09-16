@@ -38,6 +38,8 @@ The fork rules that constrain every change here are at the top of
 - [Licence compliance sign-off](licence-compliance.md) — the ten obligations
   the licence position rests on, what checks each one, and which three no
   build enforces
+- [Security review](security-review.md) — the deployment's attack surface,
+  what each finding's disposition is, and what the review did not cover
 
 ## Features and clients
 

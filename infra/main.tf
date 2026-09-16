@@ -38,10 +38,13 @@ module "secrets" {
   region                    = data.aws_region.current.region
   storage_access_key_id     = module.storage.access_key_id
   storage_secret_access_key = module.storage.secret_access_key
+  enable_ecs_exec           = var.enable_ecs_exec
 }
 
 module "backend" {
   source = "./modules/backend"
+
+  enable_ecs_exec = var.enable_ecs_exec
 
   name_prefix       = local.name_prefix
   short_name_prefix = local.short_name_prefix
@@ -75,6 +78,8 @@ module "backend" {
 
 module "frontend" {
   source = "./modules/frontend"
+
+  enable_ecs_exec = var.enable_ecs_exec
 
   name_prefix       = local.name_prefix
   short_name_prefix = local.short_name_prefix
