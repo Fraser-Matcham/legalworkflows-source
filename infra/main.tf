@@ -43,8 +43,9 @@ module "secrets" {
 module "backend" {
   source = "./modules/backend"
 
-  name_prefix = local.name_prefix
-  region      = data.aws_region.current.region
+  name_prefix       = local.name_prefix
+  short_name_prefix = local.short_name_prefix
+  region            = data.aws_region.current.region
 
   vpc_id                     = module.network.vpc_id
   public_subnet_ids          = module.network.public_subnet_ids
@@ -75,8 +76,9 @@ module "backend" {
 module "frontend" {
   source = "./modules/frontend"
 
-  name_prefix = local.name_prefix
-  region      = data.aws_region.current.region
+  name_prefix       = local.name_prefix
+  short_name_prefix = local.short_name_prefix
+  region            = data.aws_region.current.region
 
   vpc_id                     = module.network.vpc_id
   private_subnet_ids         = module.network.private_subnet_ids
@@ -142,10 +144,11 @@ module "deploy" {
   region      = data.aws_region.current.region
   account_id  = data.aws_caller_identity.current.account_id
 
-  github_repository   = var.github_repository
-  deploy_branches     = var.deploy_branches
-  deploy_environments = var.deploy_environments
-  role_name           = var.deploy_role_name
+  github_repository    = var.github_repository
+  deploy_branches      = var.deploy_branches
+  deploy_environments  = var.deploy_environments
+  role_name            = coalesce(var.deploy_role_name, "${local.name_prefix}-github-actions")
+  create_oidc_provider = var.create_github_oidc_provider
 
   ecr_repository_arns = [
     module.backend.ecr_repository_arn,

@@ -175,9 +175,16 @@ variable "deploy_environments" {
 }
 
 variable "deploy_role_name" {
-  description = "Name of the deploy role created by hand in Stage 3, Task 5 and imported by infra/imports.tf."
+  description = "Name of the deploy role Terraform creates. Null takes \"<project>-<environment>-github-actions\", which cannot collide with another project's role in a shared account."
   type        = string
-  default     = "github-actions-deploy"
+  default     = null
+  nullable    = true
+}
+
+variable "create_github_oidc_provider" {
+  description = "Create GitHub's OIDC identity provider rather than using the one already in the account. It is an account-wide singleton — see infra/modules/deploy/oidc.tf. Check with `aws iam list-open-id-connect-providers` before setting this true."
+  type        = bool
+  default     = false
 }
 
 # --- backup ----------------------------------------------------------------

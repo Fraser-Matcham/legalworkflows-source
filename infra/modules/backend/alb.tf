@@ -10,7 +10,7 @@ resource "random_password" "origin_verify" {
 }
 
 resource "aws_lb" "this" {
-  name               = "${var.name_prefix}-alb"
+  name               = "${var.short_name_prefix}-alb"
   load_balancer_type = "application"
   internal           = false
   subnets            = var.public_subnet_ids
@@ -25,7 +25,8 @@ resource "aws_lb" "this" {
 }
 
 resource "aws_lb_target_group" "backend" {
-  name        = "${var.name_prefix}-backend"
+  # Short prefix: the ELB API caps this at 32 characters (infra/locals.tf).
+  name        = "${var.short_name_prefix}-backend"
   port        = var.container_port
   protocol    = "HTTP"
   target_type = "ip"

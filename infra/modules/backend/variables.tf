@@ -7,6 +7,16 @@ variable "region" {
   type = string
 }
 
+variable "short_name_prefix" {
+  description = "Prefix for the load balancer and its target groups, which the ELB API caps at 32 characters. See infra/locals.tf."
+  type        = string
+
+  validation {
+    condition     = length(var.short_name_prefix) <= 23
+    error_message = "short_name_prefix must be 23 characters or fewer: the ELB API caps a target group name at 32, and this module appends \"-frontend\" (9) in the frontend module."
+  }
+}
+
 # --- placement -----------------------------------------------------------
 
 variable "vpc_id" {

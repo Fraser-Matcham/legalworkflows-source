@@ -71,6 +71,10 @@ that does not validate does not merge.
 
 ## Applying
 
+**The first apply has its own page**, because it adopts hand-created
+resources and waits on DNS: [`docs/runbooks/first-apply.md`](../docs/runbooks/first-apply.md).
+Afterwards:
+
 ```sh
 terraform plan -out=tfplan     # read it. All of it.
 terraform apply tfplan

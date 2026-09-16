@@ -4,24 +4,30 @@ Row 3.9 of the Stage 3 table: the role GitHub Actions assumes to deploy,
 through GitHub's OIDC provider, so no AWS access key is ever stored in a
 GitHub secret.
 
-## Adopting the hand-made role
+## Where the role and the provider come from
 
-Stage 3, Task 5 has the operator create the identity provider and a role
-named `github-actions-deploy` in the console, with `AdministratorAccess`
-"for now" and no branch restriction. `infra/imports.tf` imports both into
-this module, and the first apply then:
+**The role is created here**, named `<project>-<environment>-github-actions`
+by default. It is not adopted from anything: a role called
+`github-actions-deploy` created by hand earlier is unused and can be
+deleted. The prefix matters in an account shared with another project,
+where a bare name would collide.
 
-- rewrites the trust policy to accept only tokens whose subject is a job in
-  a listed environment (`production`) of `github_repository` — see "Who may
-  assume it" below;
-- attaches the least-privilege inline policy below;
-- **removes `AdministratorAccess`**, through
-  `aws_iam_role_policy_attachments_exclusive` with an empty list, which also
-  removes anything attached by hand later.
+**The provider is not.** GitHub's OIDC identity provider is an account-wide
+singleton — one `token.actions.githubusercontent.com` per account, shared by
+every project that deploys from GitHub. So this module looks the existing one
+up with a data source, and creates it only when `create_oidc_provider` is
+true. Two reasons: creating a second one fails outright, and adopting
+another project's into this state would make `terraform destroy` here delete
+the provider their deploys depend on.
 
-Read the plan for that apply: it should show the provider and role as
-imported and updated, never created or replaced. If Task 5 was skipped,
-delete the two `import` blocks and Terraform creates both.
+Check which case you are in before the first apply:
+
+```sh
+aws iam list-open-id-connect-providers
+```
+
+Anything listed means leave `create_github_oidc_provider` at its default of
+false. An empty list means set it true.
 
 ## What the deploy may do
 

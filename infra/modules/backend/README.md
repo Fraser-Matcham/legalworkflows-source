@@ -73,6 +73,13 @@ module because the `awslogs` driver does not create it and a task with no
 group fails to start. The `observability` module attaches alarms to it by
 name and owns retention policy beyond the default here.
 
+**Two names are shortened.** The load balancer and its target groups use
+`<project>-prod-…` rather than the full prefix, because the ELB API caps
+those names at 32 characters and `legalworkflows-production-frontend` is 34.
+Everything else in the footprint uses the full prefix. `infra/locals.tf`
+explains it, and both modules validate the input so a longer project name
+fails at plan time with a readable message rather than at apply.
+
 ## Configuration
 
 Non-secret values are environment on the task definition; secrets are

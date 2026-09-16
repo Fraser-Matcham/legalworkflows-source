@@ -3,13 +3,27 @@
 # branch or environment — may assume it. Nothing long-lived is stored in
 # GitHub.
 #
+# The provider is an ACCOUNT-WIDE singleton: one per account, shared by every
+# project that deploys from GitHub. So this module only creates it when the
+# account does not have one yet, and otherwise looks the existing one up.
+# Adopting it into this state instead would make `terraform destroy` here
+# delete a provider other projects in the account depend on.
+#
 # No thumbprint: AWS validates GitHub's issuer against its own trusted root
 # store, and the thumbprint list is Optional in the provider for that reason.
 resource "aws_iam_openid_connect_provider" "github" {
+  count = var.create_oidc_provider ? 1 : 0
+
   url            = "https://token.actions.githubusercontent.com"
   client_id_list = ["sts.amazonaws.com"]
 
   tags = { Name = "github-actions" }
+}
+
+data "aws_iam_openid_connect_provider" "github" {
+  count = var.create_oidc_provider ? 0 : 1
+
+  url = "https://token.actions.githubusercontent.com"
 }
 
 # The token subjects the role accepts. GitHub gives a job the environment
@@ -19,6 +33,8 @@ resource "aws_iam_openid_connect_provider" "github" {
 # environment, so deploy_branches is empty by default and the environment
 # subject is the only way in.
 locals {
+  oidc_provider_arn = var.create_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : data.aws_iam_openid_connect_provider.github[0].arn
+
   github_subjects = concat(
     [for b in var.deploy_branches : "repo:${var.github_repository}:ref:refs/heads/${b}"],
     [for e in var.deploy_environments : "repo:${var.github_repository}:environment:${e}"],
@@ -33,7 +49,7 @@ data "aws_iam_policy_document" "trust" {
 
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.github.arn]
+      identifiers = [local.oidc_provider_arn]
     }
 
     condition {

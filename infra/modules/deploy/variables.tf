@@ -45,9 +45,20 @@ variable "deploy_environments" {
 }
 
 variable "role_name" {
-  description = "Name of the role. Matches the one Stage 3, Task 5 creates by hand so Terraform imports it rather than making a second."
+  description = "Name of the deploy role. Prefixed by default so it cannot collide with another project's role in a shared account."
   type        = string
-  default     = "github-actions-deploy"
+}
+
+variable "create_oidc_provider" {
+  description = <<-EOT
+    Whether to create GitHub's OIDC identity provider. It is an account-wide
+    singleton, so this is false whenever the account already has one — from
+    another project, or from Stage 3, Task 5 — and the existing provider is
+    looked up instead. Creating a second one fails; adopting someone else's
+    into this state would make `terraform destroy` here break their deploys.
+  EOT
+  type        = bool
+  default     = false
 }
 
 # --- what the role may touch -----------------------------------------------------------

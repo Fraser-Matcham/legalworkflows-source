@@ -7,6 +7,10 @@ down; tasks 4 to 6 give me the access I need to build the infrastructure;
 tasks 7 to 9 connect the domain and turn on billing safety; task 10 requests
 production email sending.
 
+**Tasks 5 and 10 are already done or no longer needed** — see the notes on
+each. Task 7 is the one with a waiting period, so start there if you are
+picking this up mid-way.
+
 **Total time: about 3 hours.** Task 10 is already done — AWS approved
 production access for SES on 16 September 2026 — so nothing in this runbook
 now waits on a third party.
@@ -172,6 +176,17 @@ bucket, so there is one fewer thing to create and one fewer thing to pay for.
 
 ## Task 5 — Connect GitHub to AWS without a password
 
+> **✅ NOT NEEDED — Terraform does this now.** The deploy role is created by
+> the `deploy` module under a prefixed name, and GitHub's identity provider
+> is created only if your account does not already have one. You get the
+> role ARN from `terraform output deploy_role_arn` after the first apply,
+> which is what Stage 4, Task 1 asks for. Skip to Task 6.
+>
+> If you already followed the steps below and made a role called
+> `github-actions-deploy`, nothing breaks: it is simply unused, and you can
+> delete it. The steps are kept as a record of what the account looked like.
+
+
 **Why:** the deployment pipeline needs to push to AWS. The old way was to
 store an AWS key in GitHub, which means a long-lived credential sitting in a
 settings page forever. Instead we let GitHub prove its identity to AWS
@@ -264,6 +279,15 @@ AWS has to be able to prove it controls the domain. That means AWS DNS.
 
 **Before you start:** Stage 1, Task 1 must be complete.
 
+> **Delegate the DNS. Do not transfer the registration.** These are different
+> things and only the first is needed. Delegation means the domain stays
+> registered where it is — GoDaddy, Cloudflare, wherever — and you point its
+> nameservers at Route 53, which takes minutes to set and usually under an
+> hour to propagate. A registrar transfer moves the registration itself to
+> Amazon Registrar, takes five to seven days, needs an unlock and an
+> authorisation code, and buys nothing here. If a page mentions an EPP or
+> auth code, you are on the wrong one.
+
 ### Steps
 
 1. In the AWS console, search for **Route 53** and open it.
@@ -271,20 +295,35 @@ AWS has to be able to prove it controls the domain. That means AWS DNS.
 3. **Domain name:** enter `legalworkflows.co.uk`. No `www`, no `https://`.
 4. **Type:** leave as **Public hosted zone**.
 5. Click **Create hosted zone**.
+
+   Or, from a terminal with the AWS CLI, steps 1 to 5 are one command:
+
+   ```sh
+   aws route53 create-hosted-zone \
+     --name legalworkflows.co.uk \
+     --caller-reference "legalworkflows-$(date +%s)" \
+     --query '[HostedZone.Id, DelegationSet.NameServers]'
+   ```
+
+   which prints the zone ID and the four nameservers directly.
+
 6. The zone opens showing several records. Find the one with **Type: NS**. It
    lists four nameservers, each ending in a dot, like
    `ns-1234.awsdns-56.org.` — copy all four. On the same page, near the top
    right, copy the **Hosted zone ID** too — it starts with `Z`. Terraform
    adopts the zone you just made rather than creating a second one, and needs
    the ID to find it.
-7. Open your domain registrar in another tab — Cloudflare, if you followed the
-   Stage 1 suggestion.
-8. Find the setting for **custom nameservers**. In Cloudflare Registrar this
-   is under **Domain Registration → Manage Domains → your domain →
-   Configuration → Nameservers → Manage**.
+7. Open your domain registrar in another tab.
+8. Find the setting for **custom nameservers**:
+   - **GoDaddy:** *My Products* → find the domain → **DNS** → the
+     **Nameservers** section → **Change** → **I'll use my own nameservers**.
+   - **Cloudflare Registrar:** *Domain Registration → Manage Domains → your
+     domain → Configuration → Nameservers → Manage*.
 9. Replace the existing nameservers with the four from Route 53. Remove the
    trailing dot from each if the registrar rejects it.
-10. Save.
+10. Save. GoDaddy warns that changing nameservers turns off its own DNS
+    features and may mention email; that is expected, because Route 53 is
+    taking over. It does not affect the registration.
 11. Wait. This is DNS propagation and it genuinely can take up to 48 hours,
     though it is usually under an hour. You can check progress at
     **https://www.whatsmydns.net** — enter your domain, choose **NS**, and look

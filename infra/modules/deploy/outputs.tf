@@ -8,7 +8,8 @@ output "role_name" {
 }
 
 output "oidc_provider_arn" {
-  value = aws_iam_openid_connect_provider.github.arn
+  description = "The provider this role trusts, whether created here or already in the account."
+  value       = local.oidc_provider_arn
 }
 
 output "allowed_subjects" {
