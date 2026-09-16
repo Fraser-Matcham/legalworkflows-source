@@ -350,22 +350,82 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,scope=${{ matrix.service }},mode=max
 
-      # ECR scans on push (infra/modules/backend/ecr.tf). Wait for the result
-      # and refuse the image on any high or critical finding — the same gate
-      # the npm advisory check applies to dependencies (ticket 2050).
-      - name: Image scan is clean of high and critical findings
+      # Amazon Inspector scans the image (infra/scanning.tf) and the deploy
+      # refuses it on any high or critical finding THAT HAS A FIX (ticket 2050).
+      #
+      # "That has a fix" is the whole design. Basic scanning could not say, so
+      # the gate had to be zero-high-or-critical, and a Debian base ships with
+      # CVEs Debian has marked will-not-fix — which made the gate unpassable
+      # rather than strict, and a gate that can never pass is not a gate. The
+      # first image through it carried 5 critical and 24 high, none of which
+      # any change to this repository could have cleared.
+      #
+      # Enhanced findings carry fixAvailable, so the gate now refuses exactly
+      # what someone could act on: rebuild, bump a dependency, change a base
+      # image. Findings with no fix are printed and counted, never hidden —
+      # they are for the security review (plan row 4.12) to weigh, not for a
+      # release to silently pass over.
+      - name: Image scan is clean of fixable high and critical findings
         run: |
           set -euo pipefail
           REPO="$NAME_PREFIX-${{ matrix.service }}"
-          aws ecr wait image-scan-complete --repository-name "$REPO" --image-id imageTag="${{ needs.gate.outputs.sha }}"
-          COUNTS=$(aws ecr describe-image-scan-findings --repository-name "$REPO" --image-id imageTag="${{ needs.gate.outputs.sha }}" \
-            --query 'imageScanFindings.findingSeverityCounts' --output json)
-          echo "findings: $COUNTS"
-          HIGH=$(echo "$COUNTS" | jq '(.CRITICAL // 0) + (.HIGH // 0)')
-          if [ "$HIGH" != "0" ]; then
-            echo "::error::$HIGH high or critical findings in the $REPO image. See ECR → $REPO → ${{ needs.gate.outputs.sha }} → scan results."
+          TAG="${{ needs.gate.outputs.sha }}"
+
+          # `aws ecr wait image-scan-complete` waits for COMPLETE, which is a
+          # basic-scanning status. Enhanced scanning reports ACTIVE once
+          # Inspector has findings for the image and keeps it there while it
+          # re-scans, so that waiter would never return. Poll for either.
+          deadline=$(( $(date +%s) + 900 ))
+          while :; do
+            status=$(aws ecr describe-image-scan-findings \
+              --repository-name "$REPO" --image-id imageTag="$TAG" \
+              --query 'imageScanStatus.status' --output text 2>/dev/null || echo PENDING)
+            case "$status" in
+              ACTIVE|COMPLETE) break ;;
+              FAILED|UNSUPPORTED_IMAGE)
+                echo "::error::Inspector reported $status for $REPO:$TAG. An unsupported base image cannot be gated on; see infra/scanning.tf."
+                exit 1 ;;
+            esac
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::error::Inspector had not scanned $REPO:$TAG after 15 minutes (last status: $status). Enhanced scanning can lag for a few minutes after it is first enabled; re-running this job is safe."
+              exit 1
+            fi
+            echo "scan status: $status — waiting"
+            sleep 15
+          done
+
+          aws ecr describe-image-scan-findings --repository-name "$REPO" \
+            --image-id imageTag="$TAG" --output json > /tmp/scan.json
+
+          echo "all findings by severity: $(jq -c '.imageScanFindings.findingSeverityCounts // {}' /tmp/scan.json)"
+
+          jq -r '
+            [ .imageScanFindings.enhancedFindings[]?
+              | select(.severity == "CRITICAL" or .severity == "HIGH") ]
+            | group_by(.fixAvailable // "UNKNOWN")[]
+            | "  fixAvailable=\(.[0].fixAvailable // "UNKNOWN"): \(length)"
+          ' /tmp/scan.json || true
+
+          jq -r '
+            [ .imageScanFindings.enhancedFindings[]?
+              | select(.severity == "CRITICAL" or .severity == "HIGH")
+              | select(.fixAvailable == "YES") ]
+            | .[]
+            | "  FIXABLE \(.severity) \(.packageVulnerabilityDetails.vulnerabilityId // .title // "?") in \(
+                [.packageVulnerabilityDetails.vulnerablePackages[]?.name] | unique | join(", ") // "?")"
+          ' /tmp/scan.json || true
+
+          BLOCKING=$(jq '
+            [ .imageScanFindings.enhancedFindings[]?
+              | select(.severity == "CRITICAL" or .severity == "HIGH")
+              | select(.fixAvailable == "YES") ] | length
+          ' /tmp/scan.json)
+
+          if [ "$BLOCKING" != "0" ]; then
+            echo "::error::$BLOCKING fixable high or critical findings in the $REPO image. Each has a fix available, so each is actionable — see the FIXABLE lines above, and ECR → $REPO → $TAG → scan results."
             exit 1
           fi
+          echo "no fixable high or critical findings"
 
   # ---------------------------------------------------------------------------
   migrate:

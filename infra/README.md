@@ -19,6 +19,7 @@ infra/
   locals.tf        name prefix and the tag set every resource carries
   outputs.tf       values later stages need (account id, region, names, URLs)
   imports.tf       the hand-created resources Terraform adopts (zone, OIDC provider, deploy role)
+  scanning.tf      registry image scanning — account-wide and shared, so not in a module
   modules/         one module per row of the Stage 3 table in plan.md:
                    network, storage, backup, secrets, dns, backend, frontend,
                    observability, email, deploy — each with its own README
