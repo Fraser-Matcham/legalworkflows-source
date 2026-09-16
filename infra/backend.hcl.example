@@ -1,4 +1,18 @@
 # Copy to backend.hcl (gitignored) and fill in from Stage 3, Task 4.
+#
+# The key is project-scoped on purpose. A state bucket is often shared with
+# other projects in the same account, and two projects writing the same key
+# would overwrite each other's state — the one failure in this repository
+# with no clean recovery. Before the first init, list what the bucket already
+# holds and make sure this key is not among it:
+#
+#   aws s3 ls s3://<bucket> --recursive
+#
+# `region` is the BUCKET's region, which need not be the region the footprint
+# is built in (that is `aws_region` in terraform.tfvars). Check with:
+#
+#   aws s3api get-bucket-location --bucket <bucket>
+#
 bucket = "legalworkflows-terraform-state-123456789012"
-key    = "production/terraform.tfstate"
+key    = "legalworkflows/production/terraform.tfstate"
 region = "eu-west-2"

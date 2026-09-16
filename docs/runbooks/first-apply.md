@@ -56,7 +56,17 @@ cp terraform.tfvars.example terraform.tfvars
 
 Both files are gitignored. Edit them:
 
-- **`backend.hcl`** — the state bucket's exact name and region.
+- **`backend.hcl`** — the state bucket's exact name, its own region (which
+  need not be the region the footprint is built in), and a **project-scoped
+  key**. If the bucket is shared with another project, two projects writing
+  the same key overwrite each other's state, which is the one failure here
+  with no clean recovery. Check what is already there first:
+
+  ```sh
+  aws s3 ls s3://<bucket> --recursive
+  aws s3api get-bucket-location --bucket <bucket>
+  ```
+
 - **`terraform.tfvars`** — three values have no default and the apply
   refuses to start without them: `route53_zone_id` (the hosted zone ID, not
   the domain), `supabase_url` and `supabase_publishable_key`. The last two
