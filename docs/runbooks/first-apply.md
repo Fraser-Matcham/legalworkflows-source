@@ -18,19 +18,24 @@ depends on each of them and will fail without them.
 | Thing | From | Check it |
 | --- | --- | --- |
 | The state bucket | Stage 3, Task 4 | `aws s3 ls \| grep terraform-state` |
-| The Route 53 hosted zone, with the registrar pointing at it | Stage 3, Task 7 | `dig +short NS legalworkflows.co.uk` returns four `awsdns` names |
-| GitHub's OIDC provider and the `github-actions-deploy` role | Stage 3, Task 5 | `aws iam get-role --role-name github-actions-deploy` |
+| The Route 53 hosted zone, with the registrar pointing at it | Stage 3, Task 7 | `dig +short NS <your domain>` returns four `awsdns` names |
+
+And one thing to look up rather than create:
+
+```sh
+aws iam list-open-id-connect-providers
+```
+
+GitHub's OIDC provider is an account-wide singleton. If one is listed,
+leave `create_github_oidc_provider` false and Terraform uses it. If the
+list is empty, set it true in `terraform.tfvars`. The deploy role itself is
+always created by Terraform, so there is nothing to make by hand.
 
 **The nameserver check is not a formality.** Two certificates validate by
 DNS during this apply, and `aws_acm_certificate_validation` blocks until
 they do. If the registrar still points at the old nameservers, the apply
 hangs for the resource's timeout and then fails, leaving half a footprint
 behind. Confirm propagation at whatsmydns.net before starting.
-
-**If Task 5 was skipped**, delete the two `import` blocks for
-`module.deploy` from `infra/imports.tf` before planning. Terraform will then
-create the provider and role itself. Keep the zone import: the zone must
-exist by hand for the reason above.
 
 You also need, on your machine:
 
@@ -78,11 +83,10 @@ terraform plan -out=tfplan
 Read the whole thing. It is long — roughly 120 resources — but you are
 looking for four specific things:
 
-1. **Three resources marked "will be imported"**: the hosted zone, the OIDC
-   provider and the deploy role. Imports are listed separately from
-   creations, near the top. If the zone shows as *created* rather than
-   imported, `route53_zone_id` is wrong and you are about to make a second
-   zone that the registrar does not point at. Stop.
+1. **One resource marked "will be imported"**: the hosted zone. Imports are
+   listed separately from creations, near the top. If the zone shows as
+   *created* rather than imported, `route53_zone_id` is wrong and you are
+   about to make a second zone that the registrar does not point at. Stop.
 2. **Nothing destroyed.** On a first apply the destroy count must be zero.
 3. **Nothing named `legalworkflows-production` that you do not recognise.**
    Every resource carries that prefix; skim the names.
@@ -165,10 +169,11 @@ The two failures worth naming:
 - **Certificate validation timed out.** The nameservers are not propagated,
   or the registrar points elsewhere. Fix the delegation, wait, re-plan. The
   certificate resource is replaced on the next apply; nothing is lost.
-- **An import failed with "cannot import non-existent remote object".** The
-  hand-created resource does not exist, or the ID is wrong. For the deploy
-  role and OIDC provider, either create them (Stage 3, Task 5) or delete
-  those two import blocks. For the zone, check the ID.
+- **The import failed with "cannot import non-existent remote object".** The
+  hosted zone ID is wrong, or the zone is in another account.
+- **An IAM resource already exists.** Another project in the same account
+  has one with that name. The deploy role is prefixed to avoid this; if it
+  still collides, set `deploy_role_name`.
 
 ## Destroying it
 

@@ -142,10 +142,11 @@ module "deploy" {
   region      = data.aws_region.current.region
   account_id  = data.aws_caller_identity.current.account_id
 
-  github_repository   = var.github_repository
-  deploy_branches     = var.deploy_branches
-  deploy_environments = var.deploy_environments
-  role_name           = var.deploy_role_name
+  github_repository    = var.github_repository
+  deploy_branches      = var.deploy_branches
+  deploy_environments  = var.deploy_environments
+  role_name            = coalesce(var.deploy_role_name, "${local.name_prefix}-github-actions")
+  create_oidc_provider = var.create_github_oidc_provider
 
   ecr_repository_arns = [
     module.backend.ecr_repository_arn,

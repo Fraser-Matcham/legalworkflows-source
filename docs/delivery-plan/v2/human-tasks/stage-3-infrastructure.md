@@ -7,6 +7,10 @@ down; tasks 4 to 6 give me the access I need to build the infrastructure;
 tasks 7 to 9 connect the domain and turn on billing safety; task 10 requests
 production email sending.
 
+**Tasks 5 and 10 are already done or no longer needed** — see the notes on
+each. Task 7 is the one with a waiting period, so start there if you are
+picking this up mid-way.
+
 **Total time: about 3 hours.** Task 10 is already done — AWS approved
 production access for SES on 16 September 2026 — so nothing in this runbook
 now waits on a third party.
@@ -171,6 +175,17 @@ bucket, so there is one fewer thing to create and one fewer thing to pay for.
 ---
 
 ## Task 5 — Connect GitHub to AWS without a password
+
+> **✅ NOT NEEDED — Terraform does this now.** The deploy role is created by
+> the `deploy` module under a prefixed name, and GitHub's identity provider
+> is created only if your account does not already have one. You get the
+> role ARN from `terraform output deploy_role_arn` after the first apply,
+> which is what Stage 4, Task 1 asks for. Skip to Task 6.
+>
+> If you already followed the steps below and made a role called
+> `github-actions-deploy`, nothing breaks: it is simply unused, and you can
+> delete it. The steps are kept as a record of what the account looked like.
+
 
 **Why:** the deployment pipeline needs to push to AWS. The old way was to
 store an AWS key in GitHub, which means a long-lived credential sitting in a
