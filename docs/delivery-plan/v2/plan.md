@@ -170,11 +170,31 @@ can be destroyed and rebuilt from this repository.**
 
 ### Done when
 
-- `terraform plan` is clean against a real AWS account.
-- `terraform apply` from empty produces a working footprint.
+- ✅ `terraform plan` is clean against a real AWS account — **16 September
+  2026**, account `119462788248`, `eu-west-2`.
+- ✅ `terraform apply` from empty produces the footprint — 175 resources, one
+  imported hosted zone, nothing destroyed. The services have no image until
+  the first deploy, so "working" completes with Stage 4.
 - A document uploaded through the API round-trips through S3 and downloads via
   a signed URL.
 - A Supabase restore has been performed, not assumed.
+
+### As applied
+
+| | |
+| --- | --- |
+| Account, region | `119462788248`, `eu-west-2` |
+| Public origin | `https://legalworkflows.co.uk` (zone `Z01489871T1IGKJ6PISR0`, delegated from GoDaddy) |
+| CloudFront | `E1KJB0M380H41R`, `dotjg7yvk6u9q.cloudfront.net` |
+| Load balancer | `legalworkflows-prod-alb`, origin `origin.legalworkflows.co.uk` |
+| Cluster, services | `legalworkflows-production`, `-backend` and `-frontend` |
+| Deploy role | `arn:aws:iam::119462788248:role/legalworkflows-production-github-actions` |
+| Egress address | `16.61.111.230` (the single NAT gateway) |
+| State | `lmm-terraform-state-119462788248`, key `legalworkflows/production/terraform.tfstate` |
+
+The account is shared with the matter-management platform, which is why the
+GitHub OIDC provider is looked up rather than managed here and the deploy
+role carries the project prefix.
 
 ### Blocked on your runbook
 
