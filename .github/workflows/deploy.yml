@@ -80,6 +80,7 @@ jobs:
   config:
     name: Read the deployment configuration
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment: production
     outputs:
       configured: ${{ steps.read.outputs.configured }}
@@ -147,6 +148,9 @@ jobs:
     needs: config
     if: needs.config.outputs.configured == 'true'
     runs-on: ubuntu-latest
+      # Its own deadline is 45 minutes (below); this is the backstop for a
+      # poll that never reaches it.
+    timeout-minutes: 50
     outputs:
       sha: ${{ steps.meta.outputs.sha }}
       short_sha: ${{ steps.meta.outputs.short_sha }}
@@ -212,6 +216,8 @@ jobs:
     name: Publish the Corresponding Source
     needs: gate
     runs-on: ubuntu-latest
+      # A full history push to the mirror, which is slow the first time.
+    timeout-minutes: 20
     # SOURCE_MIRROR_REPOSITORY and SOURCE_MIRROR_TOKEN are read below; without
     # this line they are invisible when they are scoped to the environment.
     environment: production
@@ -270,6 +276,10 @@ jobs:
     name: Build and scan (${{ matrix.service }})
     needs: [config, gate, mirror]
     runs-on: ubuntu-latest
+      # Backend builds in well under a minute. A frontend build that passes
+      # 30 is not slow, it is stuck — and without this the default is six
+      # hours of a held pipeline.
+    timeout-minutes: 30
     environment: production
     env:
       ECR_REGISTRY: ${{ needs.config.outputs.ecr_registry }}
@@ -432,6 +442,10 @@ jobs:
     name: Apply database migrations
     needs: [gate, build]
     runs-on: ubuntu-latest
+      # Safe to cut: the advisory lock is session-level and releases when psql
+      # disconnects, each file keeps its own transaction semantics, and the
+      # step is already written to leave an accurate record if it stops midway.
+    timeout-minutes: 30
     environment: production
     steps:
       - uses: actions/checkout@v7
@@ -496,6 +510,9 @@ jobs:
     name: Deploy the backend
     needs: [config, gate, migrate]
     runs-on: ubuntu-latest
+      # `ecs wait services-stable` bounds itself at 10 minutes, `tasks-stopped`
+      # at 10, and the /api/ready poll at 3.
+    timeout-minutes: 30
     environment: production
     env:
       ECR_REGISTRY: ${{ needs.config.outputs.ecr_registry }}
@@ -586,6 +603,8 @@ jobs:
     name: Deploy the frontend
     needs: [config, gate, backend]
     runs-on: ubuntu-latest
+      # As the backend job above.
+    timeout-minutes: 30
     environment: production
     env:
       ECR_REGISTRY: ${{ needs.config.outputs.ecr_registry }}
@@ -641,6 +660,7 @@ jobs:
     name: Record the release
     needs: [config, gate, backend, frontend]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - run: |
           {

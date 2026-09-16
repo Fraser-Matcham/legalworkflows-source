@@ -40,6 +40,9 @@ jobs:
   loadtest:
     name: k6 SSE stream load test
     runs-on: ubuntu-latest
+      # The operator chooses the hold duration, so this is deliberately generous:
+      # it is here to stop a hang, not to constrain a long test.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
 
