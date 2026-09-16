@@ -20,6 +20,8 @@
     "frontend-boundary:self-test": "node scripts/check-frontend-boundary.mjs --self-test",
     "smoke": "node scripts/smoke-test.mjs",
     "smoke:self-test": "node scripts/smoke-test.mjs --self-test",
+    "licence": "node scripts/check-licence.mjs",
+    "licence:self-test": "node scripts/check-licence.mjs --self-test",
     "api-contract": "node scripts/check-api-contract.mjs",
     "api-contract:self-test": "node scripts/check-api-contract.mjs --self-test",
     "brand-assets": "node scripts/generate-brand-assets.mjs",

@@ -262,6 +262,15 @@ jobs:
       # rather than success when the operator leaves an argument out.
       - run: npm run smoke:self-test
 
+      # docs/licence-compliance.md item 1: the repository's own LICENCE.
+      # It was the only one of the ten items with no gate, and the one
+      # with the worst failure mode — removing or altering the file does
+      # not change the AGPL section 13 obligation, it removes the evidence
+      # that it was met.
+      - run: npm run licence:self-test
+
+      - run: npm run licence
+
   api-contract:
     name: API contract
     runs-on: ubuntu-latest

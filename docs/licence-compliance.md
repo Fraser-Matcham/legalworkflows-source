@@ -181,7 +181,7 @@ failed publish leaves no tag naming a release that never happened.
 
 | # | Item | Enforced by |
 | --- | --- | --- |
-| 1 | `LICENSE` intact | — **manual** |
+| 1 | `LICENSE` intact | `ci.yml` → `frontend-boundary` (`npm run licence`) |
 | 2 | Modification notice and date | partly (item 4) |
 | 3 | AGPL notice | partly (item 4) |
 | 4 | Notices in the UI | `frontend/src/app/legal/page.test.tsx` |
@@ -192,14 +192,26 @@ failed publish leaves no tag naming a release that never happened.
 | 9 | No upstream trademarks | `ci.yml` → `trademarks` |
 | 10 | Release ordering | `deploy.yml` job graph |
 
-Item 1 is the one with no gate and the worst failure mode. A CI check for it
-would be four lines; it has not been written because fork rule 4 has held so
-far, which is not the same as it being enforced.
+Item 1 used to be the one with no gate and the worst failure mode. It has one
+now: `scripts/check-licence.mjs` (`npm run licence`) fails the build if
+`LICENSE` is missing, altered by so much as a character, or joined at the root
+by a second file claiming different terms. `NOTICE` is not such a file —
+Apache-2.0 section 4(d) requires it, and it attributes rather than licences.
+
+One limit worth knowing. The check pins the SHA-256 of the file as it stands
+here, reviewed by eye against the AGPL-3.0 text. It proves the file has not
+changed since; it does not prove byte-identity with the FSF's own copy,
+because the environment it was written in could not reach gnu.org. Alongside
+the hash it asserts the title, the version line, section 13 and the closing
+terms, so a wholesale replacement fails with something a person can act on
+rather than a bare hash mismatch. If you verify the file against gnu.org
+directly, record it in the script's header.
 
 ## Before signing off a release
 
-1. Re-run items 1, 8 and 9 — the three that can move without anyone deciding
-   they should.
+1. Re-run items 8 and 9 — the two that can still move without anyone deciding
+   they should. Item 1 now fails CI on its own, so a release that got this far
+   has already passed it.
 2. Confirm the two deferred trademark references are still deliberate, and
    whether 2015/2016 have unblocked them.
 3. Confirm `buffers@0.1.1` is still accepted, or gone.
