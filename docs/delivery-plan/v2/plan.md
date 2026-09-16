@@ -221,7 +221,7 @@ going live has been rehearsed rather than attempted.**
 | 4.9 | Address what the load test surfaces | 2099 |
 | 4.10 | Full suite against production configuration | 2101, 2102 |
 | 4.11 | 🟡 Licence compliance sign-off — [`docs/licence-compliance.md`](../../licence-compliance.md) records all ten items with the command that checks each. Item 8 was failing (third-party notices five days stale after the 14 September dependency bumps); regenerated and now guarded by the `notices` job in `ci.yml`. Open: `buffers@0.1.1` declares no licence, and two deferred trademark references blocked on 2015/2016. The deployed `/legal` source link still needs confirming at cutover | 2103 |
-| 4.12 | Security review of the combined deployment | 2104 |
+| 4.12 | 🟡 Security review of the combined deployment — [`docs/security-review.md`](../../security-review.md). This repository's half is done: two findings, both fixed. Client documents and provider API keys were reaching CloudWatch through the error bridge's print path (high); ECS Exec gave an unrecorded shell into a task holding decrypted secrets (medium, needs an apply). Outstanding: the Juralio side and the seam from its end, and anything that can only be tested against the running deployment | 2104 |
 | 4.13 | Cutover and smoke test | 2105, 2106 |
 | 4.14 | Post-launch monitoring window | 2107 |
 
