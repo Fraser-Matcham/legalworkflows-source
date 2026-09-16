@@ -80,3 +80,8 @@ variable "cloudfront_distribution_arn" {
   description = "For cache invalidation after a frontend deploy."
   type        = string
 }
+
+variable "initial_last_migration" {
+  description = "Filename of the newest migration already applied when the footprint is first created — the database was installed from schema.sql, which includes every migration up to this one. Written once to the SSM parameter the deploy workflow reads; afterwards the workflow owns the value and Terraform ignores it."
+  type        = string
+}

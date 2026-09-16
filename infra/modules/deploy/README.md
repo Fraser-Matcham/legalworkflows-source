@@ -38,10 +38,22 @@ delete the two `import` blocks and Terraform creates both.
 | invalidate the CDN | the one distribution |
 | read logs | the two service log groups |
 | read target health | any |
+| read and write the last-applied-migration parameter | `/<prefix>/deploy/last-migration` |
 
 Not granted, on purpose: anything to do with Terraform state, secrets, IAM
 beyond `PassRole`, S3, or creating infrastructure. `infra/` is applied by a
 person (`infra/README.md`); the deploy workflow ships containers.
+
+## The migration record
+
+`docs/deployment.md` says to keep the last applied migration filename with
+the deployment records. Here it is an SSM parameter,
+`/<prefix>/deploy/last-migration`, created with the newest file in
+`backend/migrations` at the time of the first apply — the database was
+installed from `schema.sql`, which already contains every migration up to
+that one — and owned by the deploy workflow from then on: it applies every
+file that sorts after the value, then writes the newest back. Terraform
+ignores later changes to the value.
 
 ## Using it from a workflow
 

@@ -190,13 +190,13 @@ going live has been rehearsed rather than attempted.**
 
 | # | Work | Ticket |
 | --- | --- | --- |
-| 4.1 | Frontend production environment values, resolved against the real CloudFront origin | stage-1 carryover |
-| 4.2 | Build-and-push workflow for both images, on merge to `main` | 2050 |
-| 4.3 | Deploy workflow: migrate, then start, then health-gate, then shift traffic | 2051, 2052 |
-| 4.4 | Rollback that has been tested by rolling back | 2052 |
+| 4.1 | ✅ Frontend production values — `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_SOURCE_URL` are build arguments in `frontend/Dockerfile`, passed by the release pipeline from the `APP_URL` and mirror variables; `API_BASE_URL` is the backend's Service Connect name from Terraform | stage-1 carryover |
+| 4.2 | ✅ `.github/workflows/deploy.yml` builds both images on merge to `main`, pushes them to ECR as `<sha>` and `main`, and refuses an image whose ECR scan has a high or critical finding | 2050 |
+| 4.3 | ✅ Same workflow: CI gate on the exact commit → migrations newer than the SSM record, once, behind an advisory lock → catalogue-sync release job from the new revision → rolling update → `/api/ready` through the edge → frontend → `/`. `docs/release-pipeline.md`. ⏳ First real run needs the footprint applied and Stage 4, Task 1 | 2051, 2052 |
+| 4.4 | Rollback: ✅ `.github/workflows/rollback.yml` (revision numbers from the previous release's summary). ⏳ The test-by-rolling-back needs the footprint applied | 2052 |
 | 4.5 | ✅ Make the security suites required checks — done directly in GitHub's branch protection settings for `main`, not by engineering in this repo | 2024, 2025 |
-| 4.6 | Corresponding Source mirror pipeline, and gate deploys on it | 2073, 2074, 2075 |
-| 4.7 | Serve the source offer from the running UI | 2076 |
+| 4.6 | Mirror: ✅ the pipeline tags each release and pushes the tree and its history to the public mirror *before* building, and stops if that push fails or the mirror is unconfigured. ⏳ Needs the mirror repository and its token (Stage 4, Tasks 1 and 3) | 2073, 2074, 2075 |
+| 4.7 | ✅ `/legal` offers the Corresponding Source at `NEXT_PUBLIC_SOURCE_URL` — the mirror at the deployed commit, baked in at build time — and falls back to the upstream repository for a build without one; the start-up guard warns when it is unset | 2076 |
 | 4.8 | k6 SSE load scenario against production configuration | 2097, 2098 |
 | 4.9 | Address what the load test surfaces | 2099 |
 | 4.10 | Full suite against production configuration | 2101, 2102 |

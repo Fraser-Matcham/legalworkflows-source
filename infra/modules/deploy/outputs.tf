@@ -15,3 +15,8 @@ output "allowed_subjects" {
   description = "The GitHub token subjects the trust policy accepts."
   value       = local.github_subjects
 }
+
+output "last_migration_parameter_name" {
+  description = "SSM parameter the deploy workflow reads and writes."
+  value       = aws_ssm_parameter.last_migration.name
+}

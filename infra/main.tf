@@ -163,6 +163,11 @@ module "deploy" {
   ]
   log_group_names             = [module.backend.log_group_name, module.frontend.log_group_name]
   cloudfront_distribution_arn = module.frontend.distribution_arn
+
+  # The newest migration file in the repository at the time of the first
+  # apply: schema.sql, which the database was installed from, already
+  # contains everything up to it (the schema-drift CI check proves that).
+  initial_last_migration = reverse(sort(tolist(fileset("${path.root}/../backend/migrations", "*.sql"))))[0]
 }
 
 module "backup" {

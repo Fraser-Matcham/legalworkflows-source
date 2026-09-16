@@ -1,0 +1,438 @@
+# Release pipeline: a merge to main becomes the running production service.
+#
+#   gate ──▶ mirror ──▶ build (backend, frontend) ──▶ migrate ──▶ backend ──▶ frontend ──▶ summary
+#
+# The order is the point (docs/release-pipeline.md explains each step):
+#
+#   gate     nothing deploys unless every CI check on this exact commit is
+#            green (ticket 2052);
+#   mirror   the Corresponding Source is published BEFORE anything runs, so a
+#            running version never lacks published source (AGPL section 13;
+#            tickets 2074, 2075) — if the push fails, the deploy stops here;
+#   build    both images, pushed to ECR under the commit sha, scanned, and
+#            refused on a high or critical finding (ticket 2050);
+#   migrate  every migration newer than the recorded one, once (ticket 2051);
+#   backend  a new task definition revision; the catalogue-sync release job
+#            runs from it first; then the service rolls and must pass /ready;
+#   frontend the same, gated on the home page answering.
+#
+# Nothing here runs Terraform: infra/ is applied by a person (infra/README.md).
+# Rolling back is .github/workflows/rollback.yml with the revisions the
+# summary of the previous run recorded.
+#
+# Configuration (Stage 4, Task 1 in docs/delivery-plan/v2/human-tasks/):
+#   variables  AWS_REGION, AWS_ROLE_ARN, AWS_ACCOUNT_ID, APP_URL,
+#              SOURCE_MIRROR_REPOSITORY (owner/repo of the public mirror)
+#   secrets    SUPABASE_DB_URL (session-pooler connection string),
+#              SOURCE_MIRROR_TOKEN (fine-grained PAT: contents write on the
+#              mirror only)
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# One deploy at a time, and a queued one waits rather than cancelling: a
+# cancelled deploy mid-rollout is the one state nobody wants to reason about.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: write # the release tag
+  id-token: write # AWS via OIDC
+  checks: read # the gate reads this commit's check runs
+  actions: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  NAME_PREFIX: legalworkflows-production
+  ECR_REGISTRY: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com
+
+jobs:
+  # ---------------------------------------------------------------------------
+  gate:
+    name: Wait for CI on this commit
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.meta.outputs.sha }}
+      short_sha: ${{ steps.meta.outputs.short_sha }}
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - id: meta
+        run: |
+          SHA="${GITHUB_SHA}"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${SHA:0:7}" >> "$GITHUB_OUTPUT"
+          echo "tag=deploy-$(date -u +%Y%m%dT%H%M%SZ)-${SHA:0:7}" >> "$GITHUB_OUTPUT"
+
+      # Every check suite on this commit except our own must have finished
+      # green. A failed or cancelled check anywhere stops the deploy; a check
+      # still running is waited for, up to 45 minutes. This is what makes a
+      # merge to main deploy "with no manual step" without letting a red
+      # commit through.
+      - name: Every other check on this commit is green
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.sha;
+            const ourRun = context.runId;
+            const deadline = Date.now() + 45 * 60 * 1000;
+            for (;;) {
+              const runs = await github.paginate(github.rest.checks.listForRef, {
+                owner: context.repo.owner, repo: context.repo.repo, ref: sha, per_page: 100,
+              });
+              const others = runs.filter(r => !(r.name === context.job && r.app?.slug === 'github-actions' && String(r.html_url || '').includes(`/runs/${ourRun}/`)) && !r.name.startsWith('Deploy /') && r.name !== 'Wait for CI on this commit');
+              if (others.length === 0) {
+                core.setFailed(`No check runs found on ${sha}. CI has not started; refusing to deploy an unverified commit.`);
+                return;
+              }
+              const bad = others.filter(r => r.status === 'completed' && !['success', 'neutral', 'skipped'].includes(r.conclusion));
+              if (bad.length) {
+                core.setFailed(`Red on ${sha}: ${bad.map(r => `${r.name} (${r.conclusion})`).join(', ')}`);
+                return;
+              }
+              const pending = others.filter(r => r.status !== 'completed');
+              if (pending.length === 0) {
+                core.info(`All ${others.length} checks green on ${sha}.`);
+                return;
+              }
+              if (Date.now() > deadline) {
+                core.setFailed(`Still waiting on: ${pending.map(r => r.name).join(', ')}`);
+                return;
+              }
+              core.info(`Waiting on ${pending.length}: ${pending.map(r => r.name).join(', ')}`);
+              await new Promise(r => setTimeout(r, 30000));
+            }
+
+  # ---------------------------------------------------------------------------
+  mirror:
+    name: Publish the Corresponding Source
+    needs: gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the mirror receives the full history
+
+      - name: The mirror is configured
+        run: |
+          if [ -z "${{ vars.SOURCE_MIRROR_REPOSITORY }}" ] || [ -z "${{ secrets.SOURCE_MIRROR_TOKEN }}" ]; then
+            echo "::error::SOURCE_MIRROR_REPOSITORY (variable) and SOURCE_MIRROR_TOKEN (secret) must be set. The deploy is blocked until the Corresponding Source can be published — AGPL-3.0 section 13; Stage 4, Tasks 1 and 3."
+            exit 1
+          fi
+
+      - name: Tag the release
+        run: |
+          git tag "${{ needs.gate.outputs.tag }}" "${{ needs.gate.outputs.sha }}"
+          git push origin "refs/tags/${{ needs.gate.outputs.tag }}"
+
+      # The exact tree that is about to run, with its history, to the public
+      # repository. Fast-forward only: a mirror that has diverged has been
+      # written to by hand, and that needs a person to look, not a force push.
+      - name: Push to the public mirror
+        env:
+          MIRROR: ${{ vars.SOURCE_MIRROR_REPOSITORY }}
+          TOKEN: ${{ secrets.SOURCE_MIRROR_TOKEN }}
+        run: |
+          set -euo pipefail
+          git push "https://x-access-token:${TOKEN}@github.com/${MIRROR}.git" \
+            "${{ needs.gate.outputs.sha }}:refs/heads/main" \
+            "refs/tags/${{ needs.gate.outputs.tag }}:refs/tags/${{ needs.gate.outputs.tag }}"
+          echo "Corresponding Source: https://github.com/${MIRROR}/tree/${{ needs.gate.outputs.sha }}" >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build and scan (${{ matrix.service }})
+    needs: [gate, mirror]
+    runs-on: ubuntu-latest
+    environment: production
+    strategy:
+      fail-fast: true
+      matrix:
+        service: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Build-time values for the frontend only. NEXT_PUBLIC_* is inlined into
+      # the browser bundle by `next build`, so these are what the site shows;
+      # the source URL is the AGPL offer at exactly this commit (ticket 2076).
+      - name: Build arguments
+        id: args
+        run: |
+          if [ "${{ matrix.service }}" = "frontend" ]; then
+            {
+              echo "args<<EOF"
+              echo "NEXT_PUBLIC_APP_URL=${{ vars.APP_URL }}"
+              echo "NEXT_PUBLIC_SOURCE_URL=https://github.com/${{ vars.SOURCE_MIRROR_REPOSITORY }}/tree/${{ needs.gate.outputs.sha }}"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+          else
+            printf 'args=\n' >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.service }}
+          push: true
+          provenance: false
+          platforms: linux/amd64
+          tags: |
+            ${{ env.ECR_REGISTRY }}/${{ env.NAME_PREFIX }}-${{ matrix.service }}:${{ needs.gate.outputs.sha }}
+            ${{ env.ECR_REGISTRY }}/${{ env.NAME_PREFIX }}-${{ matrix.service }}:main
+          build-args: ${{ steps.args.outputs.args }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,scope=${{ matrix.service }},mode=max
+
+      # ECR scans on push (infra/modules/backend/ecr.tf). Wait for the result
+      # and refuse the image on any high or critical finding — the same gate
+      # the npm advisory check applies to dependencies (ticket 2050).
+      - name: Image scan is clean of high and critical findings
+        run: |
+          set -euo pipefail
+          REPO="$NAME_PREFIX-${{ matrix.service }}"
+          aws ecr wait image-scan-complete --repository-name "$REPO" --image-id imageTag="${{ needs.gate.outputs.sha }}"
+          COUNTS=$(aws ecr describe-image-scan-findings --repository-name "$REPO" --image-id imageTag="${{ needs.gate.outputs.sha }}" \
+            --query 'imageScanFindings.findingSeverityCounts' --output json)
+          echo "findings: $COUNTS"
+          HIGH=$(echo "$COUNTS" | jq '(.CRITICAL // 0) + (.HIGH // 0)')
+          if [ "$HIGH" != "0" ]; then
+            echo "::error::$HIGH high or critical findings in the $REPO image. See ECR → $REPO → ${{ needs.gate.outputs.sha }} → scan results."
+            exit 1
+          fi
+
+  # ---------------------------------------------------------------------------
+  migrate:
+    name: Apply database migrations
+    needs: [gate, build]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      # docs/deployment.md: apply, in filename order, only the files newer
+      # than the last one applied, and keep that filename with the deployment
+      # records. The record is an SSM parameter the deploy module creates
+      # (infra/modules/deploy/README.md). All files run in ONE psql session
+      # behind a session-level advisory lock, so two migrators cannot
+      # interleave even if the workflow concurrency group were bypassed; each
+      # file keeps its own transaction semantics (several manage their own
+      # BEGIN/COMMIT), and ON_ERROR_STOP halts at the first failing statement
+      # with the record still pointing at the last file that completed.
+      - name: Apply migrations newer than the recorded one
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PARAM: /legalworkflows-production/deploy/last-migration
+        run: |
+          set -euo pipefail
+          if [ -z "$DB_URL" ]; then
+            echo "::error::SUPABASE_DB_URL secret is not set (Stage 4, Task 1)."; exit 1
+          fi
+          LAST=$(aws ssm get-parameter --name "$PARAM" --query 'Parameter.Value' --output text)
+          echo "last applied: $LAST"
+          mapfile -t PENDING < <(cd backend/migrations && ls -1 *.sql | LC_ALL=C sort | awk -v last="$LAST" '$0 > last')
+          if [ "${#PENDING[@]}" -eq 0 ]; then
+            echo "nothing to apply" | tee -a "$GITHUB_STEP_SUMMARY"; exit 0
+          fi
+          printf 'applying %d migration(s):\n' "${#PENDING[@]}"; printf '  %s\n' "${PENDING[@]}"
+          ARGS=(-X -v ON_ERROR_STOP=1 -c "select pg_advisory_lock(726400101)")
+          for f in "${PENDING[@]}"; do
+            ARGS+=(-c "\\echo -- applying $f" -f "backend/migrations/$f" -c "select set_config('legalworkflows.last_migration', '$f', false)")
+          done
+          # Each completed file is recorded as it completes, so a failure
+          # midway leaves the record accurate: psql prints the marker line
+          # before each file and we take the last one that was followed by success.
+          if psql "$DB_URL" "${ARGS[@]}" 2>&1 | tee /tmp/migrate.log; then
+            NEWEST="${PENDING[-1]}"
+          else
+            APPLIED=$(grep -o 'applying [^ ]*\.sql' /tmp/migrate.log | tail -1 | awk '{print $2}' || true)
+            # The file named last in the log is the one that failed; the one
+            # before it is the last that completed.
+            IDX=-1; for i in "${!PENDING[@]}"; do [ "${PENDING[$i]}" = "$APPLIED" ] && IDX=$i; done
+            if [ "$IDX" -gt 0 ]; then
+              aws ssm put-parameter --name "$PARAM" --type String --overwrite --value "${PENDING[$((IDX-1))]}" >/dev/null
+              echo "::error::Migration $APPLIED failed; record advanced to ${PENDING[$((IDX-1))]}. See docs/runbooks/failed-migration.md."
+            else
+              echo "::error::Migration $APPLIED failed; no earlier pending file completed, record unchanged. See docs/runbooks/failed-migration.md."
+            fi
+            exit 1
+          fi
+          aws ssm put-parameter --name "$PARAM" --type String --overwrite --value "$NEWEST" >/dev/null
+          echo "migrations applied through $NEWEST" | tee -a "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------
+  backend:
+    name: Deploy the backend
+    needs: [gate, migrate]
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      revision: ${{ steps.register.outputs.revision }}
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      # The new revision is the current one with the image swapped and the
+      # error tracker's release stamp set to this commit. Everything else —
+      # cpu, memory, environment, secrets — stays what Terraform last set.
+      - name: Register the task definition revision
+        id: register
+        run: |
+          set -euo pipefail
+          IMAGE="$ECR_REGISTRY/$NAME_PREFIX-backend:${{ needs.gate.outputs.sha }}"
+          aws ecs describe-task-definition --task-definition "$NAME_PREFIX-backend" --include TAGS > /tmp/current.json
+          jq --arg image "$IMAGE" --arg sha "${{ needs.gate.outputs.sha }}" '
+            .taskDefinition
+            | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt)
+            | .containerDefinitions[0].image = $image
+            | .containerDefinitions[0].environment |= map(if .name == "ERROR_TRACKING_RELEASE" then .value = $sha else . end)
+          ' /tmp/current.json > /tmp/next.json
+          jq '.tags // []' /tmp/current.json > /tmp/tags.json
+          ARN=$(aws ecs register-task-definition --cli-input-json file:///tmp/next.json --tags file:///tmp/tags.json --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "registered $ARN"
+          echo "arn=$ARN" >> "$GITHUB_OUTPUT"
+          echo "revision=${ARN##*:}" >> "$GITHUB_OUTPUT"
+
+      # docs/deployment.md: run the catalogue sync from the built artifact as
+      # a release job, before traffic reaches the new backend. A one-off task
+      # from the new revision, in the same subnets and security group as the
+      # service, with the command overridden. Its exit code is the verdict.
+      - name: Run the workflow catalogue sync from the new revision
+        run: |
+          set -euo pipefail
+          NETCFG=$(aws ecs describe-services --cluster "$NAME_PREFIX" --services "$NAME_PREFIX-backend" \
+            --query 'services[0].networkConfiguration' --output json)
+          TASK=$(aws ecs run-task --cluster "$NAME_PREFIX" --launch-type FARGATE \
+            --task-definition "${{ steps.register.outputs.arn }}" \
+            --network-configuration "$NETCFG" \
+            --overrides '{"containerOverrides":[{"name":"backend","command":["node","dist/jobs/syncWorkflows.js"]}]}' \
+            --started-by "deploy-${{ needs.gate.outputs.short_sha }}" \
+            --query 'tasks[0].taskArn' --output text)
+          echo "sync task: $TASK"
+          aws ecs wait tasks-stopped --cluster "$NAME_PREFIX" --tasks "$TASK"
+          EXIT=$(aws ecs describe-tasks --cluster "$NAME_PREFIX" --tasks "$TASK" --query 'tasks[0].containers[0].exitCode' --output text)
+          REASON=$(aws ecs describe-tasks --cluster "$NAME_PREFIX" --tasks "$TASK" --query 'tasks[0].stoppedReason' --output text)
+          echo "exit code: $EXIT ($REASON)"
+          if [ "$EXIT" != "0" ]; then
+            echo "::error::The catalogue sync exited $EXIT. Logs: /ecs/$NAME_PREFIX-backend, stream backend/backend/${TASK##*/}"
+            exit 1
+          fi
+
+      # Rolling update: the service keeps 100% healthy while the new tasks
+      # come up (deployment_minimum_healthy_percent = 100). If they never do,
+      # the circuit breaker rolls back and `wait` fails — that is the alarm.
+      - name: Roll the service
+        run: |
+          set -euo pipefail
+          aws ecs update-service --cluster "$NAME_PREFIX" --service "$NAME_PREFIX-backend" \
+            --task-definition "${{ steps.register.outputs.arn }}" >/dev/null
+          aws ecs wait services-stable --cluster "$NAME_PREFIX" --services "$NAME_PREFIX-backend"
+          LIVE=$(aws ecs describe-services --cluster "$NAME_PREFIX" --services "$NAME_PREFIX-backend" --query 'services[0].deployments[?status==`PRIMARY`].taskDefinition' --output text)
+          if [ "$LIVE" != "${{ steps.register.outputs.arn }}" ]; then
+            echo "::error::The service settled on $LIVE, not the new revision — the circuit breaker rolled back. See docs/runbooks/deploy-rolled-back.md."
+            exit 1
+          fi
+
+      # The health gate the load balancer deliberately does not apply: /ready
+      # proves the new tasks can reach Supabase and S3, through the real edge.
+      - name: Readiness through the edge
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 18); do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' "${{ vars.APP_URL }}/api/ready" || true)
+            if [ "$code" = "200" ]; then echo "/api/ready: $code"; exit 0; fi
+            echo "attempt $i: /api/ready returned $code"; sleep 10
+          done
+          echo "::error::/api/ready did not return 200 within three minutes. See docs/runbooks/database-unreachable.md and storage-failure.md."
+          exit 1
+
+  # ---------------------------------------------------------------------------
+  frontend:
+    name: Deploy the frontend
+    needs: [gate, backend]
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      revision: ${{ steps.register.outputs.revision }}
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Register the task definition revision
+        id: register
+        run: |
+          set -euo pipefail
+          IMAGE="$ECR_REGISTRY/$NAME_PREFIX-frontend:${{ needs.gate.outputs.sha }}"
+          aws ecs describe-task-definition --task-definition "$NAME_PREFIX-frontend" --include TAGS > /tmp/current.json
+          jq --arg image "$IMAGE" '
+            .taskDefinition
+            | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt)
+            | .containerDefinitions[0].image = $image
+          ' /tmp/current.json > /tmp/next.json
+          jq '.tags // []' /tmp/current.json > /tmp/tags.json
+          ARN=$(aws ecs register-task-definition --cli-input-json file:///tmp/next.json --tags file:///tmp/tags.json --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "arn=$ARN" >> "$GITHUB_OUTPUT"
+          echo "revision=${ARN##*:}" >> "$GITHUB_OUTPUT"
+
+      - name: Roll the service
+        run: |
+          set -euo pipefail
+          aws ecs update-service --cluster "$NAME_PREFIX" --service "$NAME_PREFIX-frontend" \
+            --task-definition "${{ steps.register.outputs.arn }}" >/dev/null
+          aws ecs wait services-stable --cluster "$NAME_PREFIX" --services "$NAME_PREFIX-frontend"
+          LIVE=$(aws ecs describe-services --cluster "$NAME_PREFIX" --services "$NAME_PREFIX-frontend" --query 'services[0].deployments[?status==`PRIMARY`].taskDefinition' --output text)
+          if [ "$LIVE" != "${{ steps.register.outputs.arn }}" ]; then
+            echo "::error::The service settled on $LIVE, not the new revision — the circuit breaker rolled back. See docs/runbooks/deploy-rolled-back.md."
+            exit 1
+          fi
+
+      - name: The site answers through the edge
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 12); do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' "${{ vars.APP_URL }}/" || true)
+            case "$code" in 2*|3*) echo "/: $code"; exit 0;; esac
+            echo "attempt $i: / returned $code"; sleep 10
+          done
+          echo "::error::The home page did not answer within two minutes. See docs/runbooks/site-down.md."
+          exit 1
+
+  # ---------------------------------------------------------------------------
+  summary:
+    name: Record the release
+    needs: [gate, backend, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          {
+            echo "## Released ${{ needs.gate.outputs.short_sha }}"
+            echo
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| commit | \`${{ needs.gate.outputs.sha }}\` |"
+            echo "| tag | \`${{ needs.gate.outputs.tag }}\` |"
+            echo "| backend task definition | \`legalworkflows-production-backend:${{ needs.backend.outputs.revision }}\` |"
+            echo "| frontend task definition | \`legalworkflows-production-frontend:${{ needs.frontend.outputs.revision }}\` |"
+            echo "| source | https://github.com/${{ vars.SOURCE_MIRROR_REPOSITORY }}/tree/${{ needs.gate.outputs.sha }} |"
+            echo
+            echo "To undo: run the Rollback workflow with the revisions from the release before this one."
+          } >> "$GITHUB_STEP_SUMMARY"

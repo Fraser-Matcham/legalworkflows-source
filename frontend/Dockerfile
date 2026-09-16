@@ -19,6 +19,14 @@ FROM node:22-slim AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Next inlines NEXT_PUBLIC_* into the browser bundle at build time, so the
+# values the deployed site shows are the ones passed here as build arguments
+# (.github/workflows/deploy.yml), not the ones on the running container.
+# Empty defaults keep a plain `docker build` working for local use.
+ARG NEXT_PUBLIC_APP_URL=
+ARG NEXT_PUBLIC_SOURCE_URL=
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
+    NEXT_PUBLIC_SOURCE_URL=$NEXT_PUBLIC_SOURCE_URL
 # Next writes a standalone server tree when output: "standalone" is set; the
 # runtime stage below copies only that, so node_modules does not ship whole.
 RUN npm run build

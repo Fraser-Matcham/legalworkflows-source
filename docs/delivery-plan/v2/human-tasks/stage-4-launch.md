@@ -31,16 +31,26 @@ deploy using the role you created in Stage 3, Task 5.
    - Name `AWS_REGION`, value: your region, for example `eu-west-2`
    - Name `AWS_ROLE_ARN`, value: the role ARN from Stage 3, Task 5
    - Name `AWS_ACCOUNT_ID`, value: your 12-digit account number
+   - Name `APP_URL`, value: `https://legalworkflows.co.uk`
+   - Name `SOURCE_MIRROR_REPOSITORY`, value: the mirror from Task 3 below, in
+     the form `owner/repository` — for example
+     `Fraser-Matcham/legalworkflows-source`
 5. Now click the **Secrets** tab, then **New repository secret**. Add these
    one at a time:
-   - Name `SUPABASE_URL`, value: the Project URL from Stage 2, Task 2
-   - Name `SUPABASE_SECRET_KEY`, value: the `service_role` key from Stage 2,
-     Task 2
-   - Name `ANTHROPIC_API_KEY`, value: the key from Stage 2, Task 6 — *or the
-     matching name for whichever provider you chose*
+   - Name `SUPABASE_DB_URL`, value: the database connection string the
+     pipeline applies migrations with. In the Supabase dashboard click
+     **Connect** at the top of the project, choose **Session pooler**, copy
+     the URI and replace `[YOUR-PASSWORD]` with the database password from
+     Stage 2, Task 2. *Session pooler, not the direct connection: GitHub's
+     machines cannot reach the direct host.*
+   - Name `SOURCE_MIRROR_TOKEN`, value: the token from Task 3, step 8 below.
 
 *The distinction: variables are visible in logs, secrets are masked. Anything
 that would let someone act as you goes in Secrets.*
+
+*The Supabase service key and the model provider key are deliberately **not**
+here. They live in AWS Secrets Manager (Stage 3) and the running service reads
+them from there; the deploy pipeline never needs them.*
 
 ### Tell me
 
@@ -114,14 +124,25 @@ current with what is actually deployed.
    mirror is populated automatically and any starting file gets in the way.
 6. Click **Create repository**.
 7. Copy the repository URL from the address bar.
+8. Now a token that can write to that repository and nothing else. Click your
+   profile picture → **Settings** → **Developer settings** →
+   **Personal access tokens** → **Fine-grained tokens** → **Generate new
+   token**. Name it `legalworkflows-source-mirror`; set the expiry to the
+   longest offered (you will be reminded to renew it); under **Repository
+   access** choose **Only select repositories** and pick
+   `legalworkflows-source`; under **Permissions → Repository permissions**
+   set **Contents** to **Read and write** and leave everything else at
+   *No access*. Click **Generate token** and copy it — it is shown once.
+   This is the `SOURCE_MIRROR_TOKEN` secret in Task 1.
 
 ### Tell me
 
-- The URL of the public mirror repository.
+- The URL of the public mirror repository, and **"mirror token stored"**.
 
-I will then build the pipeline that pushes to it on every deploy, and gates
-the deploy on that push succeeding — so the published source can never fall
-behind what is running.
+The pipeline that pushes to it on every deploy, and refuses to deploy if
+that push fails, is already in the repository (`docs/release-pipeline.md`);
+these two settings are what switch it on. Until they exist, every deploy
+stops at the mirror step — deliberately.
 
 ---
 

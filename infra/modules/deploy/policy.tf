@@ -156,6 +156,36 @@ data "aws_iam_policy_document" "deploy" {
     actions   = ["elasticloadbalancing:DescribeTargetHealth"]
     resources = ["*"]
   }
+
+  # The deploy's own record of which migration it applied last.
+  statement {
+    sid    = "MigrationRecord"
+    effect = "Allow"
+    actions = [
+      "ssm:GetParameter",
+      "ssm:PutParameter",
+    ]
+    resources = [aws_ssm_parameter.last_migration.arn]
+  }
+}
+
+# docs/deployment.md: "Keep the last applied migration filename with your
+# deployment records." This is that record. The deploy workflow applies every
+# file in backend/migrations that sorts after this value, then writes the
+# newest one back. Terraform sets the value once, on creation, to the newest
+# migration schema.sql already contained when the database was installed,
+# and never touches it again.
+resource "aws_ssm_parameter" "last_migration" {
+  name        = "/${var.name_prefix}/deploy/last-migration"
+  description = "Filename of the last backend/migrations file applied to production. Owned by the deploy workflow."
+  type        = "String"
+  value       = var.initial_last_migration
+
+  lifecycle {
+    ignore_changes = [value]
+  }
+
+  tags = { Name = "${var.name_prefix}-last-migration" }
 }
 
 resource "aws_iam_role_policy" "deploy" {
