@@ -212,3 +212,9 @@ variable "log_retention_days" {
   type    = number
   default = 30
 }
+
+variable "enable_ecs_exec" {
+  description = "Set enable_execute_command on the service. See the root variable of the same name for why this is off in production."
+  type        = bool
+  default     = false
+}

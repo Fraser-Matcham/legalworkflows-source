@@ -211,3 +211,23 @@ variable "backup_retention_days" {
   type        = number
   default     = 35
 }
+
+# Security review, plan row 4.12. `aws ecs execute-command` opens an
+# interactive shell in a running task. That task holds the Secrets Manager
+# values decrypted into its environment — the database URL and every LLM
+# provider key — and the task role's access to the document bucket. ECS
+# records that a session started; without an execute_command_configuration on
+# the cluster it records nothing of what was typed or displayed.
+#
+# Enabling the logging instead would create a second CloudWatch store holding
+# whatever a shell session shows, which for this product is client documents,
+# and unlike the application logs nothing would redact it.
+#
+# So it is off. Nothing in docs/ documents a procedure that uses it. Turn it
+# on deliberately, for as long as a diagnosis needs, rather than leaving an
+# unrecorded route into production standing open.
+variable "enable_ecs_exec" {
+  description = "Allow `aws ecs execute-command` to open a shell in a running task, and grant the task roles the SSM Messages permissions it needs. Off in production: the session is unrecorded and the task holds decrypted secrets."
+  type        = bool
+  default     = false
+}

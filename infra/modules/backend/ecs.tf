@@ -160,7 +160,8 @@ resource "aws_ecs_service" "backend" {
   launch_type     = "FARGATE"
 
   # ECS Exec (the secrets module grants the task role what it needs).
-  enable_execute_command = true
+  # Off by default — see the root `enable_ecs_exec` variable.
+  enable_execute_command = var.enable_ecs_exec
 
   network_configuration {
     subnets          = var.private_subnet_ids

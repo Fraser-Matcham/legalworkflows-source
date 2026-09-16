@@ -51,7 +51,7 @@ variable "recovery_window_in_days" {
 }
 
 variable "enable_ecs_exec" {
-  description = "Grant the task roles the SSM Messages permissions `aws ecs execute-command` needs to open a shell in a running task. Useful for diagnosis; set false to remove the capability entirely."
+  description = "Grant the task roles the SSM Messages permissions `aws ecs execute-command` needs to open a shell in a running task. Off in production — see the root variable of the same name."
   type        = bool
-  default     = true
+  default     = false
 }
