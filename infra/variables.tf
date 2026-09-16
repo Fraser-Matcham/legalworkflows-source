@@ -86,14 +86,24 @@ variable "supabase_publishable_key" {
   }
 }
 
+# Empty means this deployment has no workflow catalogue, and the release
+# pipeline's sync step is skipped rather than failed — the job exits 78 and
+# deploy.yml reads that as a skip. See
+# backend/src/lib/workflowCatalogueConfig.ts and docs/deployment.md.
+#
+# Opting out has to be written down. Leaving this at its default is NOT opting
+# out: the default is a real catalogue, just not one this deployment
+# necessarily owns or can read, so a release that cannot sync it still fails.
+# Skipping because somebody forgot to configure it would be exactly the quiet
+# no-op this distinction exists to remove.
 variable "workflows_repository" {
-  description = "MIKE_WORKFLOWS_REPOSITORY: the owner/repo of the workflow catalogue. Point this at your own fork (AGENTS.md rule 2 — the variable name stays, the value is ownership)."
+  description = "MIKE_WORKFLOWS_REPOSITORY: the owner/repo of the workflow catalogue. Point this at your own fork (AGENTS.md rule 2 — the variable name stays, the value is ownership). Empty means there is no catalogue and the release skips the sync."
   type        = string
   default     = "Open-Legal-Products/mike-workflows"
 
   validation {
-    condition     = can(regex("^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", var.workflows_repository))
-    error_message = "workflows_repository must use the owner/repository form."
+    condition     = var.workflows_repository == "" || can(regex("^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", var.workflows_repository))
+    error_message = "workflows_repository must use the owner/repository form, or be empty for no catalogue."
   }
 }
 

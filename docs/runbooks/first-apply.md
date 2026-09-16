@@ -153,6 +153,61 @@ keeps the command out of your shell history. Add `ERROR_TRACKING_DSN`,
 you have them, and add their names to `backend_extra_secret_keys` in
 `terraform.tfvars` on the next apply so the task reads them.
 
+> **Decide about the workflow catalogue before your first release.** The
+> release pipeline runs the catalogue sync from the new image and treats its
+> exit code as the verdict, so this is not a setting you can leave for later
+> and discover at the worst moment. Deploy run 12 on `main` failed exactly
+> here.
+>
+> Pick one:
+>
+> - **A catalogue.** Point `workflows_repository` at a repository this
+>   deployment can read — AGENTS.md rule 2 asks for your own fork, since the
+>   variable name is configuration and the value is ownership — and, if it is
+>   private, write `MIKE_WORKFLOWS_GITHUB_TOKEN` into the operator secret above
+>   and list it in `backend_extra_secret_keys`. Add the name only after writing
+>   the value: a referenced key that is absent stops the task from starting.
+> - **No catalogue.** Set `workflows_repository = ""`. The sync job exits 78,
+>   the pipeline reads that as a skip rather than a failure, and the release
+>   summary records `skipped (no catalogue configured)` so nobody later mistakes
+>   it for a sync that ran.
+>
+> **Leaving the default is neither.** It resolves to the upstream
+> `Open-Legal-Products/mike-workflows`, which is a real catalogue your
+> deployment may not be able to read — and a release that cannot sync it stops.
+> That is deliberate: skipping on an unset value would hide a misconfiguration
+> behind a green release.
+>
+> If a sync does fail, the step now prints the task's own last hundred lines
+> into the workflow log, so the reason is in the run rather than a log stream
+> you have to go and find.
+
+**Check the signed-URL round trip against real S3** (plan row 3.10). The
+storage client was written for Cloudflare R2, which signs with the region
+`auto`. Real S3 rejects a presigned URL signed for the wrong region, and the
+failure looks like a permissions problem rather than a signing one, so it is
+worth ten minutes now instead of during a launch.
+
+The code half is done: `backend/src/lib/storageRegion.ts` resolves the signing
+region from `R2_REGION`, defaulting to `auto` for R2, and it is covered by
+`backend/src/lib/__tests__/storageRegion.test.ts`. What that cannot prove is
+how a real S3 endpoint treats the signature.
+
+Confirm `R2_REGION` is the bucket's own region and not `auto`:
+
+```sh
+terraform output -raw documents_bucket_name
+aws s3api get-bucket-location --bucket "$(terraform output -raw documents_bucket_name)"
+```
+
+Then exercise the round trip through the running application rather than by
+hand — it is the same code path the product uses, and a hand-rolled `aws s3
+presign` proves something slightly different. Stage 4, Task 5 already walks it:
+step 4 uploads a document and step 7 downloads one. If both work against the
+deployed stack, this row is satisfied. If the upload fails with a 403 whose
+body mentions the signature or the region, `R2_REGION` is wrong — correct it in
+`terraform.tfvars`, apply, and let the service roll.
+
 **Collect the outputs.** These are the GitHub settings from Stage 4, Task 1:
 
 ```sh

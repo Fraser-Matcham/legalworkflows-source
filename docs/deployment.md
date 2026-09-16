@@ -47,6 +47,44 @@ job exits. Run this as a release job before directing traffic to the new
 backend; backend startup itself only reads the database. Docker Compose runs
 this sequence automatically for local/self-hosted deployments.
 
+### The sync gates the release, and "no catalogue" is a thing you can say
+
+`.github/workflows/deploy.yml` runs this job on ECS from the newly built image
+and treats its exit code as the verdict: a sync that cannot reach its catalogue
+fails the deploy, after both images are built and before any traffic moves.
+
+That is right when there is a catalogue to sync and wrong when there is not,
+and the two used to be indistinguishable. A deployment that never set one up
+failed its releases in exactly the same way as one whose token had expired,
+while everything around it called the catalogue optional —
+`backend_extra_secret_keys` defaults to `[]`, the token is commented out in
+`terraform.tfvars.example`, and the first-apply runbook says to add it "if you
+have them". An operator could follow the setup exactly as written and have
+every release die here. Deploy run 12 on `main` did.
+
+The job now answers the two questions separately, and the pipeline reads them
+differently:
+
+| `workflows_repository` | sync job | release |
+| --- | --- | --- |
+| a repository it can read | syncs, exits 0 | continues |
+| a repository it cannot read, or a bad token | fails, exits non-zero | **stops**, with the task's own output in the log |
+| `""` | skips, exits 78 | continues, and the summary says `skipped (no catalogue configured)` |
+
+78 is `EX_CONFIG` from `sysexits.h`: "something was unconfigured". The check
+lives in `backend/src/lib/workflowCatalogueConfig.ts`.
+
+**Opting out is explicit, and leaving the default is not opting out.** An unset
+or default `workflows_repository` resolves to the upstream
+`Open-Legal-Products/mike-workflows` — a real catalogue, just not one your
+deployment necessarily owns or can read — so a release that cannot sync it
+still stops. Skipping on an unset value would hide a misconfiguration behind a
+green release, which is the failure this distinction exists to remove.
+
+The release summary records which of the three happened, so a release that
+skipped the catalogue does not read like one that synced it.
+
+
 ## Environment
 
 Copy the maintained examples:

@@ -9,7 +9,8 @@ repository is not reachable from here, so the seam is reviewed from this side
 only: what this service exposes, what it accepts, and what it would hand over.
 The other half is outstanding and row 4.12 stays open until it is done.
 
-Reviewed at `1ee976f`, 16 September 2026.
+Reviewed at `1ee976f`, 16 September 2026. Finding 3 was added later the same
+day, from a path noticed during the review and not written up at the time.
 
 ---
 
@@ -82,6 +83,38 @@ nothing. Turning it on for a diagnosis is one variable and an apply.
 **Takes effect on `terraform apply`.** Until then the running services still
 have it.
 
+### 3. Login MFA stopped being enforced without saying so — fixed
+
+**Severity: low, but the shape is the point.** `requireAuth` reads
+`user_profiles.mfa_on_login` to decide whether to require MFA at login. If that
+read fails with Postgres `42703` (undefined_column) the request is allowed
+through with the check skipped — deliberately, because failing closed on a
+column a migration has not yet added would lock every user out of the product
+over a schema that is merely behind.
+
+What was wrong is that nothing said so. The branch logged only through
+`devLog`, which is `if (isDev) console.log(...)` with
+`isDev = NODE_ENV !== "production"` — a no-op in production. So a security
+control could stop applying to every user, indefinitely, with no log line, no
+error-tracking event and no metric. The very next error path in the same
+function logs with `console.error` and fails closed; this one did neither.
+
+The column exists (`20260610_02_user_profile_mfa_on_login.sql`), so this is
+not a live exposure. It becomes one on a restore from a snapshot older than
+that migration — a documented procedure, `docs/runbooks/restore.md` — or any
+schema divergence that loses the column.
+
+**Fixed** by keeping the fail-open and making it loud: a `console.error`
+naming what has been skipped and for whom. That is the observable path in this
+service — the error-tracking bridge reports it and counts it in
+`loggedErrors`. Three tests in
+`backend/src/middleware/__tests__/auth.mfaColumnMissing.test.ts` pin both
+halves: the request still goes through, and it is no longer silent. The second
+was confirmed to fail against the old code before the fix went in.
+
+This is the class of problem ticket 2087 set out to remove, on a path it
+missed.
+
 ---
 
 ## Reviewed, no finding
@@ -109,8 +142,19 @@ have it.
 2. **Finding 2 needs `terraform apply`** before the running services stop
    accepting an exec session.
 3. **The review is static.** Nothing here was tested against the running
-   deployment — no authenticated probing of the deployed API, no check that the
-   origin header gate actually refuses a direct ALB request in production.
-   That belongs with the cutover smoke test (row 4.13).
+   deployment. The origin header gate refusing a direct ALB request, and the
+   document bucket refusing an anonymous listing, are both asserted from the
+   Terraform and never observed.
+
+   `scripts/smoke-test.mjs` (row 4.13, `npm run smoke`) now checks exactly
+   those two, from outside, against the deployed stack — and reports NOT
+   CHECKED rather than success when it is run without the arguments they need.
+   It is written and self-tested in both directions; it has not yet been run
+   against a deployment, because there is not one. Running it is part of
+   cutover, Stage 4 Task 5.
+
+   What it still does not cover: any authenticated probing of the deployed
+   API. Every request it makes is anonymous, so tenancy and authorisation on
+   the live system remain covered by the test suite alone.
 4. **`buffers@0.1.1`** ships with no declared licence. Tracked as a licence
    item rather than a security one, in `docs/licence-compliance.md`.

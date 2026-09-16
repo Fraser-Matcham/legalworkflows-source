@@ -254,6 +254,23 @@ jobs:
 
       - run: npm run frontend-boundary
 
+      # The cutover smoke test (scripts/smoke-test.mjs, plan row 4.13)
+      # needs a deployed stack, so CI runs only its self-test: that the
+      # checks pass against a stub that is configured correctly, FAIL
+      # against one that answers a direct origin request or serves the
+      # document bucket to anonymous callers, and report NOT CHECKED
+      # rather than success when the operator leaves an argument out.
+      - run: npm run smoke:self-test
+
+      # docs/licence-compliance.md item 1: the repository's own LICENCE.
+      # It was the only one of the ten items with no gate, and the one
+      # with the worst failure mode — removing or altering the file does
+      # not change the AGPL section 13 obligation, it removes the evidence
+      # that it was met.
+      - run: npm run licence:self-test
+
+      - run: npm run licence
+
   api-contract:
     name: API contract
     runs-on: ubuntu-latest

@@ -80,6 +80,7 @@ jobs:
   config:
     name: Read the deployment configuration
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment: production
     outputs:
       configured: ${{ steps.read.outputs.configured }}
@@ -147,6 +148,9 @@ jobs:
     needs: config
     if: needs.config.outputs.configured == 'true'
     runs-on: ubuntu-latest
+      # Its own deadline is 45 minutes (below); this is the backstop for a
+      # poll that never reaches it.
+    timeout-minutes: 50
     outputs:
       sha: ${{ steps.meta.outputs.sha }}
       short_sha: ${{ steps.meta.outputs.short_sha }}
@@ -212,6 +216,8 @@ jobs:
     name: Publish the Corresponding Source
     needs: gate
     runs-on: ubuntu-latest
+      # A full history push to the mirror, which is slow the first time.
+    timeout-minutes: 20
     # SOURCE_MIRROR_REPOSITORY and SOURCE_MIRROR_TOKEN are read below; without
     # this line they are invisible when they are scoped to the environment.
     environment: production
@@ -270,6 +276,10 @@ jobs:
     name: Build and scan (${{ matrix.service }})
     needs: [config, gate, mirror]
     runs-on: ubuntu-latest
+      # Backend builds in well under a minute. A frontend build that passes
+      # 30 is not slow, it is stuck — and without this the default is six
+      # hours of a held pipeline.
+    timeout-minutes: 30
     environment: production
     env:
       ECR_REGISTRY: ${{ needs.config.outputs.ecr_registry }}
@@ -432,6 +442,10 @@ jobs:
     name: Apply database migrations
     needs: [gate, build]
     runs-on: ubuntu-latest
+      # Safe to cut: the advisory lock is session-level and releases when psql
+      # disconnects, each file keeps its own transaction semantics, and the
+      # step is already written to leave an accurate record if it stops midway.
+    timeout-minutes: 30
     environment: production
     steps:
       - uses: actions/checkout@v7
@@ -496,11 +510,15 @@ jobs:
     name: Deploy the backend
     needs: [config, gate, migrate]
     runs-on: ubuntu-latest
+      # `ecs wait services-stable` bounds itself at 10 minutes, `tasks-stopped`
+      # at 10, and the /api/ready poll at 3.
+    timeout-minutes: 30
     environment: production
     env:
       ECR_REGISTRY: ${{ needs.config.outputs.ecr_registry }}
     outputs:
       revision: ${{ steps.register.outputs.revision }}
+      catalogue: ${{ steps.sync.outputs.catalogue }}
     steps:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -533,6 +551,7 @@ jobs:
       # from the new revision, in the same subnets and security group as the
       # service, with the command overridden. Its exit code is the verdict.
       - name: Run the workflow catalogue sync from the new revision
+        id: sync
         run: |
           set -euo pipefail
           NETCFG=$(aws ecs describe-services --cluster "$NAME_PREFIX" --services "$NAME_PREFIX-backend" \
@@ -548,10 +567,51 @@ jobs:
           EXIT=$(aws ecs describe-tasks --cluster "$NAME_PREFIX" --tasks "$TASK" --query 'tasks[0].containers[0].exitCode' --output text)
           REASON=$(aws ecs describe-tasks --cluster "$NAME_PREFIX" --tasks "$TASK" --query 'tasks[0].stoppedReason' --output text)
           echo "exit code: $EXIT ($REASON)"
-          if [ "$EXIT" != "0" ]; then
-            echo "::error::The catalogue sync exited $EXIT. Logs: /ecs/$NAME_PREFIX-backend, stream backend/backend/${TASK##*/}"
+          # 78 (sysexits EX_CONFIG) is the job saying this deployment has no
+          # catalogue — MIKE_WORKFLOWS_REPOSITORY is empty. That is a skip, not
+          # a failed release: see backend/src/lib/workflowCatalogueConfig.ts.
+          # Opting out is explicit, so an unset variable still falls back to the
+          # upstream default and still fails here if it cannot be read.
+          if [ "$EXIT" = "78" ]; then
+            echo "::notice::No workflow catalogue is configured, so the sync was skipped. The release continues. See docs/deployment.md to configure one."
+            SYNCED="skipped (no catalogue configured)"
+          elif [ "$EXIT" != "0" ]; then
+            # Print the task's own output rather than only saying where it
+            # lives. The role already holds logs:GetLogEvents on this group
+            # (infra/modules/deploy/policy.tf, ReadServiceLogs), so a failed
+            # release does not need a second trip to CloudWatch to find out
+            # what it said. The awslogs driver can lag the task's stop by a
+            # second or two, hence the retry.
+            #
+            # What lands here is redacted: every console.error in the service
+            # goes through the error-tracking bridge, which reduces what it
+            # prints with safeErrorForLog — a provider error's request body
+            # and any secret-shaped string are dropped before stdout. That is
+            # what makes it safe to copy into a CI log anyone with read access
+            # can open.
+            STREAM="backend/backend/${TASK##*/}"
+            echo "--- last 100 lines of $STREAM ---"
+            for attempt in 1 2 3; do
+              LINES=$(aws logs get-log-events \
+                --log-group-name "/ecs/$NAME_PREFIX-backend" \
+                --log-stream-name "$STREAM" \
+                --limit 100 --start-from-head \
+                --query 'events[].message' --output text 2>/dev/null || true)
+              [ -n "$LINES" ] && break
+              sleep 3
+            done
+            if [ -n "$LINES" ]; then
+              printf '%s\n' "$LINES"
+            else
+              echo "(no log events yet — read them at /ecs/$NAME_PREFIX-backend, stream $STREAM)"
+            fi
+            echo "--- end of task output ---"
+            echo "::error::The catalogue sync exited $EXIT. Its output is above; the stream is /ecs/$NAME_PREFIX-backend $STREAM"
             exit 1
+          else
+            SYNCED="synced"
           fi
+          echo "catalogue=$SYNCED" >> "$GITHUB_OUTPUT"
 
       # Rolling update: the service keeps 100% healthy while the new tasks
       # come up (deployment_minimum_healthy_percent = 100). If they never do,
@@ -586,6 +646,8 @@ jobs:
     name: Deploy the frontend
     needs: [config, gate, backend]
     runs-on: ubuntu-latest
+      # As the backend job above.
+    timeout-minutes: 30
     environment: production
     env:
       ECR_REGISTRY: ${{ needs.config.outputs.ecr_registry }}
@@ -641,6 +703,7 @@ jobs:
     name: Record the release
     needs: [config, gate, backend, frontend]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - run: |
           {
@@ -652,6 +715,7 @@ jobs:
             echo "| tag | \`${{ needs.gate.outputs.tag }}\` |"
             echo "| backend task definition | \`legalworkflows-production-backend:${{ needs.backend.outputs.revision }}\` |"
             echo "| frontend task definition | \`legalworkflows-production-frontend:${{ needs.frontend.outputs.revision }}\` |"
+            echo "| workflow catalogue | ${{ needs.backend.outputs.catalogue }} |"
             echo "| source | https://github.com/${{ needs.config.outputs.mirror_repository }}/tree/${{ needs.gate.outputs.sha }} |"
             echo
             echo "To undo: run the Rollback workflow with the revisions from the release before this one."
