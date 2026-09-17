@@ -113,6 +113,11 @@ fewer service to provision and pay for.
 
 ## Finding 5 — what the backlog says is left, corrected
 
+> Closed since this was written. Status now lives in
+> [`status.csv`](status.csv) and is presented in
+> [`delivery-status.xlsx`](delivery-status.xlsx). The counts below are the
+> position on the audit date and are kept as the record of it.
+
 The CSV has 13 epics and **94 deliverable tickets**. There is no status field,
 so completion was reconstructed from merged pull requests and from direct
 checks against the tree.

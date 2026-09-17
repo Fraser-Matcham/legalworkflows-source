@@ -10,7 +10,7 @@ Read `audit.md` for the evidence behind the sequencing, and
 
 ## The shape of the plan
 
-Four stages. Each has engineering work I do, and a numbered runbook of tasks
+Five stages. Each has engineering work I do, and a numbered runbook of tasks
 only you can do. **Every stage is gated: the engineering work of the next
 stage cannot finish until the previous stage's human tasks are done**, because
 each one hands over something the next stage needs — a domain name, an AWS
@@ -22,6 +22,11 @@ account, a set of credentials.
 | 2 | Backend: close the remaining gaps, freeze the API contract | `human-tasks/stage-2-backend.md` | Supabase production project, provider keys |
 | 3 | Infrastructure: Terraform the whole footprint | `human-tasks/stage-3-infrastructure.md` | AWS account, DNS delegation, secrets |
 | 4 | Deployment, CI and launch | `human-tasks/stage-4-launch.md` | Go live |
+| 5 | Platform: run Postgres, PostgREST and GoTrue on AWS | `human-tasks/stage-5-platform.md` | Supabase retired |
+
+Stage 5 was added on 17 September 2026 and is the one stage that is not a
+prerequisite for going live: the service can launch on Supabase and move
+afterwards. It is sequenced last for that reason.
 
 Stage 4 returns to the frontend deliberately. Several frontend concerns —
 its production environment values, its CDN cache behaviour, its deploy
@@ -238,6 +243,68 @@ going live has been rehearsed rather than attempted.**
 
 Go-live authorisation, the monitoring window, and the licence sign-off, which
 is a judgement only the copyright holder can make.
+
+## Stage 5 — run the platform on AWS
+
+Decided 17 September 2026, after three consecutive releases failed on a
+Supabase credential nobody could verify. The immediate faults were credential
+handling rather than Supabase itself — the project was `ACTIVE_HEALTHY`
+throughout — but the operator's judgement is that a dependency whose keys
+cannot be reasoned about from inside this account has stopped earning its
+place. Stage 5 removes it.
+
+**What Supabase is actually doing here.** Three things, measured rather than
+assumed: Postgres, PostgREST, and GoTrue for auth. Realtime, Supabase Storage
+and Edge Functions have **zero** call sites; documents already live in S3. The
+schema carries **no** RLS policies — tenancy is enforced in route handlers and
+gated by `npm run tenancy`.
+
+All three are open source and run as ordinary containers. So the move is an
+infrastructure change, not an application rewrite:
+
+| | |
+| --- | --- |
+| `.from(...)` data-access call sites | **556** — unchanged, they speak PostgREST |
+| `.rpc(...)` calls | **39** — unchanged |
+| Auth call sites | **32** — unchanged, they speak GoTrue |
+| `auth.users` references in `schema.sql` | **43** — GoTrue creates that schema, so the foreign keys survive |
+
+**Why not Cognito.** It was the obvious AWS answer and it is the wrong one
+here. Cognito has no `auth.users` table, so all 43 schema references break; its
+session, JWT and MFA semantics differ from what the application already
+implements; and the data layer would need rewriting at 556 sites. That work
+would also end the fork in practice — this repository tracks an active
+upstream that *is* a Supabase application, so a rewritten data layer turns
+every future upstream security fix from a merge into a manual port. Stage 5
+keeps the protocols and changes only who runs them.
+
+**What it buys beyond removing the dependency.** The `anon` and `service_role`
+keys are JWTs signed with the project's JWT secret. Self-hosting means minting
+them here, from a secret in this account — which retires the exact class of
+failure that stopped deploys 12 to 14: a credential that could not be
+verified, rotated, or reasoned about without leaving AWS.
+
+| # | Work | Ticket |
+| --- | --- | --- |
+| 5.1 | Postgres on RDS, engine matched to the 17.6 in use | 2111, 2112 |
+| 5.2 | Dump and restore including the `auth` schema — it holds the users | 2113 |
+| 5.3 | PostgREST as an ECS service on the existing cluster | 2114, 2115 |
+| 5.4 | GoTrue as an ECS service | 2116, 2117 |
+| 5.5 | Auth email through the SES credentials the email module already provisions | 2118 |
+| 5.6 | Carry the Google OAuth provider across | 2119 |
+| 5.7 | Own the JWT secret; mint, document and rotate the API keys | 2120, 2121 |
+| 5.8 | Route `/auth/v1/*` and `/rest/v1/*` through the edge, header-gated as the backend already is | 2122, 2123 |
+| 5.9 | Rehearse the cutover **and the rollback**, on a copy, before doing it for real | 2125 |
+| 5.10 | Cut over, delete the Supabase project, and correct every document that calls it a dependency | 2124, 2126 |
+
+**Sequencing.** 5.1 to 5.7 are additive — they stand the components up beside
+the live system without touching it, so nothing is at risk until 5.9. The
+rollback target throughout is the Supabase project, left running and unchanged
+until the rehearsal has passed.
+
+**What this does not change.** No application source is modified. The
+Juralio HTTP boundary, the fork rules, the upstream sync routine and the
+licence position are all untouched.
 
 ## Ticket disposition
 

@@ -4,6 +4,10 @@ Taking this AGPL-3.0 fork into a private, production-ready service that the
 Juralio matter-management platform consumes over HTTP.
 
 - [`backlog.csv`](backlog.csv) — the full backlog, Jira-importable.
+- [`v2/delivery-status.xlsx`](v2/delivery-status.xlsx) — the same backlog with
+  the current status of every ticket, summarised by phase, sprint, component
+  and issue type. Built from [`v2/status.csv`](v2/status.csv) by
+  [`v2/build-status-workbook.py`](v2/build-status-workbook.py).
 - [`v2/outstanding.md`](v2/outstanding.md) — what is not done, with the
   evidence for each, and what it is blocked on.
 - [`plan-review.md`](plan-review.md) — findings from reviewing the plan against
@@ -15,7 +19,7 @@ Juralio matter-management platform consumes over HTTP.
 
 ## Shape
 
-Three phases, 13 epics, 27 stories, 67 sub-tasks, 246 points. Six four-week
+Four phases, 14 epics, 33 stories, 77 sub-tasks, 296 points. Seven four-week
 sprints, Kanban flow within each. Estimates sit on sub-tasks only — stories
 roll up their children and epics carry none — so nothing is counted twice.
 Each sub-task is sized to one pull request.
@@ -31,6 +35,7 @@ Juralio delivery plan (1001–1160) without collision.
 | 4 | 13–16 | Infrastructure | Security gaps closed; Juralio integration seam live | 10 | 53 |
 | 5 | 17–20 | Production ready | Licence compliance, observability, tests over the untested core | 13 | 53 |
 | 6 | 21–24 | Production ready | Operational readiness and launch | 9 | 40 |
+| 7 | 25–28 | Self-hosted platform | Postgres, PostgREST and GoTrue moved onto AWS; Supabase retired | 10 | 50 |
 
 Velocity assumes one engineer pairing with an agent, ~41 points per sprint.
 Sprints 1–2 are light on purpose — that is where the external blockers sit.
@@ -54,6 +59,7 @@ boundaries.
 | 2088 | 5 | Backend test safety net |
 | 2093 | 6 | Operational readiness |
 | 2100 | 6 | Launch |
+| 2110 | 7 | Run the platform services on AWS instead of Supabase |
 
 ## Blockers to clear before, or early in, Sprint 1
 

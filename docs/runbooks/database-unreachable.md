@@ -48,6 +48,76 @@ aws ecs update-service --cluster legalworkflows-production \
 (Prefix the first command with a space so the shell history does not keep
 it, as `infra/modules/secrets/README.md` says.)
 
+**The secret must stay a JSON object.** The command above reads the existing
+JSON and replaces one field for exactly this reason. Editing it by hand is
+where this goes wrong: the console offers a **Key/value** editor and a
+**Plaintext** one, and pasting a bare key into Plaintext replaces the whole
+object with a string. Every referenced key disappears at once.
+
+The task then fails before it starts, with a message that names the missing
+key rather than anything about credentials:
+
+```
+ResourceInitializationError: unable to pull secrets or registry auth:
+execution resource retrieval failed: unable to retrieve secret from asm:
+retrieved secret from Secrets Manager did not contain json key SUPABASE_SECRET_KEY
+```
+
+That is not an authentication failure. Nothing reached Supabase; the execution
+role could not assemble the task's environment.
+
+The keys the task definition may reference are `SUPABASE_SECRET_KEY`,
+`ANTHROPIC_API_KEY`, `ERROR_TRACKING_DSN`, `MIKE_WORKFLOWS_GITHUB_TOKEN` and
+`COURTLISTENER_API_TOKEN` (`operator_secret_keys` in
+`infra/modules/secrets/variables.tf`). Only those Terraform was told exist are
+referenced, and **every referenced one must be present** — names exact and
+case-sensitive.
+
+**Recovering an overwritten secret.** Secrets Manager keeps previous versions.
+Console → the secret → **Versions** → the one labelled `AWSPREVIOUS` →
+**Retrieve secret value**. Or:
+
+```sh
+aws secretsmanager get-secret-value \
+  --secret-id legalworkflows-production/backend/operator \
+  --version-stage AWSPREVIOUS --query SecretString --output text
+```
+
+Take the values you did not mean to change from there, and write the whole
+object back.
+
+**Ask Supabase what it saw.** The task's own log says only `Invalid API key`,
+which is the same message for several different faults. Supabase's edge log
+says which. Dashboard → **Logs → Edge Logs**, or through the Supabase MCP
+connector:
+
+```sql
+select timestamp,
+       log_attributes['request.path']                      as path,
+       log_attributes['response.headers.sb_error_code']     as code,
+       log_attributes['request.sb.jwt.apikey.invalid']      as why
+from logs
+where source = 'edge_logs'
+order by timestamp desc
+limit 20
+```
+
+Read `code` and `why` together:
+
+| `code` | `why` | What it means |
+| --- | --- | --- |
+| `UNAUTHORIZED_INVALID_API_KEY` | `Not a JWT` | The stored value decodes but is not a JWT, so it is **not a legacy `anon`/`service_role` key** — those are JWTs beginning `eyJ`. Something else is in the field. |
+| `UNAUTHORIZED_INVALID_API_KEY` | `Not a JWT, invalid Base64-URL, UTF-8 or JSON` | The value is not key-shaped at all — an unsubstituted placeholder, a truncated paste, or a mangled copy. |
+| `UNAUTHORIZED_MISSING_API_KEY` | *(empty)* | No `apikey` header. In a shell test this usually means the variable was empty, not that the key is wrong. |
+
+The distinction matters: the first two produce an identical `Invalid API key` in
+the application log while having completely different causes, and on
+17 September 2026 that cost about two hours of looking in the wrong place.
+
+The same query also tells you whether the request arrived at all
+(`request.cf.asOrganization` reads `Amazon.com, Inc.` for the ECS tasks), and
+`request.host` confirms which project `SUPABASE_URL` actually points at.
+
 **The network.** A timeout with Supabase healthy means the tasks cannot
 reach the internet: the NAT gateway, its route, or the private subnets'
 route tables. `terraform plan` shows drift; `aws ec2 describe-nat-gateways`

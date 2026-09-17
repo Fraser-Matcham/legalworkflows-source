@@ -1,6 +1,7 @@
 # What is actually left
 
-The backlog register is [`../backlog.csv`](../backlog.csv), 107 tickets. Most
+The backlog register is [`../backlog.csv`](../backlog.csv), 124 tickets; the
+current status of each is in [`delivery-status.xlsx`](delivery-status.xlsx). Most
 are done and the plan records them. This lists only what is **not** done, with
 the evidence for each, so nobody has to re-derive it.
 
