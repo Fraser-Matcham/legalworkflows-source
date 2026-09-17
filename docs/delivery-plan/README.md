@@ -4,6 +4,8 @@ Taking this AGPL-3.0 fork into a private, production-ready service that the
 Juralio matter-management platform consumes over HTTP.
 
 - [`backlog.csv`](backlog.csv) — the full backlog, Jira-importable.
+- [`v2/outstanding.md`](v2/outstanding.md) — what is not done, with the
+  evidence for each, and what it is blocked on.
 - [`plan-review.md`](plan-review.md) — findings from reviewing the plan against
   the actual tree. **Read this before starting Sprint 1**; it contains one
   blocking correction to the highest-priority ticket.

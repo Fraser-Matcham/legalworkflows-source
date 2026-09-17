@@ -1,7 +1,8 @@
 # Delivery plan v2 — three components to operational
 
 Supersedes the sequencing in `docs/delivery-plan/backlog.csv`. That backlog
-remains the ticket register; this document says what order the work happens in
+remains the ticket register, and [`outstanding.md`](outstanding.md) lists what
+is still open with the evidence for each; this document says what order the work happens in
 and why, and maps each stage back to its ticket ids.
 
 Read `audit.md` for the evidence behind the sequencing, and
