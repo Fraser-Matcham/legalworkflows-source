@@ -92,9 +92,10 @@ uses it.
 ## Bootstrapping
 
 Once, after the apply that creates the instance and before any restore or
-service start. Everything here runs from inside the VPC via the
-database-tools task (ticket 2113); the commands below are what that task
-runs, shown so the procedure is readable without it.
+service start. It runs from inside the VPC as the database-tools task —
+`infra/dbtools/run.sh bootstrap` (ticket 2113, `docs/runbooks/platform-migration.md`).
+The commands below are what that task runs, shown so the procedure is
+readable without it.
 
 ```sh
 # 1. The master credential RDS keeps (JSON: username, password).

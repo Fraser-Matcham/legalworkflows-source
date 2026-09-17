@@ -21,3 +21,8 @@ output "last_migration_parameter_name" {
   description = "SSM parameter the deploy workflow reads and writes."
   value       = aws_ssm_parameter.last_migration.name
 }
+
+output "last_migration_parameter_arn" {
+  description = "The SSM record of the last applied migration, for the dbtools task role (stage 5)."
+  value       = aws_ssm_parameter.last_migration.arn
+}

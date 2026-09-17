@@ -201,3 +201,13 @@ output "gotrue_google_redirect_uri" {
   description = "The authorised redirect URI to add to the Google OAuth client."
   value       = one(module.gotrue[*].google_redirect_uri)
 }
+
+output "dbtools_ecr_repository_url" {
+  description = "Where the release pipeline pushes the database-tools image (stage 5)."
+  value       = one(module.dbtools[*].ecr_repository_url)
+}
+
+output "platform_migration_source_secret_name" {
+  description = "Where Stage 5, Task 2 writes the Supabase session-pooler connection string as SOURCE_DB_URL."
+  value       = one(module.dbtools[*].migration_source_secret_name)
+}

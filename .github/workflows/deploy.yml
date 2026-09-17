@@ -28,6 +28,10 @@
 #   secrets    SUPABASE_DB_URL (session-pooler connection string),
 #              SOURCE_MIRROR_TOKEN (fine-grained PAT: contents write on the
 #              mirror only)
+#   stage 5    PLATFORM_ENABLED=true once infra's platform_enabled is applied
+#   variables  (builds the dbtools image); PLATFORM_SERVES_BACKEND=true once
+#              platform_serves_backend is applied (migrations run as a task
+#              inside the VPC instead of over SUPABASE_DB_URL)
 #
 # Either scope works: repository, or the `production` environment. Which one
 # is used is invisible here because nothing below reads a variable outside a
@@ -438,9 +442,90 @@ jobs:
           echo "no fixable high or critical findings"
 
   # ---------------------------------------------------------------------------
+  # Stage 5 (ticket 2113): the database-tools image — psql, pg_dump and
+  # pg_restore with this commit's schema and migrations — built when the
+  # platform exists. The PLATFORM_ENABLED variable is the operator saying so
+  # (the ECR repository only exists once infra's platform_enabled is
+  # applied). Same build and scan gate as the services; the context is the
+  # repository root because the image carries backend/ files.
+  build-dbtools:
+    name: Build and scan (dbtools)
+    if: vars.PLATFORM_ENABLED == 'true'
+    needs: [config, gate, mirror]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      ECR_REGISTRY: ${{ needs.config.outputs.ecr_registry }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/dbtools/Dockerfile
+          push: true
+          provenance: false
+          platforms: linux/amd64
+          tags: |
+            ${{ env.ECR_REGISTRY }}/${{ env.NAME_PREFIX }}-dbtools:${{ needs.gate.outputs.sha }}
+            ${{ env.ECR_REGISTRY }}/${{ env.NAME_PREFIX }}-dbtools:main
+          cache-from: type=gha,scope=dbtools
+          cache-to: type=gha,scope=dbtools,mode=max
+
+      # The same gate as the services' images (see the build job for why
+      # "fixable" is the line): a tools image with a fixable critical is as
+      # much a release blocker as the backend's.
+      - name: Image scan is clean of fixable high and critical findings
+        run: |
+          set -euo pipefail
+          REPO="$NAME_PREFIX-dbtools"
+          TAG="${{ needs.gate.outputs.sha }}"
+          deadline=$(( $(date +%s) + 900 ))
+          while :; do
+            status=$(aws ecr describe-image-scan-findings \
+              --repository-name "$REPO" --image-id imageTag="$TAG" \
+              --query 'imageScanStatus.status' --output text 2>/dev/null || echo PENDING)
+            case "$status" in
+              ACTIVE|COMPLETE) break ;;
+              FAILED|UNSUPPORTED_IMAGE)
+                echo "::error::Inspector reported $status for $REPO:$TAG."; exit 1 ;;
+            esac
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::error::Inspector had not scanned $REPO:$TAG after 15 minutes (last status: $status)."; exit 1
+            fi
+            echo "scan status: $status — waiting"; sleep 15
+          done
+          aws ecr describe-image-scan-findings --repository-name "$REPO" \
+            --image-id imageTag="$TAG" --output json > /tmp/scan.json
+          echo "all findings by severity: $(jq -c '.imageScanFindings.findingSeverityCounts // {}' /tmp/scan.json)"
+          BLOCKING=$(jq '
+            [ .imageScanFindings.enhancedFindings[]?
+              | select(.severity == "CRITICAL" or .severity == "HIGH")
+              | select(.fixAvailable == "YES") ] | length
+          ' /tmp/scan.json)
+          if [ "$BLOCKING" != "0" ]; then
+            echo "::error::$BLOCKING fixable high or critical findings in the $REPO image. See ECR → $REPO → $TAG → scan results."
+            exit 1
+          fi
+          echo "no fixable high or critical findings"
+
+  # ---------------------------------------------------------------------------
   migrate:
     name: Apply database migrations
-    needs: [gate, build]
+    # build-dbtools is skipped until the platform exists; a skipped need
+    # would skip this job too without the explicit condition.
+    needs: [gate, build, build-dbtools]
+    if: ${{ !cancelled() && needs.gate.result == 'success' && needs.build.result == 'success' && (needs.build-dbtools.result == 'success' || needs.build-dbtools.result == 'skipped') }}
     runs-on: ubuntu-latest
       # Safe to cut: the advisory lock is session-level and releases when psql
       # disconnects, each file keeps its own transaction semantics, and the
@@ -464,7 +549,47 @@ jobs:
       # file keeps its own transaction semantics (several manage their own
       # BEGIN/COMMIT), and ON_ERROR_STOP halts at the first failing statement
       # with the record still pointing at the last file that completed.
+      # Stage 5, after the cutover (ticket 2122): the database is the RDS
+      # instance, reachable from inside the VPC only, so the same procedure
+      # runs as a one-off dbtools task — `dbtools migrate`, the same files,
+      # the same advisory lock, the same SSM record (infra/dbtools/dbtools.sh).
+      # PLATFORM_SERVES_BACKEND is the operator saying infra's
+      # platform_serves_backend is applied; until then the psql path below
+      # still reaches Supabase.
+      - name: Apply migrations newer than the recorded one (dbtools task)
+        if: vars.PLATFORM_SERVES_BACKEND == 'true'
+        run: |
+          set -euo pipefail
+          SUBNETS=$(aws ecs describe-services --cluster "$NAME_PREFIX" --services "$NAME_PREFIX-backend" \
+            --query 'services[0].networkConfiguration.awsvpcConfiguration.subnets' --output json)
+          SG=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=$NAME_PREFIX-dbtools" \
+            --query 'SecurityGroups[0].GroupId' --output text)
+          TASK=$(aws ecs run-task --cluster "$NAME_PREFIX" --launch-type FARGATE \
+            --task-definition "$NAME_PREFIX-dbtools" \
+            --network-configuration "{\"awsvpcConfiguration\":{\"subnets\":$SUBNETS,\"securityGroups\":[\"$SG\"],\"assignPublicIp\":\"DISABLED\"}}" \
+            --overrides '{"containerOverrides":[{"name":"dbtools","command":["migrate"]}]}' \
+            --started-by "deploy-${{ needs.gate.outputs.sha }}" \
+            --query 'tasks[0].taskArn' --output text)
+          echo "migrate task: $TASK"
+          aws ecs wait tasks-stopped --cluster "$NAME_PREFIX" --tasks "$TASK"
+          EXIT=$(aws ecs describe-tasks --cluster "$NAME_PREFIX" --tasks "$TASK" --query 'tasks[0].containers[0].exitCode' --output text)
+          STREAM="dbtools/dbtools/${TASK##*/}"
+          for attempt in 1 2 3 4 5; do
+            LINES=$(aws logs get-log-events --log-group-name "/ecs/$NAME_PREFIX-dbtools" \
+              --log-stream-name "$STREAM" --start-from-head \
+              --query 'events[].message' --output text 2>/dev/null || true)
+            [ -n "$LINES" ] && break
+            sleep 3
+          done
+          printf '%s\n' "${LINES:-(no log events yet — read them at /ecs/$NAME_PREFIX-dbtools, stream $STREAM)}"
+          if [ "$EXIT" != "0" ]; then
+            echo "::error::The migrate task exited $EXIT. Its output is above. See docs/runbooks/failed-migration.md."
+            exit 1
+          fi
+          grep -o 'applied through [^ ]*\|nothing to apply' <<<"$LINES" | tail -1 | sed 's/^/migrations: /' | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Apply migrations newer than the recorded one
+        if: vars.PLATFORM_SERVES_BACKEND != 'true'
         env:
           DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           PARAM: /legalworkflows-production/deploy/last-migration
