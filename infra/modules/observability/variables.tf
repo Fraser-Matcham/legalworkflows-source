@@ -90,3 +90,18 @@ variable "readiness_failures_per_5m" {
   type        = number
   default     = 3
 }
+
+# --- stage 5 ---------------------------------------------------------------------
+
+variable "database_instance_identifier" {
+  description = "The RDS instance to alarm on, once the stage 5 database module exists. Null (the default) creates no database alarms."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "database_free_storage_bytes" {
+  description = "Free storage below which the urgent database alarm fires. Two GiB: storage autoscaling adds space at 10% free, so reaching this means autoscaling is off, capped, or losing the race — and a full volume goes read-only."
+  type        = number
+  default     = 2147483648
+}

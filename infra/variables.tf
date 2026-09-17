@@ -241,3 +241,34 @@ variable "enable_ecs_exec" {
   type        = bool
   default     = false
 }
+
+# --- stage 5: the self-hosted platform ----------------------------------------------
+
+# Stage 5 (docs/delivery-plan/v2/plan.md) stands PostgreSQL, PostgREST and
+# GoTrue up in this account beside the live Supabase-backed service, and
+# nothing in it is a prerequisite for going live. Its first human task is to
+# approve the running cost, so every stage 5 module is created only when this
+# is true; the default leaves an apply exactly as it was.
+variable "platform_enabled" {
+  description = "Create the stage 5 platform modules (the RDS database first; PostgREST, GoTrue and their routing follow). false until Stage 5, Task 1 has approved the cost."
+  type        = bool
+  default     = false
+}
+
+variable "database_instance_class" {
+  description = "RDS instance class — Stage 5, Task 1's first decision. See infra/modules/database/README.md."
+  type        = string
+  default     = "db.t4g.small"
+}
+
+variable "database_multi_az" {
+  description = "Standby in a second availability zone — Stage 5, Task 1's second decision. Roughly doubles the database cost."
+  type        = bool
+  default     = false
+}
+
+variable "database_backup_retention_days" {
+  description = "Days of automated database backups and point-in-time recovery. 35 matches the document bucket's backup retention; the RDS maximum."
+  type        = number
+  default     = 35
+}

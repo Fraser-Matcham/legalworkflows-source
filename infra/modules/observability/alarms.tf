@@ -262,3 +262,53 @@ resource "aws_cloudwatch_metric_alarm" "service_memory" {
 
   tags = { Name = "${var.name_prefix}-${each.key}-memory-high" }
 }
+
+# --- stage 5: the database ---------------------------------------------------------
+# Present only when the database module exists (platform_enabled). Storage is
+# urgent because a full volume takes the database read-only, which is an
+# outage with a slower onset; CPU is informational for the same reason it is
+# on the services.
+
+resource "aws_cloudwatch_metric_alarm" "database_free_storage" {
+  count = var.database_instance_identifier == null ? 0 : 1
+
+  alarm_name          = "${var.name_prefix}-database-free-storage"
+  alarm_description   = "URGENT: the database has under ${floor(var.database_free_storage_bytes / 1073741824)} GiB free. A full volume goes read-only. Runbook: docs/runbooks/database-unreachable.md"
+  namespace           = "AWS/RDS"
+  metric_name         = "FreeStorageSpace"
+  statistic           = "Minimum"
+  period              = 300
+  evaluation_periods  = 2
+  threshold           = var.database_free_storage_bytes
+  comparison_operator = "LessThanThreshold"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = { DBInstanceIdentifier = var.database_instance_identifier }
+
+  alarm_actions = [aws_sns_topic.urgent.arn]
+  ok_actions    = [aws_sns_topic.urgent.arn]
+
+  tags = { Name = "${var.name_prefix}-database-free-storage" }
+}
+
+resource "aws_cloudwatch_metric_alarm" "database_cpu" {
+  count = var.database_instance_identifier == null ? 0 : 1
+
+  alarm_name          = "${var.name_prefix}-database-cpu-high"
+  alarm_description   = "The database has averaged over 85% CPU for fifteen minutes. Runbook: docs/runbooks/high-resource-usage.md"
+  namespace           = "AWS/RDS"
+  metric_name         = "CPUUtilization"
+  statistic           = "Average"
+  period              = 300
+  evaluation_periods  = 3
+  threshold           = 85
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = { DBInstanceIdentifier = var.database_instance_identifier }
+
+  alarm_actions = [aws_sns_topic.informational.arn]
+  ok_actions    = [aws_sns_topic.informational.arn]
+
+  tags = { Name = "${var.name_prefix}-database-cpu-high" }
+}

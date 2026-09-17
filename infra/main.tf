@@ -126,6 +126,9 @@ module "observability" {
   frontend_service_name            = module.frontend.service_name
   backend_log_group_name           = module.backend.log_group_name
   cloudfront_distribution_id       = module.frontend.distribution_id
+
+  # Stage 5: null until the database exists, and then its alarms appear.
+  database_instance_identifier = one(module.database[*].instance_identifier)
 }
 
 module "email" {
@@ -188,4 +191,27 @@ module "backup" {
   source_bucket_arn  = module.storage.bucket_arn
   source_kms_key_arn = module.storage.kms_key_arn
   retention_days     = var.backup_retention_days
+}
+
+# --- stage 5: the self-hosted platform ----------------------------------------------
+# One module per row of the Stage 5 table, all gated on platform_enabled.
+
+module "database" {
+  count  = var.platform_enabled ? 1 : 0
+  source = "./modules/database"
+
+  name_prefix        = local.name_prefix
+  vpc_id             = module.network.vpc_id
+  private_subnet_ids = module.network.private_subnet_ids
+
+  # The backend is admitted because ticket 2112 says so and because the
+  # migration job may one day run from its image; it opens no connection
+  # today. PostgREST, GoTrue and the database-tools task add their own rules.
+  client_security_group_ids = {
+    backend = module.network.backend_security_group_id
+  }
+
+  instance_class        = var.database_instance_class
+  multi_az              = var.database_multi_az
+  backup_retention_days = var.database_backup_retention_days
 }

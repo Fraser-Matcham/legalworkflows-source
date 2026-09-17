@@ -22,7 +22,10 @@ infra/
   scanning.tf      registry image scanning — account-wide and shared, so not in a module
   modules/         one module per row of the Stage 3 table in plan.md:
                    network, storage, backup, secrets, dns, backend, frontend,
-                   observability, email, deploy — each with its own README
+                   observability, email, deploy — each with its own README;
+                   and, gated on platform_enabled, one per row of the Stage 5
+                   table: database (RDS), with PostgREST, GoTrue and their
+                   routing to follow
 ```
 
 Each module in `modules/` maps to one row of the Stage 3 engineering table in

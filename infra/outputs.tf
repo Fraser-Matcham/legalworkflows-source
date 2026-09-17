@@ -148,3 +148,26 @@ output "documents_backup_bucket_name" {
   description = "Where to restore documents from (docs/runbooks/restore.md)."
   value       = module.backup.bucket_name
 }
+
+# --- stage 5 ----------------------------------------------------------------------
+# Null until platform_enabled is true.
+
+output "database_address" {
+  description = "Hostname of the RDS instance, reachable from the private subnets only."
+  value       = one(module.database[*].address)
+}
+
+output "database_master_user_secret_arn" {
+  description = "The RDS-managed master credential, for the role bootstrap and a restore (infra/modules/database/README.md)."
+  value       = one(module.database[*].master_user_secret_arn)
+}
+
+output "database_roles_secret_name" {
+  description = "Secret holding the authenticator and supabase_auth_admin passwords and URIs."
+  value       = one(module.database[*].roles_secret_name)
+}
+
+output "database_security_group_id" {
+  description = "For adding an ingress rule from a new client task."
+  value       = one(module.database[*].security_group_id)
+}

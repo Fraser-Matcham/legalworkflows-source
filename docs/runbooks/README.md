@@ -19,6 +19,8 @@ The rest exist because an alarm exists for them.
 | *event* `ecs-deployment-failed` | urgent | [deploy-rolled-back.md](deploy-rolled-back.md) |
 | `backend-5xx`, `backend-latency` | informational | [backend-errors.md](backend-errors.md) |
 | `backend-cpu-high`, `backend-memory-high`, `frontend-cpu-high`, `frontend-memory-high` | informational | [high-resource-usage.md](high-resource-usage.md) |
+| `database-free-storage` *(stage 5, once the RDS instance exists)* | urgent | [database-unreachable.md](database-unreachable.md) |
+| `database-cpu-high` *(stage 5)* | informational | [high-resource-usage.md](high-resource-usage.md) |
 | SES bounce / complaint / reject notification | informational | [email-delivery.md](email-delivery.md) |
 | *(no alarm yet — found on the dashboard or by a user)* | — | [queue-backlog.md](queue-backlog.md), [model-provider-outage.md](model-provider-outage.md), [failed-migration.md](failed-migration.md), [certificate-expiry.md](certificate-expiry.md) |
 | *(procedure, not an alarm)* | — | [first-apply.md](first-apply.md), [restore.md](restore.md) |
