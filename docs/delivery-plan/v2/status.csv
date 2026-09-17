@@ -7,7 +7,7 @@ Issue Id,Status,Status note
 2006,Done,fork rules present in AGENTS.md
 2007,In progress,"Rolled up from 2 children: 1 done, 1 to do."
 2008,Done,docs/upstream-sync.md
-2009,To do,"Never performed in this fork; the ""upstream"" merges in history are inherited. Value decays as the fork diverges."
+2009,In progress,"Rehearsed in a scratch worktree on 17 September 2026 and sized in docs/upstream-sync.md (""The first sync, sized""): 49 conflicts, four of them decisions against fork positions, plus 40 files to debrand. Recommended as its own sprint."
 2010,In progress,"Rolled up from 2 children: 1 done, 1 to do."
 2011,Done,"Rolled up from 2 children: 1 done, 1 won't do."
 2012,Won't do,From the delivery plan row that cites it.
