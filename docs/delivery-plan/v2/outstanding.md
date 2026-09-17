@@ -61,6 +61,26 @@ the ticket's own framing — and it stays open until the catalogue is yours.
 Needs a fork created under an account you control, which is outside what this
 repository's tooling can do.
 
+**The licence question the ticket raises is answered.** Checked on
+17 September 2026 against `Open-Legal-Products/mike-workflows` at `ce62e6a`
+(17 August 2026): the repository is **MIT** (`LICENSE`, and the README's
+"License" section), with a `PROVENANCE.md` that requires each workflow to
+carry its own `license` field and asks contributors to keep third-party
+notices where a pack was adapted. MIT permits the fork, the copy and the
+modification outright; the one obligation is to keep the MIT notice in the
+fork, which forking does by construction. It is a separate repository from
+the AGPL application, so the AGPL does not reach it and it does not reach
+the AGPL.
+
+Once the fork exists, the remaining steps are configuration: set
+`workflows_repository` in `infra/terraform.tfvars` to the fork (and
+`workflows_ref` to a commit SHA for a reproducible release), apply, and the
+next release's catalogue sync reads from it (ticket 2016 is that release
+passing its sync step against an empty catalogue and the five defaults
+resolving in the product). The catalogue carries 23 assistant workflows and
+the tabular-review packs; pinning the SHA is what stops an upstream edit
+changing product content between releases.
+
 ### 2009 — Run a first upstream merge as a dry run *(Sub-task, Medium)*
 
 > AC: *"Merge completes; full backend and frontend suites green afterwards."*
