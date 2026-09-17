@@ -23,10 +23,14 @@
  *                               --alb-host mike-alb-123.eu-west-2.elb.amazonaws.com \
  *                               --bucket mike-documents
  *   node scripts/smoke-test.mjs --self-test    prove the checks fire
+ *   node scripts/smoke-test.mjs --platform ... also check the self-hosted
+ *                               auth and REST paths through the edge (stage 5)
  *
  * --app-url defaults to $APP_URL. --alb-host and --bucket have no default:
  * without them their checks report NOT CHECKED and the run fails, unless
- * --allow-skipped says the operator meant it.
+ * --allow-skipped says the operator meant it. --platform adds two checks
+ * that only mean anything once the stage 5 platform is routed
+ * (docs/runbooks/platform-cutover.md); without the flag they are not listed.
  */
 
 import { createServer } from "node:http";
@@ -50,7 +54,7 @@ async function get(url, { method = "GET", redirect = "follow", headers = {} } = 
     return response;
 }
 
-function checks({ appUrl, albHost, bucket, albUrl, bucketUrl }) {
+function checks({ appUrl, albHost, bucket, albUrl, bucketUrl, platform = false }) {
     const origin = appUrl.replace(/\/+$/, "");
     const insecure = origin.replace(/^https:/, "http:");
     // Built here, injectable by the self-test: a check nothing can exercise
@@ -103,6 +107,43 @@ function checks({ appUrl, albHost, bucket, albUrl, bucketUrl }) {
                 };
             },
         },
+        // Stage 5: the two paths the backend's SUPABASE_URL resolves to once
+        // the platform serves it. Neither check authenticates: GoTrue's
+        // /health is public, and PostgREST answers an anonymous request for
+        // a table with its own JSON refusal (the anon role holds no
+        // privilege on any table). What both distinguish is "the service
+        // answered" from "the edge or the load balancer answered instead" —
+        // the ALB's default action is a text/plain 403, and a missing
+        // behaviour lands on the frontend's HTML.
+        ...(platform ? [
+            {
+                name: "GoTrue answers /auth/v1/health through the edge",
+                why: "Every sign-in, email link and OAuth callback resolves to /auth/v1 on the public origin. If this path does not reach GoTrue, nobody can sign in after the cutover.",
+                async run() {
+                    const res = await get(`${origin}/auth/v1/health`);
+                    const type = res.headers.get("content-type") ?? "";
+                    const body = res.status === 200 && type.includes("json") ? await res.json().catch(() => null) : null;
+                    const ok = Boolean(body && typeof body === "object" && "version" in body);
+                    return { ok, detail: `/auth/v1/health → ${res.status} ${type || "(no content-type)"}${ok ? ` GoTrue ${body.version}` : ""}` };
+                },
+            },
+            {
+                name: "PostgREST answers /rest/v1 through the edge, and refuses the anonymous request",
+                why: "The backend's data access resolves to /rest/v1 on the public origin. A JSON refusal from PostgREST proves the route; a 200 would mean the anon role can read a table, which every revoke in schema.sql exists to prevent.",
+                async run() {
+                    const res = await get(`${origin}/rest/v1/projects?select=id&limit=1`);
+                    const type = res.headers.get("content-type") ?? "";
+                    const body = type.includes("json") ? await res.json().catch(() => null) : null;
+                    // 401 without a token, 403 with one; either carries
+                    // PostgREST's {code, message}. Anything else answered.
+                    const refused = (res.status === 401 || res.status === 403) && Boolean(body && typeof body === "object" && "code" in body);
+                    return {
+                        ok: refused,
+                        detail: `/rest/v1/projects → ${res.status} ${type || "(no content-type)"}${res.status === 200 ? " (ANON CAN READ)" : refused ? ` ${body.code}` : " (not PostgREST's refusal)"}`,
+                    };
+                },
+            },
+        ] : []),
         {
             name: "the load balancer refuses a request that did not come through CloudFront",
             why: "Two gates protect the origin: the CloudFront prefix list and a secret X-Origin-Verify header. The prefix list admits every CloudFront distribution in the world, so the header is the one that matters — and it has never been observed doing its job.",
@@ -208,6 +249,12 @@ async function selfTest() {
             res.writeHead(301, { location: `${base}/refuses` }).end();
         } else if (url === "/api/ready") {
             res.writeHead(200, { "content-type": "application/json" }).end('{"ok":true}');
+        } else if (url === "/auth/v1/health") {
+            res.writeHead(200, { "content-type": "application/json" }).end('{"version":"v2.189.0","name":"GoTrue","description":"GoTrue is a user registration and authentication API"}');
+        } else if (url.startsWith("/rest/v1/projects")) {
+            res.writeHead(401, { "content-type": "application/json; charset=utf-8" }).end('{"code":"42501","message":"permission denied for table projects"}');
+        } else if (url.startsWith("/leaky/rest/v1/projects")) {
+            res.writeHead(200, { "content-type": "application/json" }).end('[]');
         } else if (url === "/legal") {
             res.writeHead(200, { "content-type": "text/html" })
                 .end('<a href="https://github.com/owner/repo/tree/abc123">Source</a>');
@@ -253,6 +300,13 @@ async function selfTest() {
     const detail = (rs, fragment) => rs.find((r) => r.name.includes(fragment)).detail;
     const state = (rs, fragment) => rs.find((r) => r.name.includes(fragment)).state;
 
+    // Stage 5: the platform checks against a stub that routes them, one that
+    // does not (the frontend's HTML answers instead), and one where the anon
+    // role can read.
+    const platformRouted = await run({ appUrl: base, albHost: null, bucket: null, platform: true });
+    const platformUnrouted = await run({ appUrl: `${base}/unrouted`, albHost: null, bucket: null, platform: true });
+    const platformLeaky = await run({ appUrl: `${base}/leaky`, albHost: null, bucket: null, platform: true });
+
     const cases = [
         ["the application check passes against a serving stub", byName("application is served").state === "PASS"],
         ["the readiness check passes against a ready stub", byName("backend is ready").state === "PASS"],
@@ -273,6 +327,15 @@ async function selfTest() {
         [
             "a bucket that 301s to a refusal passes, rather than false-alarming",
             state(redirectedToRefusal, "document bucket") === "PASS",
+        ],
+        ["without --platform the platform checks are not listed", !results.some((r) => r.name.includes("GoTrue"))],
+        ["GoTrue's health through the edge passes when GoTrue answers", state(platformRouted, "GoTrue") === "PASS"],
+        ["PostgREST's JSON refusal of an anonymous request passes", state(platformRouted, "PostgREST") === "PASS"],
+        ["an unrouted /auth/v1 (HTML from the frontend) fails", state(platformUnrouted, "GoTrue") === "FAIL"],
+        ["an unrouted /rest/v1 (HTML from the frontend) fails", state(platformUnrouted, "PostgREST") === "FAIL"],
+        [
+            "a /rest/v1 that SERVES rows to the anonymous request fails, and says so",
+            state(platformLeaky, "PostgREST") === "FAIL" && detail(platformLeaky, "PostgREST").includes("ANON CAN READ"),
         ],
     ];
 
@@ -299,5 +362,6 @@ const results = await run({
     appUrl,
     albHost: arg("alb-host", null),
     bucket: arg("bucket", null),
+    platform: flag("platform"),
 });
 process.exit(report(results, { allowSkipped: flag("allow-skipped") }) ? 0 : 1);
