@@ -23,7 +23,7 @@ The rest exist because an alarm exists for them.
 | `database-cpu-high` *(stage 5)* | informational | [high-resource-usage.md](high-resource-usage.md) |
 | SES bounce / complaint / reject notification | informational | [email-delivery.md](email-delivery.md) |
 | *(no alarm yet — found on the dashboard or by a user)* | — | [queue-backlog.md](queue-backlog.md), [model-provider-outage.md](model-provider-outage.md), [failed-migration.md](failed-migration.md), [certificate-expiry.md](certificate-expiry.md) |
-| *(procedure, not an alarm)* | — | [first-apply.md](first-apply.md), [restore.md](restore.md) |
+| *(procedure, not an alarm)* | — | [first-apply.md](first-apply.md), [restore.md](restore.md), [api-keys.md](api-keys.md) *(stage 5: mint, verify and rotate the platform keys)* |
 
 ## Before any of them
 

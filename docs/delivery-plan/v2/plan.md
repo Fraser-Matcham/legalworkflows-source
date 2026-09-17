@@ -292,7 +292,7 @@ verified, rotated, or reasoned about without leaving AWS.
 | 5.4 | GoTrue as an ECS service | 2116, 2117 |
 | 5.5 | Auth email through the SES credentials the email module already provisions | 2118 |
 | 5.6 | Carry the Google OAuth provider across | 2119 |
-| 5.7 | Own the JWT secret; mint, document and rotate the API keys | 2120, 2121 |
+| 5.7 | Own the JWT secret; mint, document and rotate the API keys — ✅ `infra/modules/keys` mints the secret into Secrets Manager and creates the api-keys container Terraform never writes; `scripts/platform-keys.mjs` mints the two JWTs from it and refuses a malformed, expired, wrong-role or wrong-secret key before it is written, self-tested in CI (`API key tooling`); `docs/runbooks/api-keys.md` is the mint, verify and rotation procedure. ⏳ 2120 closes when the procedure has been walked once against the applied footprint | 2120, 2121 |
 | 5.8 | Route `/auth/v1/*` and `/rest/v1/*` through the edge, header-gated as the backend already is | 2122, 2123 |
 | 5.9 | Rehearse the cutover **and the rollback**, on a copy, before doing it for real | 2125 |
 | 5.10 | Cut over, delete the Supabase project, and correct every document that calls it a dependency | 2124, 2126 |

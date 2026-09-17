@@ -106,7 +106,7 @@ Issue Id,Status,Status note
 2105,In progress,"Rolled up from 2 children: 1 in progress, 1 to do."
 2106,In progress,As 2105.
 2107,To do,From the delivery plan row that cites it.
-2110,In progress,"Rolled up from 6 children: 1 in progress, 5 to do."
+2110,In progress,"Rolled up from 6 children: 2 in progress, 4 to do."
 2111,In progress,"Rolled up from 2 children: 1 done, 1 to do."
 2112,Done,"infra/modules/database, wired behind platform_enabled; plan row 5.1."
 2113,To do,"Stage 5, added 17 September 2026."
@@ -116,8 +116,8 @@ Issue Id,Status,Status note
 2117,To do,"Stage 5, added 17 September 2026."
 2118,To do,"Stage 5, added 17 September 2026."
 2119,To do,"Stage 5, added 17 September 2026."
-2120,To do,Rolled up from 1 child: 1 to do.
-2121,To do,"Stage 5, added 17 September 2026."
+2120,In progress,Rolled up from 1 child: 1 done. Closes when the runbook has been walked once against the applied footprint.
+2121,Done,"infra/modules/keys, scripts/platform-keys.mjs, docs/runbooks/api-keys.md; plan row 5.7."
 2122,To do,Rolled up from 1 child: 1 to do.
 2123,To do,"Stage 5, added 17 September 2026."
 2124,To do,Rolled up from 2 children: 2 to do.
