@@ -21,6 +21,9 @@ The fork rules that constrain every change here are at the top of
 - [Troubleshooting](troubleshooting.md) — common local and production problems
 - [Runbooks](runbooks/README.md) — one page per production failure mode, each
   reached from the alarm that fires for it; includes the restore procedure
+  and the stage 5 procedures: [API keys](runbooks/api-keys.md),
+  [copying the database](runbooks/platform-migration.md) and
+  [the cutover and rollback](runbooks/platform-cutover.md)
 - [Release pipeline](release-pipeline.md) — how a merge to `main` becomes the
   running service: CI gate, source mirror, image scan, migrations, rolling
   deploy, health gates, and how to roll back

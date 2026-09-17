@@ -120,6 +120,6 @@ Issue Id,Status,Status note
 2121,Done,"infra/modules/keys, scripts/platform-keys.mjs, docs/runbooks/api-keys.md; plan row 5.7."
 2122,In progress,Rolled up from 1 child: 1 done. The platform_serves_backend switch exists; closes at the cutover.
 2123,Done,"frontend module: platform origins, behaviours and prefix function on platform_enabled; plan row 5.8."
-2124,In progress,"Rolled up from 2 children: 1 in progress, 1 to do."
+2124,In progress,Rolled up from 2 children: 2 in progress.
 2125,In progress,"Procedure written (docs/runbooks/platform-cutover.md) and the smoke test extended; the rehearsal itself needs the applied platform and Stage 5, Tasks 1 to 4."
-2126,To do,"Stage 5, added 17 September 2026."
+2126,In progress,"The platform is documented beside Supabase (plan row 5.10); the pass that removes the Supabase paragraphs waits for Stage 5, Task 6."

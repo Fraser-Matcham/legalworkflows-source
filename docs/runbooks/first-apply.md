@@ -246,6 +246,31 @@ merge to `main` builds both images and rolls them out
 (`docs/release-pipeline.md`). That is what turns the footprint into a
 running service.
 
+## 6. Stage 5: the platform, later
+
+None of the above creates the self-hosted platform. It arrives in its own
+apply, once Stage 5, Task 1 has approved the running cost, and it is
+additive: the live service is untouched until the cutover.
+
+1. `platform_enabled = true` in `terraform.tfvars`; `terraform plan` shows
+   the database, keys, postgrest, gotrue and dbtools modules, two CloudFront
+   origins and behaviours, and the alarms — and no change to the backend or
+   frontend services. Apply. The RDS instance takes ten to fifteen minutes.
+2. Set `PLATFORM_ENABLED=true` on the repository's `production` environment
+   so the next release builds and pushes the dbtools image.
+3. `infra/dbtools/run.sh bootstrap` — the role shape, the `auth` and
+   `extensions` schemas, the extensions (`infra/modules/database/README.md`).
+4. Mint, verify and write the API keys: `docs/runbooks/api-keys.md`.
+5. Stage 5, Task 2 writes the migration-source secret; Task 3 adds the
+   Google redirect URI and writes the client, after which
+   `gotrue_google_oauth_enabled = true` and an apply.
+6. `npm run smoke -- --app-url https://legalworkflows.co.uk --platform …`
+   proves GoTrue and PostgREST answer through the edge.
+7. The rehearsal, then the cutover: `docs/runbooks/platform-cutover.md`.
+
+Nothing in steps 1 to 6 changes what users see. `platform_serves_backend`
+stays `false` until the rehearsal has passed.
+
 ## If it fails partway
 
 Terraform records what it created. Fix the cause and run

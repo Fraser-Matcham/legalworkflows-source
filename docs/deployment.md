@@ -480,10 +480,61 @@ extra process management is needed. To run them on separate hardware, start
 and set `WORKERS_MODE=none` on the API process. The compose file contains a
 commented `worker` service demonstrating this.
 
+## The self-hosted platform (stage 5)
+
+Everything above that says "Supabase" describes the first production
+configuration: the backend talking to a hosted Supabase project for
+Postgres, PostgREST and GoTrue. Stage 5 of the delivery plan
+(`docs/delivery-plan/v2/plan.md`) runs those three components in the AWS
+account instead, and **nothing in the application changes** — the
+`SUPABASE_*` variables keep their names and meaning, only their values
+move:
+
+| Variable | Supabase | The platform |
+| --- | --- | --- |
+| `SUPABASE_URL` | `https://<ref>.supabase.co` | the public origin, `https://legalworkflows.co.uk`; CloudFront routes `/rest/v1` and `/auth/v1` to PostgREST and GoTrue on the cluster |
+| `SUPABASE_PUBLISHABLE_KEY` | the project's anon key | the `anon` JWT minted from the platform's own JWT secret (`docs/runbooks/api-keys.md`) |
+| `SUPABASE_SECRET_KEY` | the project's service-role key | the `service_role` JWT minted the same way |
+
+The pieces, each with its own README under `infra/modules/`:
+
+| | |
+| --- | --- |
+| `database` | RDS PostgreSQL 17.6, private, TLS required, 35-day backups; `bootstrap.sql` recreates the Supabase role shape |
+| `keys` | the JWT secret PostgREST and GoTrue share, and the api-keys secret the minted tokens go in |
+| `postgrest`, `gotrue` | the same releases `docker-compose.yml` runs, as Fargate services behind the header-gated load balancer |
+| `dbtools` | psql and `pg_dump`/`pg_restore` as a one-off task inside the VPC: bootstrap, copy, verify, migrate |
+| `frontend` (edit) | the `/rest/v1` and `/auth/v1` behaviours and the prefix-stripping function |
+
+Two root variables gate it: `platform_enabled` creates everything beside the
+live service without touching it; `platform_serves_backend` is the cutover
+switch. The procedures are `docs/runbooks/platform-migration.md` (copy the
+database) and `docs/runbooks/platform-cutover.md` (rehearse, cut over, roll
+back). Auth email then goes through SES on the project's own domain rather
+than the Supabase dashboard's SMTP page, and Google sign-in's redirect URI
+becomes `https://legalworkflows.co.uk/auth/v1/callback`
+(`infra/modules/gotrue/README.md`).
+
+**Database setup on the platform.** The "Database setup" section above
+still describes the shape — `schema.sql` for a fresh install, dated
+migrations for an existing one — but the instance is reachable only from
+inside the VPC, so both run through the `dbtools` task rather than a SQL
+editor: `infra/dbtools/run.sh bootstrap` then a restore for a migration from
+Supabase, or `dbtools sql` with `schema.sql` for a fresh install; and the
+release pipeline applies migrations as a `dbtools migrate` task once
+`PLATFORM_SERVES_BACKEND` is set.
+
+Until the cutover, and for as long as the Supabase project exists as the
+rollback target (Stage 5, Task 6), the Supabase instructions above remain the
+live ones. When the project is deleted, this section becomes the only one and
+the Supabase-specific paragraphs go.
+
 ## Deployment safety
 
 - Generate unique, high-entropy signing and encryption secrets.
-- Use production Supabase credentials rather than the local demo values.
+- Use production Supabase credentials rather than the local demo values — or,
+  on the platform, keys minted from the platform's own JWT secret and
+  verified before they are written (`docs/runbooks/api-keys.md`).
 - Keep backend secrets out of `NEXT_PUBLIC_*` variables.
 - Configure spending limits for model-provider keys where supported.
 - Confirm LibreOffice is available on the backend process path if document
