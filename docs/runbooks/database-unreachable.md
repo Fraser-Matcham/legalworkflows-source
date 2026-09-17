@@ -48,6 +48,44 @@ aws ecs update-service --cluster legalworkflows-production \
 (Prefix the first command with a space so the shell history does not keep
 it, as `infra/modules/secrets/README.md` says.)
 
+**The secret must stay a JSON object.** The command above reads the existing
+JSON and replaces one field for exactly this reason. Editing it by hand is
+where this goes wrong: the console offers a **Key/value** editor and a
+**Plaintext** one, and pasting a bare key into Plaintext replaces the whole
+object with a string. Every referenced key disappears at once.
+
+The task then fails before it starts, with a message that names the missing
+key rather than anything about credentials:
+
+```
+ResourceInitializationError: unable to pull secrets or registry auth:
+execution resource retrieval failed: unable to retrieve secret from asm:
+retrieved secret from Secrets Manager did not contain json key SUPABASE_SECRET_KEY
+```
+
+That is not an authentication failure. Nothing reached Supabase; the execution
+role could not assemble the task's environment.
+
+The keys the task definition may reference are `SUPABASE_SECRET_KEY`,
+`ANTHROPIC_API_KEY`, `ERROR_TRACKING_DSN`, `MIKE_WORKFLOWS_GITHUB_TOKEN` and
+`COURTLISTENER_API_TOKEN` (`operator_secret_keys` in
+`infra/modules/secrets/variables.tf`). Only those Terraform was told exist are
+referenced, and **every referenced one must be present** — names exact and
+case-sensitive.
+
+**Recovering an overwritten secret.** Secrets Manager keeps previous versions.
+Console → the secret → **Versions** → the one labelled `AWSPREVIOUS` →
+**Retrieve secret value**. Or:
+
+```sh
+aws secretsmanager get-secret-value \
+  --secret-id legalworkflows-production/backend/operator \
+  --version-stage AWSPREVIOUS --query SecretString --output text
+```
+
+Take the values you did not mean to change from there, and write the whole
+object back.
+
 **Ask Supabase what it saw.** The task's own log says only `Invalid API key`,
 which is the same message for several different faults. Supabase's edge log
 says which. Dashboard → **Logs → Edge Logs**, or through the Supabase MCP
