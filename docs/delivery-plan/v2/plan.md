@@ -288,7 +288,7 @@ verified, rotated, or reasoned about without leaving AWS.
 | --- | --- | --- |
 | 5.1 | Postgres on RDS, engine matched to the 17.6 in use — ✅ the module: `infra/modules/database`, gated on `platform_enabled` so an apply today changes nothing. RDS PostgreSQL 17.6 in the private subnets, a security group admitting the platform tasks only, TLS required, 35-day automated backups matching the document bucket, the master credential managed by RDS, the two service roles minted into Secrets Manager, and `bootstrap.sql` for the role shape a plain PostgreSQL lacks. ⏳ 2111 closes when a restored dump passes the drift check (5.2) | 2111, 2112 |
 | 5.2 | Dump and restore including the `auth` schema — it holds the users | 2113 |
-| 5.3 | PostgREST as an ECS service on the existing cluster | 2114, 2115 |
+| 5.3 | PostgREST as an ECS service on the existing cluster — ✅ `infra/modules/postgrest`: the pinned `v14.12` release from the public ECR gallery as a Fargate service in the private subnets, connecting as the `authenticator` role, verifying with the platform JWT secret, health-checked on its admin server's `/ready`, behind the same header-gated listener the backend uses; plus the `service_role` RLS policy migration (`20260917_01`) the RDS master user's missing `BYPASSRLS` makes necessary. ⏳ 2114 closes when the backend's queries succeed against it after the cutover | 2114, 2115 |
 | 5.4 | GoTrue as an ECS service | 2116, 2117 |
 | 5.5 | Auth email through the SES credentials the email module already provisions | 2118 |
 | 5.6 | Carry the Google OAuth provider across | 2119 |

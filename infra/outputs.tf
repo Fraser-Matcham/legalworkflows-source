@@ -181,3 +181,8 @@ output "platform_api_keys_secret_name" {
   description = "Secret the minted anon and service_role keys are written to."
   value       = one(module.keys[*].api_keys_secret_name)
 }
+
+output "postgrest_service_name" {
+  description = "The PostgREST ECS service, for `aws ecs update-service --force-new-deployment` after a secret rotation."
+  value       = one(module.postgrest[*].service_name)
+}

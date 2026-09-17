@@ -10,15 +10,15 @@
 locals {
   alb_dims = { LoadBalancer = var.alb_arn_suffix }
 
-  target_groups = {
+  target_groups = merge({
     backend  = var.backend_target_group_arn_suffix
     frontend = var.frontend_target_group_arn_suffix
-  }
+  }, var.extra_target_groups)
 
-  services = {
+  services = merge({
     backend  = var.backend_service_name
     frontend = var.frontend_service_name
-  }
+  }, var.extra_services)
 }
 
 # --- urgent -----------------------------------------------------------------------

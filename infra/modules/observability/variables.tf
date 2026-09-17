@@ -105,3 +105,15 @@ variable "database_free_storage_bytes" {
   type        = number
   default     = 2147483648
 }
+
+variable "extra_services" {
+  description = "Further ECS services on the cluster to alarm on (no running task, CPU, memory), keyed by short name: the stage 5 platform services once they exist."
+  type        = map(string)
+  default     = {}
+}
+
+variable "extra_target_groups" {
+  description = "Further target groups to alarm on (unhealthy targets), keyed by the same short names."
+  type        = map(string)
+  default     = {}
+}

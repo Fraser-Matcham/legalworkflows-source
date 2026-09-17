@@ -127,8 +127,15 @@ module "observability" {
   backend_log_group_name           = module.backend.log_group_name
   cloudfront_distribution_id       = module.frontend.distribution_id
 
-  # Stage 5: null until the database exists, and then its alarms appear.
+  # Stage 5: null and empty until the platform exists, and then its alarms
+  # appear alongside the backend's and frontend's.
   database_instance_identifier = one(module.database[*].instance_identifier)
+  extra_services = var.platform_enabled ? {
+    postgrest = module.postgrest[0].service_name
+  } : {}
+  extra_target_groups = var.platform_enabled ? {
+    postgrest = module.postgrest[0].target_group_arn_suffix
+  } : {}
 }
 
 module "email" {
@@ -221,4 +228,32 @@ module "keys" {
   source = "./modules/keys"
 
   name_prefix = local.name_prefix
+}
+
+module "postgrest" {
+  count  = var.platform_enabled ? 1 : 0
+  source = "./modules/postgrest"
+
+  name_prefix       = local.name_prefix
+  short_name_prefix = local.short_name_prefix
+  region            = data.aws_region.current.region
+  account_id        = data.aws_caller_identity.current.account_id
+  enable_ecs_exec   = var.enable_ecs_exec
+
+  vpc_id                     = module.network.vpc_id
+  private_subnet_ids         = module.network.private_subnet_ids
+  alb_security_group_id      = module.network.alb_security_group_id
+  backend_security_group_id  = module.network.backend_security_group_id
+  database_security_group_id = module.database[0].security_group_id
+
+  cluster_arn                   = module.backend.cluster_arn
+  cluster_name                  = module.backend.cluster_name
+  service_connect_namespace_arn = module.backend.service_connect_namespace_arn
+  https_listener_arn            = module.backend.https_listener_arn
+  origin_verify_secret          = module.backend.origin_verify_secret
+
+  database_uri_secret_arn = module.database[0].roles_secret_arn
+  database_kms_key_arn    = module.database[0].kms_key_arn
+  jwt_secret_arn          = module.keys[0].jwt_secret_arn
+  jwt_secret_valuefrom    = module.keys[0].ecs_secrets["PGRST_JWT_SECRET"]
 }

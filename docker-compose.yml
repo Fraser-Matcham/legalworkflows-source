@@ -142,6 +142,7 @@ services:
       - ./backend/migrations/20260904_01_organization_access.sql:/organization-access-migration.sql:ro
       - ./backend/migrations/20260904_02_migrate_legacy_sharing.sql:/legacy-sharing-migration.sql:ro
       - ./backend/migrations/20260910_01_revoke_quick_action_grants.sql:/quick-action-grants-migration.sql:ro
+      - ./backend/migrations/20260917_01_service_role_rls_policies.sql:/service-role-rls-policies-migration.sql:ro
     entrypoint: ["bash", "-c"]
     command:
       - |
@@ -171,6 +172,7 @@ services:
         psql "$$DB" -v ON_ERROR_STOP=1 -f /organization-access-migration.sql;
         psql "$$DB" -v ON_ERROR_STOP=1 -f /legacy-sharing-migration.sql;
         psql "$$DB" -v ON_ERROR_STOP=1 -f /quick-action-grants-migration.sql;
+        psql "$$DB" -v ON_ERROR_STOP=1 -f /service-role-rls-policies-migration.sql;
         psql "$$DB" -c "grant usage on schema public to service_role;
           grant all privileges on all tables in schema public to service_role;
           grant all privileges on all sequences in schema public to service_role;
