@@ -29,3 +29,15 @@ workflows_ref        = "main"
 
 # Optional operator secrets to inject once they have been written:
 # backend_extra_secret_keys = ["ERROR_TRACKING_DSN", "MIKE_WORKFLOWS_GITHUB_TOKEN"]
+
+# --- Stage 5: the self-hosted platform (docs/delivery-plan/v2/plan.md) ---------
+# Nothing below is created until platform_enabled is true, and that waits on
+# Stage 5, Task 1 (the running cost). platform_serves_backend is the cutover
+# switch and stays false until the rehearsal has passed
+# (docs/runbooks/platform-cutover.md); flipping it back is the rollback.
+# platform_enabled                 = true
+# database_instance_class          = "db.t4g.small"
+# database_multi_az                = false
+# database_backup_retention_days   = 35
+# gotrue_google_oauth_enabled      = false   # true once Stage 5, Task 3 has written the secret
+# platform_serves_backend          = false

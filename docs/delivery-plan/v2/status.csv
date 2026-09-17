@@ -106,7 +106,7 @@ Issue Id,Status,Status note
 2105,In progress,"Rolled up from 2 children: 1 in progress, 1 to do."
 2106,In progress,As 2105.
 2107,To do,From the delivery plan row that cites it.
-2110,In progress,"Rolled up from 6 children: 4 in progress, 2 to do."
+2110,In progress,"Rolled up from 6 children: 5 in progress, 1 to do."
 2111,In progress,"Rolled up from 2 children: 1 done, 1 to do."
 2112,Done,"infra/modules/database, wired behind platform_enabled; plan row 5.1."
 2113,To do,"Stage 5, added 17 September 2026."
@@ -118,8 +118,8 @@ Issue Id,Status,Status note
 2119,In progress,"Provider, secret container and redirect URI in place (plan row 5.6); the operator adds the URI and writes the client (Stage 5, Task 3)."
 2120,In progress,Rolled up from 1 child: 1 done. Closes when the runbook has been walked once against the applied footprint.
 2121,Done,"infra/modules/keys, scripts/platform-keys.mjs, docs/runbooks/api-keys.md; plan row 5.7."
-2122,To do,Rolled up from 1 child: 1 to do.
-2123,To do,"Stage 5, added 17 September 2026."
+2122,In progress,Rolled up from 1 child: 1 done. The platform_serves_backend switch exists; closes at the cutover.
+2123,Done,"frontend module: platform origins, behaviours and prefix function on platform_enabled; plan row 5.8."
 2124,To do,Rolled up from 2 children: 2 to do.
 2125,To do,"Stage 5, added 17 September 2026."
 2126,To do,"Stage 5, added 17 September 2026."
