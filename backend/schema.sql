@@ -4906,3 +4906,105 @@ grant select, insert, update, delete
 grant usage, select
   on all sequences in schema public
   to service_role;
+
+-- ---------------------------------------------------------------------------
+-- service_role row-level-security policies (stage 5: self-hosted platform)
+-- ---------------------------------------------------------------------------
+--
+-- Every table above with RLS enabled has no policy, which is deny-all for the
+-- browser roles. The backend passes on Supabase because service_role carries
+-- BYPASSRLS; on the RDS instance the platform is moving to, the master user
+-- cannot confer that attribute, so service_role needs a policy of its own.
+-- Scoped to service_role, these leave anon and authenticated exactly as denied
+-- as before. See backend/migrations/20260917_01_service_role_rls_policies.sql.
+
+drop policy if exists service_role_all on public.auth_handoff_tickets;
+create policy service_role_all on public.auth_handoff_tickets
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.organizations;
+create policy service_role_all on public.organizations
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.org_members;
+create policy service_role_all on public.org_members
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.org_invitations;
+create policy service_role_all on public.org_invitations
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.user_api_keys;
+create policy service_role_all on public.user_api_keys
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.user_router_models;
+create policy service_role_all on public.user_router_models
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.user_mcp_connectors;
+create policy service_role_all on public.user_mcp_connectors
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.user_mcp_oauth_tokens;
+create policy service_role_all on public.user_mcp_oauth_tokens
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.user_mcp_oauth_states;
+create policy service_role_all on public.user_mcp_oauth_states
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.user_mcp_connector_tools;
+create policy service_role_all on public.user_mcp_connector_tools
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.user_mcp_tool_audit_logs;
+create policy service_role_all on public.user_mcp_tool_audit_logs
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.project_access_grants;
+create policy service_role_all on public.project_access_grants
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.project_org_access_overrides;
+create policy service_role_all on public.project_org_access_overrides
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.upload_sessions;
+create policy service_role_all on public.upload_sessions
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.upload_session_files;
+create policy service_role_all on public.upload_session_files
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.upload_processing_jobs;
+create policy service_role_all on public.upload_processing_jobs
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.workflow_org_access_overrides;
+create policy service_role_all on public.workflow_org_access_overrides
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.workflow_open_source_submissions;
+create policy service_role_all on public.workflow_open_source_submissions
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.chat_access_grants;
+create policy service_role_all on public.chat_access_grants
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.word_documents;
+create policy service_role_all on public.word_documents
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.word_chats;
+create policy service_role_all on public.word_chats
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.word_chat_messages;
+create policy service_role_all on public.word_chat_messages
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.word_document_edits;
+create policy service_role_all on public.word_document_edits
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.tabular_review_access_grants;
+create policy service_role_all on public.tabular_review_access_grants
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.tabular_review_rows;
+create policy service_role_all on public.tabular_review_rows
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.tabular_review_row_sources;
+create policy service_role_all on public.tabular_review_row_sources
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.courtlistener_citation_index;
+create policy service_role_all on public.courtlistener_citation_index
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.courtlistener_opinion_cluster_index;
+create policy service_role_all on public.courtlistener_opinion_cluster_index
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.audit_events;
+create policy service_role_all on public.audit_events
+  for all to service_role using (true) with check (true);
+drop policy if exists service_role_all on public.db_jobs;
+create policy service_role_all on public.db_jobs
+  for all to service_role using (true) with check (true);

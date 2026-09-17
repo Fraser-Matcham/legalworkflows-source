@@ -11,14 +11,14 @@ The rest exist because an alarm exists for them.
 
 | Alarm or event (`legalworkflows-production-…`) | Topic | Runbook |
 | --- | --- | --- |
-| `backend-unhealthy-targets`, `frontend-unhealthy-targets` | urgent | [site-down.md](site-down.md) |
-| `backend-no-running-tasks`, `frontend-no-running-tasks` | urgent | [site-down.md](site-down.md) |
+| `backend-unhealthy-targets`, `frontend-unhealthy-targets`, and from stage 5 `postgrest-unhealthy-targets` | urgent | [site-down.md](site-down.md) |
+| `backend-no-running-tasks`, `frontend-no-running-tasks`, and from stage 5 `postgrest-no-running-tasks` | urgent | [site-down.md](site-down.md) |
 | `alb-5xx` | urgent | [site-down.md](site-down.md) |
 | `backend-readiness` — log line says `"check":"database"` | urgent | [database-unreachable.md](database-unreachable.md) |
 | `backend-readiness` — log line says `"check":"storage"` | urgent | [storage-failure.md](storage-failure.md) |
 | *event* `ecs-deployment-failed` | urgent | [deploy-rolled-back.md](deploy-rolled-back.md) |
 | `backend-5xx`, `backend-latency` | informational | [backend-errors.md](backend-errors.md) |
-| `backend-cpu-high`, `backend-memory-high`, `frontend-cpu-high`, `frontend-memory-high` | informational | [high-resource-usage.md](high-resource-usage.md) |
+| `backend-cpu-high`, `backend-memory-high`, `frontend-cpu-high`, `frontend-memory-high`, and from stage 5 `postgrest-cpu-high`, `postgrest-memory-high` | informational | [high-resource-usage.md](high-resource-usage.md) |
 | `database-free-storage` *(stage 5, once the RDS instance exists)* | urgent | [database-unreachable.md](database-unreachable.md) |
 | `database-cpu-high` *(stage 5)* | informational | [high-resource-usage.md](high-resource-usage.md) |
 | SES bounce / complaint / reject notification | informational | [email-delivery.md](email-delivery.md) |
