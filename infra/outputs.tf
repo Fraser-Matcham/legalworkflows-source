@@ -171,3 +171,13 @@ output "database_security_group_id" {
   description = "For adding an ingress rule from a new client task."
   value       = one(module.database[*].security_group_id)
 }
+
+output "platform_jwt_secret_name" {
+  description = "Secret holding the JWT secret PostgREST and GoTrue sign with; the input to minting API keys (docs/runbooks/api-keys.md)."
+  value       = one(module.keys[*].jwt_secret_name)
+}
+
+output "platform_api_keys_secret_name" {
+  description = "Secret the minted anon and service_role keys are written to."
+  value       = one(module.keys[*].api_keys_secret_name)
+}

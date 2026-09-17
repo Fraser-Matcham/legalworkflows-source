@@ -118,6 +118,23 @@ jobs:
 
       - run: npm run boundary
 
+  platform-keys:
+    name: API key tooling
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      # scripts/platform-keys.mjs mints the platform's anon and service_role
+      # keys and is the check that runs before one is written to Secrets
+      # Manager (docs/runbooks/api-keys.md). Its self-test proves a tampered,
+      # expired, wrong-role or wrong-secret key is refused, so the verifier
+      # cannot silently degrade into one that passes everything.
+      - run: npm run platform-keys:self-test
+
   tenancy:
     name: Route tenancy
     runs-on: ubuntu-latest

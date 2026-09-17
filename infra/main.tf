@@ -215,3 +215,10 @@ module "database" {
   multi_az              = var.database_multi_az
   backup_retention_days = var.database_backup_retention_days
 }
+
+module "keys" {
+  count  = var.platform_enabled ? 1 : 0
+  source = "./modules/keys"
+
+  name_prefix = local.name_prefix
+}
