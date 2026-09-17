@@ -62,14 +62,17 @@ without the password, and the password is yours.
    at a quiet moment and expect to update `SUPABASE_DB_URL` in GitHub
    afterwards.
 3. Put the connection string into AWS Secrets Manager, not into a message:
-   open the AWS console, **Secrets Manager**, the existing
-   `legalworkflows-production` secret, **Retrieve secret value**, **Edit**.
-4. Add one key, `SUPABASE_DB_URL`, with the **Session pooler** URI as its
-   value, and the password substituted in.
-5. **Edit the JSON as JSON.** If the console shows you a plain-text box, what
-   is in it is the whole secret object — add your key to it rather than
-   replacing it. Replacing the object with a bare string stops every task from
-   starting. This has happened once already; see
+   open the AWS console, **Secrets Manager**, the secret named
+   `legalworkflows-production/platform/migration-source` (it exists, empty,
+   once the platform is applied), **Retrieve secret value**, **Set secret
+   value**.
+4. Enter one key, `SOURCE_DB_URL`, with the **Session pooler** URI as its
+   value and the password substituted in. Session pooler, port 5432 — the
+   copy needs a session, and the direct host is unreachable from AWS.
+5. **Enter it as JSON**, `{"SOURCE_DB_URL": "postgres://…"}`, never as a bare
+   string: the copying task reads that key by name and refuses anything
+   else. The same mistake with the operator secret has stopped every task
+   from starting once already; see
    [`../../../runbooks/database-unreachable.md`](../../../runbooks/database-unreachable.md).
 
 ---

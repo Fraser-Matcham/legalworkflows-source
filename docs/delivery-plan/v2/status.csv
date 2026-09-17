@@ -106,10 +106,10 @@ Issue Id,Status,Status note
 2105,In progress,"Rolled up from 2 children: 1 in progress, 1 to do."
 2106,In progress,As 2105.
 2107,To do,From the delivery plan row that cites it.
-2110,In progress,"Rolled up from 6 children: 5 in progress, 1 to do."
-2111,In progress,"Rolled up from 2 children: 1 done, 1 to do."
+2110,In progress,"Rolled up from 6 children: 1 done, 4 in progress, 1 to do."
+2111,Done,Rolled up from 2 children: 2 done.
 2112,Done,"infra/modules/database, wired behind platform_enabled; plan row 5.1."
-2113,To do,"Stage 5, added 17 September 2026."
+2113,Done,"infra/dbtools image and module, docs/runbooks/platform-migration.md; plan row 5.2. The acceptance criteria are proven at the rehearsal (2125)."
 2114,In progress,Rolled up from 1 child: 1 done. Closes when the backend's queries succeed against the self-hosted endpoint after cutover.
 2115,Done,infra/modules/postgrest and the service_role RLS policy migration; plan row 5.3.
 2116,In progress,"Rolled up from 3 children: 1 done, 2 in progress."

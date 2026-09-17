@@ -32,6 +32,7 @@ every one of those calls keeps working with no change but `SUPABASE_URL`.
 | `PGRST_DB_URI` | `AUTHENTICATOR_URI` from `<prefix>/database/roles` (secret) | the connection role the `database` module minted |
 | `PGRST_JWT_SECRET` | `JWT_SECRET` from `<prefix>/platform/jwt` (secret) | the same secret GoTrue signs with, so a GoTrue session token is a valid PostgREST token |
 | `PGRST_DB_SCHEMAS` | `public` | the only schema the backend queries; `auth` stays unexposed |
+| `PGRST_DB_EXTRA_SEARCH_PATH` | `public,extensions` | the schema the bootstrap installs `pg_trgm` and `pgcrypto` in, as Supabase does, so a restored dump's references resolve |
 | `PGRST_DB_ANON_ROLE` | `anon` | the role for a request with no JWT, which every table denies |
 | `PGRST_DB_POOL` | 10 per task | two tasks at most leaves the t4g.small's default `max_connections` mostly free for GoTrue and the tooling |
 | `PGRST_ADMIN_SERVER_PORT` | 3001 | `/live` and `/ready` for the load balancer |

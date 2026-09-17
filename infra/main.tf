@@ -188,21 +188,29 @@ module "deploy" {
   role_name            = coalesce(var.deploy_role_name, "${local.name_prefix}-github-actions")
   create_oidc_provider = var.create_github_oidc_provider
 
-  ecr_repository_arns = [
+  # Stage 5 adds the database-tools image, task and log group: the pipeline
+  # builds the image and, after the cutover, runs the migrate task from it.
+  ecr_repository_arns = concat([
     module.backend.ecr_repository_arn,
     module.frontend.ecr_repository_arn,
-  ]
-  cluster_name             = module.backend.cluster_name
-  cluster_arn              = module.backend.cluster_arn
-  service_names            = [module.backend.service_name, module.frontend.service_name]
-  task_definition_families = [module.backend.task_definition_family, module.frontend.task_definition_family]
-  passable_role_arns = [
+  ], module.dbtools[*].ecr_repository_arn)
+  cluster_name  = module.backend.cluster_name
+  cluster_arn   = module.backend.cluster_arn
+  service_names = [module.backend.service_name, module.frontend.service_name]
+  task_definition_families = concat(
+    [module.backend.task_definition_family, module.frontend.task_definition_family],
+    module.dbtools[*].task_definition_family,
+  )
+  passable_role_arns = concat([
     module.secrets.backend_execution_role_arn,
     module.secrets.backend_task_role_arn,
     module.secrets.frontend_execution_role_arn,
     module.secrets.frontend_task_role_arn,
-  ]
-  log_group_names             = [module.backend.log_group_name, module.frontend.log_group_name]
+  ], module.dbtools[*].execution_role_arn, module.dbtools[*].task_role_arn)
+  log_group_names = concat(
+    [module.backend.log_group_name, module.frontend.log_group_name],
+    module.dbtools[*].log_group_name,
+  )
   cloudfront_distribution_arn = module.frontend.distribution_arn
 
   # The newest migration file in the repository at the time of the first
@@ -317,4 +325,25 @@ module "gotrue" {
 
   google_oauth_enabled = var.gotrue_google_oauth_enabled
   extra_redirect_urls  = var.gotrue_extra_redirect_urls
+}
+
+module "dbtools" {
+  count  = var.platform_enabled ? 1 : 0
+  source = "./modules/dbtools"
+
+  name_prefix = local.name_prefix
+  region      = data.aws_region.current.region
+  account_id  = data.aws_caller_identity.current.account_id
+  vpc_id      = module.network.vpc_id
+
+  database_security_group_id = module.database[0].security_group_id
+  database_address           = module.database[0].address
+  database_port              = module.database[0].port
+  database_name              = module.database[0].db_name
+  database_master_secret_arn = module.database[0].master_user_secret_arn
+  database_roles_secret_arn  = module.database[0].roles_secret_arn
+  database_kms_key_arn       = module.database[0].kms_key_arn
+
+  last_migration_parameter_arn  = module.deploy.last_migration_parameter_arn
+  last_migration_parameter_name = module.deploy.last_migration_parameter_name
 }

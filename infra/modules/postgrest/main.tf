@@ -16,6 +16,7 @@ locals {
       # The same settings docker-compose.yml runs locally, plus the admin
       # server for health checks and a pool size for a shared t4g.small.
       PGRST_DB_SCHEMAS                  = "public"
+      PGRST_DB_EXTRA_SEARCH_PATH        = "public,extensions"
       PGRST_DB_ANON_ROLE                = "anon"
       PGRST_DB_POOL                     = tostring(var.db_pool)
       PGRST_DB_POOL_ACQUISITION_TIMEOUT = "10"

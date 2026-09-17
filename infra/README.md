@@ -24,8 +24,9 @@ infra/
                    network, storage, backup, secrets, dns, backend, frontend,
                    observability, email, deploy — each with its own README;
                    and, gated on platform_enabled, one per row of the Stage 5
-                   table: database (RDS), with PostgREST, GoTrue and their
-                   routing to follow
+                   table: database (RDS), keys, postgrest, gotrue, dbtools
+  dbtools/         the database-tools image (Dockerfile, entrypoint, run.sh):
+                   psql and pg_dump/pg_restore as a one-off task inside the VPC
 ```
 
 Each module in `modules/` maps to one row of the Stage 3 engineering table in

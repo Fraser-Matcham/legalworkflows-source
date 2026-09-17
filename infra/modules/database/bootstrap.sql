@@ -28,8 +28,17 @@
 --                                       schema and everything GoTrue creates
 --                                       in it.
 --   supabase_admin, dashboard_user      NOLOGIN placeholders. Some of GoTrue's
---                                       own migrations grant to them by name
---                                       and fail if the role is missing.
+--   and the other Supabase roles        own migrations grant to them by name,
+--                                       and a dump of the Supabase database
+--                                       carries GRANTs to the rest; a grant to
+--                                       a missing role fails the restore.
+--
+-- It also creates the `extensions` schema Supabase keeps its extensions in
+-- and installs the three schema.sql needs there, with the database's
+-- search_path extended to find them. A dump of the Supabase database names
+-- `extensions.gin_trgm_ops` in its index definitions, so a restore needs the
+-- extension under that name; a fresh install's `create extension if not
+-- exists` in schema.sql is then a no-op.
 
 \set ON_ERROR_STOP on
 
@@ -49,6 +58,34 @@ begin
   end if;
   if not exists (select 1 from pg_roles where rolname = 'dashboard_user') then
     create role dashboard_user nologin noinherit;
+  end if;
+  -- The rest of the Supabase image's roles, so a dump's GRANTs resolve.
+  if not exists (select 1 from pg_roles where rolname = 'supabase_read_only_user') then
+    create role supabase_read_only_user nologin noinherit;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'supabase_replication_admin') then
+    create role supabase_replication_admin nologin noinherit;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'supabase_storage_admin') then
+    create role supabase_storage_admin nologin noinherit;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'supabase_functions_admin') then
+    create role supabase_functions_admin nologin noinherit;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'supabase_realtime_admin') then
+    create role supabase_realtime_admin nologin noinherit;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'pgbouncer') then
+    create role pgbouncer nologin noinherit;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'pgsodium_keyholder') then
+    create role pgsodium_keyholder nologin noinherit;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'pgsodium_keyiduser') then
+    create role pgsodium_keyiduser nologin noinherit;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'pgsodium_keymaker') then
+    create role pgsodium_keymaker nologin noinherit;
   end if;
   if not exists (select 1 from pg_roles where rolname = 'authenticator') then
     create role authenticator login noinherit;
@@ -104,15 +141,25 @@ alter default privileges for role supabase_auth_admin in schema auth grant all o
 -- table it creates; the three roles need to be able to see the schema first.
 grant usage on schema public to anon, authenticated, service_role;
 
--- Extensions schema.sql and the parameter group expect. All three are on
--- RDS's supported list for PostgreSQL 17.
-create extension if not exists pgcrypto;
-create extension if not exists pg_trgm;
-create extension if not exists pg_stat_statements;
+-- Extensions, in the schema Supabase keeps them in so a dump restores by the
+-- same names. All four are on RDS's supported list for PostgreSQL 17. The
+-- database's search_path finds them for every session, as Supabase's does;
+-- PostgREST is told the same through PGRST_DB_EXTRA_SEARCH_PATH.
+create schema if not exists extensions;
+grant usage on schema extensions to anon, authenticated, service_role, supabase_auth_admin;
+create extension if not exists pgcrypto schema extensions;
+create extension if not exists pg_trgm schema extensions;
+create extension if not exists "uuid-ossp" schema extensions;
+create extension if not exists pg_stat_statements schema extensions;
+alter database postgres set search_path = "$user", public, extensions;
 
 -- What the next steps rely on, printed so the operator sees it.
 select rolname, rolcanlogin, rolinherit, rolcreaterole, rolbypassrls
 from pg_roles
 where rolname in ('anon', 'authenticated', 'service_role', 'authenticator',
-                  'supabase_auth_admin', 'supabase_admin', 'dashboard_user')
+                  'supabase_auth_admin', 'supabase_admin', 'dashboard_user',
+                  'supabase_read_only_user', 'supabase_replication_admin',
+                  'supabase_storage_admin', 'supabase_functions_admin',
+                  'supabase_realtime_admin', 'pgbouncer',
+                  'pgsodium_keyholder', 'pgsodium_keyiduser', 'pgsodium_keymaker')
 order by rolname;
