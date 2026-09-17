@@ -60,7 +60,14 @@ while everything around it called the catalogue optional —
 `backend_extra_secret_keys` defaults to `[]`, the token is commented out in
 `terraform.tfvars.example`, and the first-apply runbook says to add it "if you
 have them". An operator could follow the setup exactly as written and have
-every release die here. Deploy run 12 on `main` did.
+every release die here.
+
+Runs 12 and 13 on `main` were blamed on this while it was still a guess. They
+were not: the sync task reported `Invalid API key` from Supabase and never
+reached a catalogue at all. The distinction below is still worth having — it
+was a real hole, and an operator with no catalogue would have hit it — but it
+did not cause those two failures, and nothing here should be read as saying it
+did.
 
 The job now answers the two questions separately, and the pipeline reads them
 differently:
@@ -83,6 +90,29 @@ green release, which is the failure this distinction exists to remove.
 
 The release summary records which of the three happened, so a release that
 skipped the catalogue does not read like one that synced it.
+
+### When the sync fails for a reason that is not the catalogue
+
+The step prints the task's own output, so read it before assuming anything
+about the catalogue. The failure that has actually occurred here, twice, is
+Supabase rejecting the task's credentials:
+
+```
+Mike workflow sync failed { message: 'Invalid API key',
+  hint: 'Double check your Supabase `anon` or `service_role` API key.' }
+```
+
+That is the operator secret, not the catalogue — the task never reaches GitHub.
+It means `SUPABASE_SECRET_KEY` in `<prefix>/backend/operator` is wrong or
+stale, and the remedy is section 2 of
+[`docs/runbooks/database-unreachable.md`](runbooks/database-unreachable.md),
+which has the patch command.
+
+Worth knowing that it would not have stopped at the sync. The service reads the
+same secret from the same task definition, and `/ready` includes a database
+probe, so the readiness gate a step later would have failed too. A sync failure
+of this shape means the release was never going to succeed, not that the
+catalogue step is in the way.
 
 
 ## Environment

@@ -606,6 +606,15 @@ jobs:
               echo "(no log events yet — read them at /ecs/$NAME_PREFIX-backend, stream $STREAM)"
             fi
             echo "--- end of task output ---"
+            # The output names the cause; this points at the runbook for the
+            # one that has bitten twice. "Invalid API key" from Supabase is not
+            # a catalogue problem at all — the task never reaches GitHub. It
+            # means the operator secret's SUPABASE_SECRET_KEY is wrong, which
+            # also fails the readiness probe, so the release would have stopped
+            # a step later anyway.
+            if printf '%s' "$LINES" | grep -qi "invalid api key"; then
+              echo "::error::Supabase rejected the task's credentials. This is the operator secret, not the catalogue: see docs/runbooks/database-unreachable.md section 2."
+            fi
             echo "::error::The catalogue sync exited $EXIT. Its output is above; the stream is /ecs/$NAME_PREFIX-backend $STREAM"
             exit 1
           else
