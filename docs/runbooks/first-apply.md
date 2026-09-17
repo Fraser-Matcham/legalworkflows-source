@@ -148,7 +148,30 @@ start even with an image:
 ```
 
 Note the leading space: with bash's default `HISTCONTROL=ignorespace` it
-keeps the command out of your shell history. Add `ERROR_TRACKING_DSN`,
+keeps the command out of your shell history.
+
+**Check the key before you rely on it.** Supabase rejecting
+`SUPABASE_SECRET_KEY` does not show up until something uses it, and the first
+thing that does is a release — deploy runs 12 and 13 on `main` both got as far
+as building and pushing both images, applying migrations, and launching the
+catalogue sync task before dying on it, about seventeen minutes each. Thirty
+seconds here saves that:
+
+```sh
+ KEY='…the same service_role key you just wrote…'
+curl -s -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+  "<your supabase_url from terraform.tfvars>/rest/v1/" | head -c 200
+```
+
+If the response mentions **`Invalid API key`**, the key is wrong — that is the
+exact message the release fails with, and
+[database-unreachable.md](database-unreachable.md) section 2 has the patch
+command. Anything else, and Supabase accepted the credential.
+
+Deliberately phrased around the failure rather than the success: the failing
+response is the one we have actually seen, out of a release log. What a
+healthy project returns from that path was not exercised when this was
+written, so do not read a particular status code into it. Add `ERROR_TRACKING_DSN`,
 `MIKE_WORKFLOWS_GITHUB_TOKEN` or `COURTLISTENER_API_TOKEN` to that JSON if
 you have them, and add their names to `backend_extra_secret_keys` in
 `terraform.tfvars` on the next apply so the task reads them.
