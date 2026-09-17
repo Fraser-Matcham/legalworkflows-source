@@ -132,9 +132,11 @@ module "observability" {
   database_instance_identifier = one(module.database[*].instance_identifier)
   extra_services = var.platform_enabled ? {
     postgrest = module.postgrest[0].service_name
+    gotrue    = module.gotrue[0].service_name
   } : {}
   extra_target_groups = var.platform_enabled ? {
     postgrest = module.postgrest[0].target_group_arn_suffix
+    gotrue    = module.gotrue[0].target_group_arn_suffix
   } : {}
 }
 
@@ -256,4 +258,42 @@ module "postgrest" {
   database_kms_key_arn    = module.database[0].kms_key_arn
   jwt_secret_arn          = module.keys[0].jwt_secret_arn
   jwt_secret_valuefrom    = module.keys[0].ecs_secrets["PGRST_JWT_SECRET"]
+}
+
+module "gotrue" {
+  count  = var.platform_enabled ? 1 : 0
+  source = "./modules/gotrue"
+
+  name_prefix       = local.name_prefix
+  short_name_prefix = local.short_name_prefix
+  region            = data.aws_region.current.region
+  account_id        = data.aws_caller_identity.current.account_id
+  domain_name       = var.domain_name
+  enable_ecs_exec   = var.enable_ecs_exec
+
+  vpc_id                     = module.network.vpc_id
+  private_subnet_ids         = module.network.private_subnet_ids
+  alb_security_group_id      = module.network.alb_security_group_id
+  backend_security_group_id  = module.network.backend_security_group_id
+  database_security_group_id = module.database[0].security_group_id
+
+  cluster_arn                   = module.backend.cluster_arn
+  cluster_name                  = module.backend.cluster_name
+  service_connect_namespace_arn = module.backend.service_connect_namespace_arn
+  https_listener_arn            = module.backend.https_listener_arn
+  origin_verify_secret          = module.backend.origin_verify_secret
+
+  database_uri_secret_arn = module.database[0].roles_secret_arn
+  database_kms_key_arn    = module.database[0].kms_key_arn
+  jwt_secret_arn          = module.keys[0].jwt_secret_arn
+  jwt_secret_valuefrom    = module.keys[0].ecs_secrets["GOTRUE_JWT_SECRET"]
+
+  smtp_secret_arn = module.email.smtp_secret_arn
+  smtp_host       = module.email.smtp_host
+  smtp_port       = module.email.smtp_port
+  sender_address  = module.email.sender_address
+  sender_name     = module.email.sender_name
+
+  google_oauth_enabled = var.gotrue_google_oauth_enabled
+  extra_redirect_urls  = var.gotrue_extra_redirect_urls
 }

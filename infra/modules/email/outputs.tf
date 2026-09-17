@@ -27,3 +27,12 @@ output "smtp_secret_name" {
 output "mail_from_domain" {
   value = local.mail_from_domain
 }
+
+output "smtp_secret_arn" {
+  description = "For the GoTrue task's execution role, which reads SMTP_USERNAME and SMTP_PASSWORD from it (stage 5, ticket 2118)."
+  value       = aws_secretsmanager_secret.smtp.arn
+}
+
+output "sender_name" {
+  value = var.sender_name
+}

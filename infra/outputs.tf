@@ -186,3 +186,18 @@ output "postgrest_service_name" {
   description = "The PostgREST ECS service, for `aws ecs update-service --force-new-deployment` after a secret rotation."
   value       = one(module.postgrest[*].service_name)
 }
+
+output "gotrue_service_name" {
+  description = "The GoTrue ECS service, for `aws ecs update-service --force-new-deployment` after a secret rotation."
+  value       = one(module.gotrue[*].service_name)
+}
+
+output "gotrue_google_oauth_secret_name" {
+  description = "Where Stage 5, Task 3 writes the Google client id and secret."
+  value       = one(module.gotrue[*].google_oauth_secret_name)
+}
+
+output "gotrue_google_redirect_uri" {
+  description = "The authorised redirect URI to add to the Google OAuth client."
+  value       = one(module.gotrue[*].google_redirect_uri)
+}
