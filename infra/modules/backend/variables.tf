@@ -125,8 +125,10 @@ variable "supabase_url" {
 }
 
 variable "supabase_publishable_key" {
-  description = "The anon/publishable key. Public by design; it ships in the browser bundle elsewhere, so it is environment rather than a secret."
+  description = "The anon/publishable key. Public by design; it ships in the browser bundle elsewhere, so it is environment rather than a secret. Null once the self-hosted platform serves the backend (stage 5): the key is then minted out of band and injected from Secrets Manager through ecs_secrets instead."
   type        = string
+  default     = null
+  nullable    = true
 }
 
 variable "storage_endpoint_url" {

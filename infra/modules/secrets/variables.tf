@@ -55,3 +55,9 @@ variable "enable_ecs_exec" {
   type        = bool
   default     = false
 }
+
+variable "extra_readable_secret_arns" {
+  description = "Further secrets the backend execution role may read: the stage 5 platform's api-keys secret, once the backend is served by it (ticket 2122). The backend module still has to be told which keys to inject."
+  type        = list(string)
+  default     = []
+}

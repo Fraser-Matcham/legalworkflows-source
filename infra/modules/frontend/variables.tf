@@ -170,3 +170,11 @@ variable "enable_ecs_exec" {
   type        = bool
   default     = false
 }
+
+# --- stage 5 --------------------------------------------------------------------
+
+variable "platform_routes_enabled" {
+  description = "Route /rest/v1/* and /auth/v1/* through this distribution to the self-hosted PostgREST and GoTrue (ticket 2123). Tied to the root platform_enabled: the listener rules those behaviours rely on exist only with the platform modules."
+  type        = bool
+  default     = false
+}

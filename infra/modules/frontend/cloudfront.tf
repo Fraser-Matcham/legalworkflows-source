@@ -53,9 +53,52 @@ resource "aws_cloudfront_function" "strip_api_prefix" {
   EOT
 }
 
+# Stage 5 (ticket 2123): the self-hosted platform's two services sit behind
+# the same load balancer, under the two prefixes supabase-js appends to
+# SUPABASE_URL. Neither PostgREST nor GoTrue can serve under a prefix, so it
+# is removed here exactly as /api is. Both prefixes are eight characters, so
+# one function serves both.
+#
+#   https://<domain>/rest/v1/* -> strip "/rest/v1" -> origin "postgrest" -> ALB rule -> PostgREST task
+#   https://<domain>/auth/v1/* -> strip "/auth/v1" -> origin "gotrue"    -> ALB rule -> GoTrue task
+resource "aws_cloudfront_function" "strip_platform_prefix" {
+  count = var.platform_routes_enabled ? 1 : 0
+
+  name    = "${var.name_prefix}-strip-platform-prefix"
+  runtime = "cloudfront-js-2.0"
+  comment = "Remove the /rest/v1 or /auth/v1 prefix before forwarding to the platform origins"
+  publish = true
+
+  code = <<-EOT
+    function handler(event) {
+      var request = event.request;
+      var uri = request.uri;
+      if (uri === '/rest/v1' || uri === '/auth/v1') {
+        request.uri = '/';
+      } else if (uri.startsWith('/rest/v1/') || uri.startsWith('/auth/v1/')) {
+        request.uri = uri.substring(8);
+      }
+      return request;
+    }
+  EOT
+}
+
 locals {
   frontend_origin_id = "frontend"
   backend_origin_id  = "backend"
+
+  # Origin id => the path prefix routed to it. Empty until the platform
+  # exists, so the distribution is unchanged by an apply with the default.
+  platform_origins = var.platform_routes_enabled ? {
+    postgrest = "/rest/v1"
+    gotrue    = "/auth/v1"
+  } : {}
+
+  # One behaviour for "<prefix>/*" and one for the bare "<prefix>", as /api has.
+  platform_behaviours = {
+    for pair in setproduct(keys(local.platform_origins), ["", "/*"]) :
+    "${local.platform_origins[pair[0]]}${pair[1]}" => pair[0]
+  }
 
   # Every method, because the API needs them all and the same list keeps the
   # two dynamic behaviours identical apart from their origin.
@@ -183,6 +226,61 @@ resource "aws_cloudfront_distribution" "this" {
     function_association {
       event_type   = "viewer-request"
       function_arn = aws_cloudfront_function.strip_api_prefix.arn
+    }
+  }
+
+  # Stage 5: the platform origins. Same load balancer, same secret header, a
+  # target header the postgrest and gotrue modules' listener rules match.
+  dynamic "origin" {
+    for_each = local.platform_origins
+
+    content {
+      origin_id   = origin.key
+      domain_name = var.origin_fqdn
+
+      custom_origin_config {
+        http_port                = 80
+        https_port               = 443
+        origin_protocol_policy   = "https-only"
+        origin_ssl_protocols     = ["TLSv1.2"]
+        origin_read_timeout      = var.origin_read_timeout_seconds
+        origin_keepalive_timeout = 5
+      }
+
+      custom_header {
+        name  = "X-Origin-Verify"
+        value = var.origin_verify_secret
+      }
+
+      custom_header {
+        name  = "X-Origin-Target"
+        value = origin.key
+      }
+    }
+  }
+
+  # /rest/v1 and /auth/v1, each with and without a trailing path: nothing
+  # cached, every header and query string forwarded (PostgREST's filters are
+  # query strings; the keys travel in apikey and Authorization), prefix
+  # stripped at the edge.
+  dynamic "ordered_cache_behavior" {
+    for_each = local.platform_behaviours
+
+    content {
+      path_pattern           = ordered_cache_behavior.key
+      target_origin_id       = ordered_cache_behavior.value
+      viewer_protocol_policy = "https-only"
+      allowed_methods        = local.all_methods
+      cached_methods         = ["GET", "HEAD"]
+      compress               = true
+
+      cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+      origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
+
+      function_association {
+        event_type   = "viewer-request"
+        function_arn = aws_cloudfront_function.strip_platform_prefix[0].arn
+      }
     }
   }
 

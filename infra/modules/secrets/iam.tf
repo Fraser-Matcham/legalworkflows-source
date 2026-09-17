@@ -89,11 +89,11 @@ data "aws_iam_policy_document" "backend_execution" {
     sid     = "ReadBackendSecrets"
     effect  = "Allow"
     actions = ["secretsmanager:GetSecretValue"]
-    resources = [
+    resources = concat([
       aws_secretsmanager_secret.generated.arn,
       aws_secretsmanager_secret.operator.arn,
       aws_secretsmanager_secret.storage.arn,
-    ]
+    ], var.extra_readable_secret_arns)
   }
 }
 

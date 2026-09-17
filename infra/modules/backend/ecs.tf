@@ -71,8 +71,7 @@ locals {
       FRONTEND_URL   = "https://${var.domain_name}"
       API_PUBLIC_URL = "https://${var.domain_name}/api"
 
-      SUPABASE_URL             = var.supabase_url
-      SUPABASE_PUBLISHABLE_KEY = var.supabase_publishable_key
+      SUPABASE_URL = var.supabase_url
 
       R2_ENDPOINT_URL = var.storage_endpoint_url
       R2_BUCKET_NAME  = var.storage_bucket_name
@@ -88,6 +87,10 @@ locals {
       ERROR_TRACKING_SERVER_NAME = "${var.name_prefix}-backend"
     },
     { for k, v in var.rate_limits : k => tostring(v) },
+    # Environment until the self-hosted platform serves the backend; then it
+    # arrives through ecs_secrets with the service key (stage 5, ticket 2122),
+    # and setting it here as well would leave ECS two values for one name.
+    var.supabase_publishable_key == null ? {} : { SUPABASE_PUBLISHABLE_KEY = var.supabase_publishable_key },
     var.extra_environment,
   )
 

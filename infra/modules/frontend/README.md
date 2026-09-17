@@ -76,6 +76,18 @@ into the browser bundle when the image is built, so the Stage 4 build must
 pass `https://<domain>` as a build argument. The task definition sets it too,
 so the runtime and the bundle agree and the start-up guard is satisfied.
 
+**Stage 5: two more origins on the same hostname.** With
+`platform_routes_enabled`, `/rest/v1/*` and `/auth/v1/*` (and the bare
+prefixes) go to two further origins — the same load balancer, the same
+secret header, target headers `postgrest` and `gotrue` — after a second
+CloudFront function strips the eight-character prefix, exactly as `/api`
+is handled. That is what lets the backend's `SUPABASE_URL` become the
+public origin: supabase-js appends those two prefixes to it, and the edge
+routes them to the two services (ticket 2123; the `postgrest` and `gotrue`
+module READMEs say why the edge rather than an internal gateway). Both
+paths are gated as the backend's is: a request that did not come through
+this distribution meets the listener's 403.
+
 ## Inputs and outputs
 
 See `variables.tf` and `outputs.tf`. The module takes the shared cluster,

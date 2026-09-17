@@ -67,7 +67,7 @@ variable "single_nat_gateway" {
 # --- backend ---------------------------------------------------------------
 
 variable "supabase_url" {
-  description = "SUPABASE_URL for the backend: the project URL from Stage 2, Task 2 (https://<ref>.supabase.co)."
+  description = "SUPABASE_URL for the backend: the project URL from Stage 2, Task 2 (https://<ref>.supabase.co). Ignored once platform_serves_backend is true — the backend then points at the public origin, where the edge routes /rest/v1 and /auth/v1 to the self-hosted services."
   type        = string
 
   validation {
@@ -283,4 +283,22 @@ variable "gotrue_extra_redirect_urls" {
   description = "Redirect targets GoTrue may send users to beyond https://<domain>/** — the Word add-in's origin, if it is hosted elsewhere."
   type        = list(string)
   default     = []
+}
+
+# The cutover switch (ticket 2122). With the platform applied, its roles
+# bootstrapped, the database restored and the API keys minted, this one
+# variable moves the backend: SUPABASE_URL becomes the public origin, and
+# both Supabase keys come from the platform's api-keys secret instead of the
+# root variable and the operator secret. Nothing in the application changes.
+# Flip it back to roll back — the Supabase project is untouched until Stage
+# 5, Task 6. docs/runbooks/platform-cutover.md is the procedure.
+variable "platform_serves_backend" {
+  description = "Point the backend at the self-hosted platform (SUPABASE_URL = https://<domain>, keys from <prefix>/platform/api-keys). Requires platform_enabled."
+  type        = bool
+  default     = false
+
+  validation {
+    condition     = !var.platform_serves_backend || var.platform_enabled
+    error_message = "platform_serves_backend needs platform_enabled: the backend cannot be pointed at services that do not exist."
+  }
 }

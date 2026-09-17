@@ -39,6 +39,10 @@ module "secrets" {
   storage_access_key_id     = module.storage.access_key_id
   storage_secret_access_key = module.storage.secret_access_key
   enable_ecs_exec           = var.enable_ecs_exec
+
+  # Stage 5: the backend reads its Supabase keys from the platform's api-keys
+  # secret once it is served by the platform.
+  extra_readable_secret_arns = var.platform_enabled ? [module.keys[0].api_keys_secret_arn] : []
 }
 
 module "backend" {
@@ -59,16 +63,30 @@ module "backend" {
 
   execution_role_arn = module.secrets.backend_execution_role_arn
   task_role_arn      = module.secrets.backend_task_role_arn
-  ecs_secrets        = module.secrets.backend_ecs_secrets
-  extra_secret_keys  = var.backend_extra_secret_keys
+
+  # Stage 5, ticket 2122: with platform_serves_backend, the two Supabase keys
+  # map to the platform's api-keys secret (the merge overrides the operator
+  # secret's SUPABASE_SECRET_KEY) and the publishable key is injected as a
+  # secret rather than set as environment.
+  ecs_secrets = merge(
+    module.secrets.backend_ecs_secrets,
+    var.platform_serves_backend ? {
+      SUPABASE_SECRET_KEY      = module.keys[0].ecs_secrets["SUPABASE_SECRET_KEY"]
+      SUPABASE_PUBLISHABLE_KEY = module.keys[0].ecs_secrets["SUPABASE_PUBLISHABLE_KEY"]
+    } : {},
+  )
+  extra_secret_keys = concat(
+    var.backend_extra_secret_keys,
+    var.platform_serves_backend ? ["SUPABASE_PUBLISHABLE_KEY"] : [],
+  )
 
   certificate_arn = module.dns.origin_certificate_arn
   zone_id         = module.dns.zone_id
   origin_fqdn     = module.dns.origin_fqdn
   domain_name     = var.domain_name
 
-  supabase_url             = var.supabase_url
-  supabase_publishable_key = var.supabase_publishable_key
+  supabase_url             = var.platform_serves_backend ? "https://${var.domain_name}" : var.supabase_url
+  supabase_publishable_key = var.platform_serves_backend ? null : var.supabase_publishable_key
   storage_endpoint_url     = module.storage.endpoint_url
   storage_bucket_name      = module.storage.bucket_name
   workflows_repository     = var.workflows_repository
@@ -105,6 +123,9 @@ module "frontend" {
   apex_certificate_arn = module.dns.apex_certificate_arn
 
   image_tag = var.frontend_image_tag
+
+  # Stage 5: /rest/v1 and /auth/v1 to the platform services (ticket 2123).
+  platform_routes_enabled = var.platform_enabled
 }
 
 module "observability" {
