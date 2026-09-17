@@ -21,9 +21,10 @@ merge to main
    ▼
  build     backend and frontend images → ECR, tagged with the commit sha
    │       ── ECR scan has a HIGH or CRITICAL finding → stop
+   │       (stage 5: and the dbtools image, once PLATFORM_ENABLED is set)
    ▼
  migrate   backend/migrations newer than the recorded one, in order, once
-   │
+   │       (stage 5: as a dbtools task inside the VPC once PLATFORM_SERVES_BACKEND is set)
    ▼
  backend   new task definition revision → catalogue-sync release job → roll the service
    │       ── /api/ready through CloudFront must answer 200
