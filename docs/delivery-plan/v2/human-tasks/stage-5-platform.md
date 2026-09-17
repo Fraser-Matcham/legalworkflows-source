@@ -84,21 +84,34 @@ OAuth client lives in your Google account.
 
 **Time:** 15 minutes.
 
-**Before you start:** I will tell you the new address. Do not do this task
-before the cutover — adding the new address early is safe, removing the old
-one early is not.
+**Before you start:** the new address is
+`https://legalworkflows.co.uk/auth/v1/callback` — the same path Supabase used,
+on your own domain (`infra/modules/gotrue`, ticket 2119). Adding it early is
+safe; removing the old one early is not, so leave the Supabase address in
+place until Task 6.
 
 ### Steps
 
 1. Go to **https://console.cloud.google.com/apis/credentials** and sign in with
    the Google account that owns the OAuth client.
 2. Click the OAuth 2.0 client ID used for this product.
-3. Under **Authorised redirect URIs**, click **ADD URI** and paste the new
-   address I give you. It will end in `/auth/v1/callback`.
+3. Under **Authorised redirect URIs**, click **ADD URI** and paste
+   `https://legalworkflows.co.uk/auth/v1/callback`.
 4. **Leave the existing Supabase URI in place.** Two addresses can be
    authorised at once, and keeping both is what makes the rollback work.
 5. Click **SAVE**. Google can take a few minutes to apply the change.
-6. After the soak period in Task 6, come back and remove the Supabase URI.
+6. Give the client ID and secret to the platform without putting them in a
+   message: in the AWS console, **Secrets Manager**, open
+   `legalworkflows-production/platform/google-oauth`, **Retrieve secret
+   value**, **Set secret value**, and enter the two keys as JSON:
+
+   ```json
+   {"GOOGLE_CLIENT_ID": "…", "GOOGLE_CLIENT_SECRET": "…"}
+   ```
+
+   Tell me it is written; switching the provider on is then a one-variable
+   change (`gotrue_google_oauth_enabled = true`) and an apply.
+7. After the soak period in Task 6, come back and remove the Supabase URI.
 
 ---
 

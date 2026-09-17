@@ -106,16 +106,16 @@ Issue Id,Status,Status note
 2105,In progress,"Rolled up from 2 children: 1 in progress, 1 to do."
 2106,In progress,As 2105.
 2107,To do,From the delivery plan row that cites it.
-2110,In progress,"Rolled up from 6 children: 3 in progress, 3 to do."
+2110,In progress,"Rolled up from 6 children: 4 in progress, 2 to do."
 2111,In progress,"Rolled up from 2 children: 1 done, 1 to do."
 2112,Done,"infra/modules/database, wired behind platform_enabled; plan row 5.1."
 2113,To do,"Stage 5, added 17 September 2026."
 2114,In progress,Rolled up from 1 child: 1 done. Closes when the backend's queries succeed against the self-hosted endpoint after cutover.
 2115,Done,infra/modules/postgrest and the service_role RLS policy migration; plan row 5.3.
-2116,To do,Rolled up from 3 children: 3 to do.
-2117,To do,"Stage 5, added 17 September 2026."
-2118,To do,"Stage 5, added 17 September 2026."
-2119,To do,"Stage 5, added 17 September 2026."
+2116,In progress,"Rolled up from 3 children: 1 done, 2 in progress."
+2117,Done,infra/modules/gotrue; plan row 5.4.
+2118,In progress,Wired to the email module's SES credential (plan row 5.5); the deliverability check needs the running service.
+2119,In progress,"Provider, secret container and redirect URI in place (plan row 5.6); the operator adds the URI and writes the client (Stage 5, Task 3)."
 2120,In progress,Rolled up from 1 child: 1 done. Closes when the runbook has been walked once against the applied footprint.
 2121,Done,"infra/modules/keys, scripts/platform-keys.mjs, docs/runbooks/api-keys.md; plan row 5.7."
 2122,To do,Rolled up from 1 child: 1 to do.

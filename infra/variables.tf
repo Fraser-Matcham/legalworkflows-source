@@ -272,3 +272,15 @@ variable "database_backup_retention_days" {
   type        = number
   default     = 35
 }
+
+variable "gotrue_google_oauth_enabled" {
+  description = "Turn on Google sign-in on the self-hosted GoTrue. Only after Stage 5, Task 3 has written the <prefix>/platform/google-oauth secret; see infra/modules/gotrue/README.md."
+  type        = bool
+  default     = false
+}
+
+variable "gotrue_extra_redirect_urls" {
+  description = "Redirect targets GoTrue may send users to beyond https://<domain>/** — the Word add-in's origin, if it is hosted elsewhere."
+  type        = list(string)
+  default     = []
+}
