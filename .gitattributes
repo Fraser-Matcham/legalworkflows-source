@@ -6,3 +6,8 @@
 #   git checkout origin/main -- package-lock.json && npm install
 package-lock.json merge=binary
 bun.lock merge=binary
+
+# Generated from docs/delivery-plan/v2/status.csv by the script beside it.
+# A zip archive: never text-merge it. On a conflict, take either side and
+# rebuild with:  python3 docs/delivery-plan/v2/build-status-workbook.py
+*.xlsx binary merge=binary

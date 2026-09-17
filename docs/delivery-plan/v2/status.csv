@@ -1,0 +1,125 @@
+Issue Id,Status,Status note
+2001,In progress,"Rolled up from 2 children: 1 done, 1 in progress."
+2002,Done,Rolled up from 4 children: 4 done.
+2003,Done,repository exists with history
+2004,Done,upstream-main exists on the remote
+2005,Done,branch protection set in GitHub settings (plan 4.5)
+2006,Done,fork rules present in AGENTS.md
+2007,In progress,"Rolled up from 2 children: 1 done, 1 to do."
+2008,Done,docs/upstream-sync.md
+2009,To do,"Never performed in this fork; the ""upstream"" merges in history are inherited. Value decays as the fork diverges."
+2010,In progress,"Rolled up from 2 children: 1 done, 1 to do."
+2011,Done,"Rolled up from 2 children: 1 done, 1 won't do."
+2012,Won't do,From the delivery plan row that cites it.
+2013,Done,From the delivery plan row that cites it.
+2014,To do,Rolled up from 2 children: 2 to do.
+2015,To do,Inherited from parent 2014 (to do).
+2016,To do,Inherited from parent 2014 (to do).
+2017,In progress,"Rolled up from 2 children: 1 done, 1 in progress."
+2018,In progress,"Rolled up from 5 children: 3 done, 1 in progress, 1 won't do."
+2019,Done,scorecard.yml absent from .github/workflows/
+2020,In progress,"e2e green, but ANTHROPIC_API_KEY is unset so 4 LLM specs — including critical-path ""ask a question"" — skip every run. Established from the job env block."
+2021,Done,.github/dependabot.yml
+2022,Done,.github/workflows/codeql.yml
+2023,Won't do,"Plan ""Ticket disposition"": obsolete — the add-in is not deferred."
+2024,Done,Rolled up from 2 children: 2 done.
+2025,Done,From the delivery plan row that cites it.
+2026,Done,Inherited from parent 2024 (done).
+2027,Done,Rolled up from 2 children: 2 done.
+2028,Done,Rolled up from 5 children: 5 done.
+2029,Done,Debranding; npm run trademarks sweeps user-visible surfaces and passes in CI.
+2030,Done,MFA issuer name changed; covered by the rebrand checklist (2036).
+2031,Done,User-facing copy; covered by the trademark sweep and rebrand checklist.
+2032,Done,From the delivery plan row that cites it.
+2033,Done,completed this session
+2034,Done,Rolled up from 2 children: 2 done.
+2035,Done,do-not-rename table in AGENTS.md fork rule 2
+2036,Done,completed this session
+2037,In progress,"Rolled up from 3 children: 1 done, 1 in progress, 1 superseded."
+2038,Superseded,Rolled up from 3 children: 3 superseded.
+2039,Superseded,Plan disposition made this production-only; Stage 5 removes the Supabase project entirely.
+2040,Superseded,"Deny-all verified by grants, not RLS policies — schema.sql has none. Carried into Stage 5 with the schema."
+2041,Superseded,"Auth provider, email and MFA configuration move to GoTrue: tickets 2116-2119."
+2042,In progress,"Rolled up from 2 children: 1 done, 1 in progress."
+2043,Done,From the delivery plan row that cites it.
+2044,In progress,Code half done and tested (storageRegion.ts). Live check needs the deployed stack.
+2045,Done,Rolled up from 2 children: 2 done.
+2046,Done,From the delivery plan row that cites it.
+2047,Done,From the delivery plan row that cites it.
+2048,In progress,"Rolled up from 2 children: 1 done, 1 in progress."
+2049,In progress,"Rolled up from 3 children: 2 done, 1 in progress."
+2050,Done,From the delivery plan row that cites it.
+2051,Done,From the delivery plan row that cites it.
+2052,In progress,rollback.yml exists; test-by-rolling-back needs a working deployment.
+2053,Done,Rolled up from 1 child: 1 done.
+2054,Done,From the delivery plan row that cites it.
+2055,Done,Rolled up from 3 children: 3 done.
+2056,Done,Rolled up from 2 children: 2 done.
+2057,Done,Inherited from parent 2056 (done).
+2058,Done,Inherited from parent 2056 (done).
+2059,Done,Rolled up from 2 children: 2 done.
+2060,Done,completed this session
+2061,Done,completed this session
+2062,Done,Rolled up from 2 children: 2 done.
+2063,Done,From the delivery plan row that cites it.
+2064,Done,completed this session
+2065,In progress,"Rolled up from 2 children: 1 done, 1 deferred."
+2066,Deferred,Rolled up from 3 children: 3 deferred.
+2067,Deferred,As 2066.
+2068,Deferred,As 2066.
+2069,Deferred,As 2066.
+2070,Done,Rolled up from 1 child: 1 done.
+2071,Done,completed this session
+2072,Done,Rolled up from 2 children: 2 done.
+2073,Done,Rolled up from 3 children: 3 done.
+2074,Done,From the delivery plan row that cites it.
+2075,Done,From the delivery plan row that cites it.
+2076,Done,From the delivery plan row that cites it.
+2077,Done,Rolled up from 3 children: 3 done.
+2078,Done,completed this session
+2079,Done,completed this session
+2080,Done,completed this session
+2081,Done,Rolled up from 2 children: 2 done.
+2082,Done,Rolled up from 2 children: 2 done.
+2083,Done,completed this session
+2084,Done,completed this session
+2085,Done,Rolled up from 2 children: 2 done.
+2086,Done,completed this session
+2087,Done,completed this session
+2088,Done,Rolled up from 1 child: 1 done.
+2089,Done,Rolled up from 3 children: 3 done.
+2090,Done,completed this session
+2091,Done,completed this session
+2092,Done,completed this session
+2093,In progress,Rolled up from 2 children: 2 in progress.
+2094,In progress,"Rolled up from 2 children: 1 done, 1 in progress."
+2095,In progress,From the delivery plan row that cites it.
+2096,Done,From the delivery plan row that cites it.
+2097,In progress,"Rolled up from 2 children: 1 in progress, 1 to do."
+2098,In progress,As 2097.
+2099,To do,From the delivery plan row that cites it.
+2100,In progress,Rolled up from 2 children: 2 in progress.
+2101,In progress,"Rolled up from 3 children: 2 in progress, 1 to do."
+2102,To do,From the delivery plan row that cites it.
+2103,In progress,From the delivery plan row that cites it.
+2104,In progress,"This repository half done: 3 findings, all fixed. Juralio side and the seam from its end outstanding."
+2105,In progress,"Rolled up from 2 children: 1 in progress, 1 to do."
+2106,In progress,As 2105.
+2107,To do,From the delivery plan row that cites it.
+2110,To do,Rolled up from 6 children: 6 to do.
+2111,To do,Rolled up from 2 children: 2 to do.
+2112,To do,"Stage 5, added 17 September 2026."
+2113,To do,"Stage 5, added 17 September 2026."
+2114,To do,Rolled up from 1 child: 1 to do.
+2115,To do,"Stage 5, added 17 September 2026."
+2116,To do,Rolled up from 3 children: 3 to do.
+2117,To do,"Stage 5, added 17 September 2026."
+2118,To do,"Stage 5, added 17 September 2026."
+2119,To do,"Stage 5, added 17 September 2026."
+2120,To do,Rolled up from 1 child: 1 to do.
+2121,To do,"Stage 5, added 17 September 2026."
+2122,To do,Rolled up from 1 child: 1 to do.
+2123,To do,"Stage 5, added 17 September 2026."
+2124,To do,Rolled up from 2 children: 2 to do.
+2125,To do,"Stage 5, added 17 September 2026."
+2126,To do,"Stage 5, added 17 September 2026."
