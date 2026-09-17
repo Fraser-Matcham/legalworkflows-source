@@ -55,6 +55,19 @@ MFA, 65 backend files using the Supabase client.
 Supabase therefore stays as managed Postgres and identity. AWS provides
 compute, object storage, CDN, DNS, TLS and secrets.
 
+> **Superseded on 17 September 2026 by stage 5** (`plan.md`, "Stage 5 — run
+> the platform on AWS"). The reasoning above was right about Cognito and
+> wrong about "RDS": the evidence that made Cognito unreachable — 43 foreign
+> keys to `auth.users`, GoTrue's OAuth and MFA — is exactly what running
+> GoTrue and PostgREST ourselves, against RDS, preserves. Supabase is three
+> open-source containers plus a managed database; stage 5 runs the same
+> three in this account with no application change, which retires the
+> credential failure that stopped deploys 12 to 14. The modules are
+> `infra/modules/{database,keys,postgrest,gotrue,dbtools}` and the
+> procedures `docs/runbooks/platform-migration.md` and
+> `platform-cutover.md`. Until the cutover, this decision still describes
+> the running service.
+
 ### 5. The public origin is `https://legalworkflows.co.uk`
 
 Registered by the operator on 12 September 2026. `.co.uk` over `.com`: the
@@ -197,7 +210,7 @@ resource created outside Terraform, and Stage 3 says so explicitly.
 
 | Service | Why |
 | --- | --- |
-| Supabase | Postgres, Auth, MFA — see decision 4 |
+| Supabase | Postgres, Auth, MFA — see decision 4, and its stage 5 supersession: after the cutover these run in the account as RDS, PostgREST and GoTrue |
 | GitHub Actions | Already the CI system; deploys via OIDC, so no long-lived AWS keys |
 | Model providers | Anthropic, OpenAI, Google — called over HTTPS, keys in Secrets Manager |
 
@@ -216,8 +229,10 @@ eyes, not to reopen it.
 | Route 53 | £0.40 |
 | SES (email, low volume) | <£1 |
 | Secrets Manager | £2 |
-| Supabase Pro | £20 |
-| **Total** | **≈ £110–140** |
+| Supabase Pro | £20 — until the stage 5 cutover |
+| Stage 5, replacing it: RDS `db.t4g.small` single-AZ + 20 GB gp3 + backups | £25–30 |
+| Stage 5: PostgREST and GoTrue tasks (0.25 vCPU / 512 MB each) | £12–16 |
+| **Total** | **≈ £110–140** (Supabase); **≈ £130–165** (stage 5) |
 
 The NAT gateway and load balancer together are roughly a third of that and buy
 no features at this scale — they buy a private network topology. If cost

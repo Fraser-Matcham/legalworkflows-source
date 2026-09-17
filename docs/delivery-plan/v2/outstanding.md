@@ -5,7 +5,8 @@ current status of each is in [`delivery-status.xlsx`](delivery-status.xlsx). Mos
 are done and the plan records them. This lists only what is **not** done, with
 the evidence for each, so nobody has to re-derive it.
 
-Compiled 17 September 2026, against `main` at `0f8e99c`.
+Compiled 17 September 2026, against `main` at `0f8e99c`; the stage 5 section
+added the same day after the platform pull requests.
 
 ---
 
@@ -61,6 +62,26 @@ the ticket's own framing — and it stays open until the catalogue is yours.
 Needs a fork created under an account you control, which is outside what this
 repository's tooling can do.
 
+**The licence question the ticket raises is answered.** Checked on
+17 September 2026 against `Open-Legal-Products/mike-workflows` at `ce62e6a`
+(17 August 2026): the repository is **MIT** (`LICENSE`, and the README's
+"License" section), with a `PROVENANCE.md` that requires each workflow to
+carry its own `license` field and asks contributors to keep third-party
+notices where a pack was adapted. MIT permits the fork, the copy and the
+modification outright; the one obligation is to keep the MIT notice in the
+fork, which forking does by construction. It is a separate repository from
+the AGPL application, so the AGPL does not reach it and it does not reach
+the AGPL.
+
+Once the fork exists, the remaining steps are configuration: set
+`workflows_repository` in `infra/terraform.tfvars` to the fork (and
+`workflows_ref` to a commit SHA for a reproducible release), apply, and the
+next release's catalogue sync reads from it (ticket 2016 is that release
+passing its sync step against an empty catalogue and the five defaults
+resolving in the product). The catalogue carries 23 assistant workflows and
+the tabular-review packs; pinning the SHA is what stops an upstream edit
+changing product content between releases.
+
 ### 2009 — Run a first upstream merge as a dry run *(Sub-task, Medium)*
 
 > AC: *"Merge completes; full backend and frontend suites green afterwards."*
@@ -106,6 +127,31 @@ streamed answer — are green because they did not run. Setup is in
 key. Until then, treat e2e's green as covering the other 27 specs only.
 
 ---
+
+## Stage 5: engineered, waiting on the operator
+
+The self-hosted platform (tickets 2110–2126) was built on 17 September 2026
+as six pull requests, every module gated on `platform_enabled` so the live
+service is untouched. What is left is the sequence only the operator can
+start, in the order `docs/runbooks/first-apply.md` §6 gives:
+
+| Step | Ticket it closes | Who |
+| --- | --- | --- |
+| Approve the running cost; `platform_enabled = true`; apply | 2112 proven, 2111 | operator (Stage 5, Task 1) |
+| `PLATFORM_ENABLED=true` on the repository; a release builds the dbtools image | — | operator |
+| `run.sh bootstrap`; mint, verify and write the API keys | 2120 | operator with `docs/runbooks/api-keys.md` |
+| Write the migration-source secret; add the Google redirect URI and write the client | — | operator (Stage 5, Tasks 2 and 3) |
+| Rehearse: copy, verify, prove the switch and the way back | 2113, 2125 | operator with `docs/runbooks/platform-cutover.md` |
+| Cut over: `platform_serves_backend = true`, `PLATFORM_SERVES_BACKEND=true`, smoke | 2114, 2116, 2118, 2119, 2122 | operator (Stage 5, Task 5) |
+| Two weeks' soak, then delete the Supabase project | 2124 | operator (Stage 5, Task 6) |
+| Remove the Supabase paragraphs from the documentation | 2126 | engineering, after Task 6 |
+
+Nothing in this list is a code change. The one open engineering question the
+platform work surfaced is recorded in `infra/modules/database/README.md`,
+"Row-level security on RDS": whether the RDS master user can confer
+`BYPASSRLS`. The bootstrap tries and says which; the policy migration that
+ships with PostgREST covers the case where it cannot, so neither answer
+blocks the cutover.
 
 ## Not in this repository
 
