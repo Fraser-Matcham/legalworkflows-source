@@ -106,9 +106,9 @@ Issue Id,Status,Status note
 2105,In progress,"Rolled up from 2 children: 1 in progress, 1 to do."
 2106,In progress,As 2105.
 2107,To do,From the delivery plan row that cites it.
-2110,To do,Rolled up from 6 children: 6 to do.
-2111,To do,Rolled up from 2 children: 2 to do.
-2112,To do,"Stage 5, added 17 September 2026."
+2110,In progress,"Rolled up from 6 children: 1 in progress, 5 to do."
+2111,In progress,"Rolled up from 2 children: 1 done, 1 to do."
+2112,Done,"infra/modules/database, wired behind platform_enabled; plan row 5.1."
 2113,To do,"Stage 5, added 17 September 2026."
 2114,To do,Rolled up from 1 child: 1 to do.
 2115,To do,"Stage 5, added 17 September 2026."

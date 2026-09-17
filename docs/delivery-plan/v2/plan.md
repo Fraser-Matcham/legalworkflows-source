@@ -286,7 +286,7 @@ verified, rotated, or reasoned about without leaving AWS.
 
 | # | Work | Ticket |
 | --- | --- | --- |
-| 5.1 | Postgres on RDS, engine matched to the 17.6 in use | 2111, 2112 |
+| 5.1 | Postgres on RDS, engine matched to the 17.6 in use — ✅ the module: `infra/modules/database`, gated on `platform_enabled` so an apply today changes nothing. RDS PostgreSQL 17.6 in the private subnets, a security group admitting the platform tasks only, TLS required, 35-day automated backups matching the document bucket, the master credential managed by RDS, the two service roles minted into Secrets Manager, and `bootstrap.sql` for the role shape a plain PostgreSQL lacks. ⏳ 2111 closes when a restored dump passes the drift check (5.2) | 2111, 2112 |
 | 5.2 | Dump and restore including the `auth` schema — it holds the users | 2113 |
 | 5.3 | PostgREST as an ECS service on the existing cluster | 2114, 2115 |
 | 5.4 | GoTrue as an ECS service | 2116, 2117 |
