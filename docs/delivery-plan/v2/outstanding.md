@@ -75,7 +75,7 @@ considerably.
 
 ---
 
-## Done, but only literally
+## Done literally, not meaningfully
 
 ### 2020 — Configure Actions secrets and verify the e2e run *(Sub-task, High)*
 
@@ -83,17 +83,26 @@ considerably.
 
 Met on the face of it: e2e runs on every pull request and passes.
 
-But four LLM-gated specs — chat rename, delete, submit, and the critical-path
-"ask a question" — **self-skip when `ANTHROPIC_API_KEY` is absent**, and a
-keyless run still reports green. That is deliberate and documented in
-`e2e.yml`, `e2e/llm.ts` and [`../../e2e-ci.md`](../../e2e-ci.md); it is not a
-defect. It does mean a green e2e does not by itself prove those four ran.
+**`ANTHROPIC_API_KEY` is not set, so four specs have never run in CI** — chat
+rename, chat delete, chat submit, and the critical-path "ask a question". They
+self-skip without the key and the run still reports green, which is deliberate
+and documented in `e2e.yml`, `e2e/llm.ts` and
+[`../../e2e-ci.md`](../../e2e-ci.md). The design is not the problem; the empty
+secret is.
 
-**Not established either way here.** Repository secrets are not readable, and
-the Playwright summary was beyond the reach of the log tail. The Playwright HTML
-report artifact on any e2e run shows skipped specs — one look settles it. If
-they are skipping, the product's core flow has never been exercised in CI, and
-the setup steps are in `docs/e2e-ci.md`, "Enable the LLM specs".
+The evidence is in any e2e job log, in the env block of a step that exposes it:
+
+```
+ANTHROPIC_API_KEY:
+```
+
+GitHub renders a configured secret as `***` and an unset one as empty. It is
+empty on run 35152758070, job 104984842558 — the e2e run for `89348ed`.
+
+So the specs covering the product's central flow — send a message, get a
+streamed answer — are green because they did not run. Setup is in
+`docs/e2e-ci.md`, "Enable the LLM specs"; it wants a spend-capped, CI-scoped
+key. Until then, treat e2e's green as covering the other 27 specs only.
 
 ---
 

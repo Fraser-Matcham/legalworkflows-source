@@ -69,6 +69,13 @@ screenshots, and step-by-step traces of what the browser did.
 | `ANTHROPIC_API_KEY` | The 4 LLM-dependent specs (chat rename/delete/submit, critical-path "ask a question") send a message and assert a **streamed** answer. With the key set they run and are enforced. | Those 4 specs **skip** (see `e2e/llm.ts`) instead of hanging, so the run is still green on the other 27 specs. |
 
 The suite is green **without** any secret — the LLM specs skip themselves via
+**To tell whether the key is set on a given run**, open any e2e job log and
+look at the `env:` block of a step that exposes `ANTHROPIC_API_KEY`. GitHub
+renders a configured secret as `***` and an unset one as empty, so a bare
+`ANTHROPIC_API_KEY:` means the four specs skipped. The Playwright HTML report
+artifact shows the same thing as skipped specs. As of run 35152758070 it is
+empty: those specs have not run in CI.
+
 `test.skip(!process.env.ANTHROPIC_API_KEY, …)`, which keeps keyless runs (local,
 and fork PRs with no secret access) green and fast. Mike supports keyless local
 models through Ollama, but this CI job does not provision an Ollama server or
