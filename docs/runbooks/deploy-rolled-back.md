@@ -61,4 +61,49 @@ rollback nor a manual roll-forward creates drift.
 
 Ticket 2052's acceptance criterion is exactly this event: "a deliberately
 broken deploy is caught by the health check and rolled back without manual
-intervention." The first time it fires for real, note it as the proof.
+intervention."
+
+**Drilled on 18 September 2026, and it did not happen.** The backend was
+deliberately rolled onto a revision whose image tag does not exist in ECR. The
+result, over seventeen minutes:
+
+| Time (UTC) | What happened |
+| --- | --- |
+| 10:36 | Service updated to the broken revision; it becomes `PRIMARY`, `IN_PROGRESS` |
+| 10:38, 10:40, 10:42 | Three tasks each fail with `CannotPullContainerError` |
+| 10:42 onwards | No further attempt, no rollback. `rolloutState` stays `IN_PROGRESS`, `failedTasks` stalls at 2 |
+| 10:53 | Restored to the good revision by hand |
+
+The circuit breaker is configured correctly — `enable` and `rollback` both
+true — and it still did not fire. The reason appears to be that an unpullable
+image produces a *placement* failure ("was unable to place a task"), not a
+task that starts and then fails, and the deployment simply stalls instead of
+being failed.
+
+Two things follow, and the second is the one that matters:
+
+- **Availability was never at risk.** `deploymentConfiguration.minimumHealthyPercent`
+  is 100, so the running task is not drained until a replacement is healthy.
+  The site answered 200 on every one of 33 probes across the drill. This is the
+  property worth having, and it held.
+- **What catches a broken deploy is the pipeline, not the breaker.** The "Roll
+  the service" step in `deploy.yml` runs `aws ecs wait services-stable`, which
+  is bounded at ten minutes, and then asserts that the `PRIMARY` deployment is
+  the revision it just registered. A stalled deployment fails that step and the
+  release goes red. Do not rely on the breaker to undo it for you.
+
+So if you are reading this page because a deploy went wrong, check whether the
+deployment actually rolled back or merely stalled. `describe-services` telling
+you `IN_PROGRESS` long after the fact means stalled, and you restore the
+previous revision yourself:
+
+```sh
+aws ecs update-service --cluster legalworkflows-production \
+  --service legalworkflows-production-backend \
+  --task-definition legalworkflows-production-backend:<last good revision>
+```
+
+**Still untested:** whether the breaker fires for a *runtime* failure — an
+image that pulls, starts, and then fails its health checks. That is the case
+the breaker is designed for, and the drill above does not tell us either way.
+Worth a second drill before anyone relies on it.

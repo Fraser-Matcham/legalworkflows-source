@@ -142,6 +142,38 @@ This needs an operator: an address to subscribe, and a human to click the
 confirmation link SNS sends. Until then the monitoring window cannot start,
 because nothing would reach anyone if it went wrong.
 
+### The deployment circuit breaker did not roll back a broken deploy
+
+Ticket 2052, drilled on 18 September 2026 with the operator's authorisation.
+The backend was deliberately rolled onto a revision whose image tag does not
+exist in ECR. Three tasks failed with `CannotPullContainerError` over six
+minutes; the deployment then sat `IN_PROGRESS` for a further eleven with no
+rollback and no further attempt, until it was restored by hand.
+
+The breaker is configured correctly, with `enable` and `rollback` both true.
+An unpullable image produces a *placement* failure rather than a task that
+starts and fails, and the deployment stalls instead of being failed.
+
+The acceptance criterion says "rolled back **without manual intervention**", so
+this is not a pass. What the drill did establish is worth as much:
+
+- Availability never moved. `minimumHealthyPercent` is 100, so the serving task
+  was not drained for a replacement that never became healthy. The site
+  answered 200 on all 33 probes across the drill.
+- The release pipeline, not the breaker, is what catches this. `deploy.yml`'s
+  "Roll the service" step bounds `wait services-stable` at ten minutes and then
+  asserts the `PRIMARY` deployment is the revision it registered, so a stalled
+  deployment turns the release red.
+
+The timeline and the manual-restore command are in
+[`../../runbooks/deploy-rolled-back.md`](../../runbooks/deploy-rolled-back.md)
+under "Note for the record".
+
+**Still open:** whether the breaker fires for a runtime failure, where the
+image pulls and starts but fails its health checks. That is the case it is
+designed for and this drill says nothing about it. A second drill would answer
+it, and should be run when no release is in flight.
+
 ---
 
 ## Genuinely open tickets
