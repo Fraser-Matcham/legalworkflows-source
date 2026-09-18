@@ -124,23 +124,37 @@ The service itself was compliant throughout. The evidence for it was not.
 
 Both fixes carry self-test cases, so neither can regress quietly.
 
-### Alerting is armed but nobody is subscribed
+### RESOLVED 18 September 2026 — alerting had nowhere to go, and now does
 
-Ticket 2107 wants "alerting proven working" and it is not. Sixteen CloudWatch
-alarms exist, all with actions enabled and an action attached, covering 5xx
-rates, latency, CPU, memory, unhealthy targets, running-task count and the
-readiness probe. Fourteen read `OK`; the two that do not are the autoscaling
-low-CPU alarms, which read that way on an idle service by design.
+**Fixed, and proven rather than assumed.** Sixteen CloudWatch alarms exist,
+all with actions enabled and an action attached, covering 5xx rates, latency,
+CPU, memory, unhealthy targets, running-task count and the readiness probe.
+Fourteen read `OK`; the two that do not are the autoscaling low-CPU alarms,
+which read that way on an idle service by design.
 
-The gap is downstream of them. The alarms publish to
+The gap was downstream of them. The alarms publish to
 `legalworkflows-production-alerts` and `legalworkflows-production-alerts-urgent`,
-and **neither topic has a single subscription**. The only subscription in the
-account is an unrelated SES feedback address. Every alarm above would fire into
-a topic with no listeners.
+and **neither topic had a single subscription**. The only subscription in the
+account was an unrelated SES feedback address, so every alarm above would have
+fired into a topic with no listeners. The alarms were not the problem and never
+had been; nothing they said could reach a person.
 
-This needs an operator: an address to subscribe, and a human to click the
-confirmation link SNS sends. Until then the monitoring window cannot start,
-because nothing would reach anyone if it went wrong.
+Closed on 18 September 2026:
+
+| Step | Evidence |
+| --- | --- |
+| Both topics subscribed to `fraser@legalutopia.co.uk` | `ListSubscriptionsByTopic` on each |
+| Operator confirmed both | Both read a subscription ARN rather than `PendingConfirmation` |
+| A test message published to each | Operator confirmed both arrived in the inbox |
+
+The last row is the one that matters and the easy one to skip. SNS accepting a
+publish proves the topic took the message, not that anyone received it. Only
+the mailbox owner can see the other half, so the proof is their confirmation,
+not the API's.
+
+**Still open for 2107:** the ticket also asks for a monitoring window to pass
+with no unresolved incident. That is a matter of elapsed time, not
+configuration. Alerting itself is now proven working.
 
 ### The deployment circuit breaker did not roll back a broken deploy
 
