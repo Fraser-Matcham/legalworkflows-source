@@ -36,7 +36,17 @@ subscriptions were created through the API during the incident, to close the
 gap the same day, and confirmed from the inbox. They work; they are simply not
 declared.
 
-Adopt them once, before or alongside the apply that sets `alert_email`:
+Order matters, and the obvious order is wrong. `aws_sns_topic_subscription.email`
+is a `for_each` over the topics, and the map is empty while `alert_email` is
+null — so the resource address does not exist in the configuration and the
+import fails with a confusing error. Set the variable first:
+
+1. Put the address in `terraform.tfvars` as `alert_email`.
+2. Import both subscriptions, below.
+3. `terraform plan` and confirm it reports no changes for them.
+4. `terraform apply`.
+
+The imports:
 
 ```sh
 terraform import \

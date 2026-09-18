@@ -24,6 +24,11 @@ account, a set of credentials.
 | 4 | Deployment, CI and launch | `human-tasks/stage-4-launch.md` | Go live |
 | 5 | Platform: run Postgres, PostgREST and GoTrue on AWS | `human-tasks/stage-5-platform.md` | Supabase retired |
 
+The five runbooks above are sequenced by stage. What is outstanding **now**,
+across all of them, is collected in
+[`human-tasks/next-steps.md`](human-tasks/next-steps.md) — six tasks, in the
+order to do them.
+
 Stage 5 was added on 17 September 2026 and is the one stage that is not a
 prerequisite for going live: the service can launch on Supabase and move
 afterwards. It is sequenced last for that reason.
