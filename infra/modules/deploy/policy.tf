@@ -55,13 +55,25 @@ data "aws_iam_policy_document" "deploy" {
   # DescribeImageScanFindings calls as AccessDenied. The workflow no longer
   # swallows the error; this is the permission it was failing on.
   #
-  # ListFindings does not take a resource, so this cannot be scoped to the
-  # project's repositories the way the ECR statement is. It is read-only, and it
-  # is the narrowest action that serves the gate.
+  # Which actions, exactly, was a guess the first time: ListFindings alone,
+  # inferred from the shape of the call. Deploy run 33 refused it and named the
+  # real one — inspector2:ListCoverage, on /coverage/list — which is ECR asking
+  # Inspector whether the image is covered before it reads anything from it.
+  # ListFindings stays: the coverage check is the first gate, not the only one.
+  #
+  # That correction took five seconds, because the same change that added this
+  # statement also stopped the workflow swallowing the error. The three failures
+  # before it each spent fifteen minutes saying nothing.
+  #
+  # Neither action takes a resource, so this cannot be scoped to the project's
+  # repositories the way the ECR statement is. Both are read-only.
   statement {
-    sid       = "InspectorReadFindings"
-    effect    = "Allow"
-    actions   = ["inspector2:ListFindings"]
+    sid    = "InspectorReadFindings"
+    effect = "Allow"
+    actions = [
+      "inspector2:ListCoverage",
+      "inspector2:ListFindings",
+    ]
     resources = ["*"]
   }
 
