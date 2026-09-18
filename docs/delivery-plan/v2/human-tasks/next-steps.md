@@ -9,15 +9,16 @@ between "running" and "finished".
 
 | # | Task | Time | Blocks |
 | --- | --- | --- | --- |
-| 1 | Run the queued `terraform apply` | 30 min | a security finding, alerting durability |
+| 1 | Run the queued `terraform apply` | 30 min | two security gaps, alerting durability |
 | 2 | Fork the workflow catalogue | 15 min | 2014, 2015, 2016 |
 | 3 | Get an Anthropic key and put it in two places | 20 min | 2020, and the product's central feature |
 | 4 | Make me a test account on the live stack | 5 min | 2044 |
 | 5 | Two optional drills | 2 h | 2095, 2098 |
 | 6 | Let the monitoring window elapse | nothing | 2107 |
 
-**Task 1 first.** It carries a security finding that is live until it is
-applied. Tasks 2 and 3 are independent of each other and of Task 1 — do them in
+**Task 1 first.** It carries two security gaps that are live until it is
+applied — one of them is that the release's image scan gate has never actually
+refused anything. Tasks 2 and 3 are independent of each other and of Task 1 — do them in
 whichever order suits. Tasks 4, 5 and 6 can wait.
 
 Stage 5, the self-hosted platform, is a separate and larger sequence with its
@@ -29,129 +30,219 @@ it is a decision before it is a task.
 
 ## Task 1 — Run the apply that four changes are waiting on
 
-**Why:** four merged changes are sitting in `infra/` unapplied. One of them is
-a security review finding, so it is live in production until you apply:
-**ECS Exec is still enabled on both services** (confirmed against the account —
-the backend service reads `enableExecuteCommand: true` today), which means anyone holding the
-deploy credentials can open an unrecorded shell inside a task that holds
-decrypted secrets.
+**Why:** four merged changes are sitting in `infra/` unapplied, and two of them
+are live security gaps:
+
+- **ECS Exec is enabled on both services.** Confirmed against the account —
+  `legalworkflows-production-backend` and `-frontend` both read
+  `enableExecuteCommand: true` today. Anyone holding the deploy credentials can
+  open an unrecorded shell inside a task that holds decrypted secrets.
+- **The release's image scan gate currently passes everything.** See "What this
+  actually turns on", below. This is the one worth reading before you start.
 
 **Time:** 30 minutes, most of it reading the plan.
 
-**Where:** a terminal with AWS credentials for the account, in `infra/`.
+### Before you start
 
-What is queued:
-
-| Change | Effect |
+| You need | Value |
 | --- | --- |
-| ECS Exec disabled on both services and both task roles | Closes security finding 2 |
-| ECR enhanced scanning | Continuous CVE scanning of pushed images |
-| `alert_email` | Puts the alert subscriptions in Terraform, so a rebuild keeps them |
-| `workflows_repository` | Only if you have done Task 2 — see there |
+| Terraform | `~> 1.16` (`required_version` in `infra/versions.tf`) |
+| AWS credentials | For account `119462788248`, region `eu-west-2`. **Not** the deploy role — it deliberately cannot touch state. |
+| State bucket | `lmm-terraform-state-119462788248` |
+| State key | `legalworkflows/production/terraform.tfstate` |
 
 ### Steps
 
-1. **Open a terminal in `infra/` with credentials for the account.**
+**1. Confirm you are pointed at the right account.**
 
-   ```sh
-   cd infra
-   ```
+```sh
+aws sts get-caller-identity --query Account --output text
+```
 
-   If you have not used Terraform on this machine before, the initialisation is
-   in [`../../../../infra/README.md`](../../../../infra/README.md) under
-   "Initialising" — copy `backend.hcl.example` and `terraform.tfvars.example`,
-   then `terraform init -backend-config=backend.hcl`.
+It must print `119462788248`. If it prints anything else, stop and fix your
+credentials — every command below acts on whatever account answers here.
 
-2. **Put the alert address in `terraform.tfvars`.**
+**2. Initialise, if this machine has not run Terraform on this stack before.**
 
-   The file is gitignored, so this stays on your machine and in Terraform
-   state, not in the repository. Add or edit the line:
+```sh
+cd infra
+cp backend.hcl.example backend.hcl
+```
 
-   ```
-   alert_email = "<the address you confirmed on 18 September>"
-   ```
+Edit `backend.hcl` to read:
 
-   Do this **before** the imports in step 4. The subscriptions are declared with
-   `for_each` over a map that is empty while `alert_email` is null, so until the
-   variable is set the resource address does not exist and the import fails with
-   a misleading error.
+```hcl
+bucket = "lmm-terraform-state-119462788248"
+key    = "legalworkflows/production/terraform.tfstate"
+region = "eu-west-2"
+```
 
-3. **Find the two subscription ARNs.**
+Then:
 
-   ```sh
-   for topic in legalworkflows-production-alerts legalworkflows-production-alerts-urgent; do
-     aws sns list-subscriptions-by-topic \
-       --topic-arn "arn:aws:sns:eu-west-2:<account id>:$topic" \
-       --query 'Subscriptions[?Protocol==`email`].SubscriptionArn' --output text
-   done
-   ```
+```sh
+terraform init -backend-config=backend.hcl
+```
 
-   Each should print a full ARN ending in a UUID. If either prints
-   `PendingConfirmation`, that subscription was never confirmed from the inbox
-   and cannot be imported — click the link in the confirmation email first.
+Both `backend.hcl` and `terraform.tfvars` are gitignored, so neither leaves your
+machine. If you have run Terraform here before, `terraform init` alone is enough.
 
-4. **Import both subscriptions.**
+**3. Put the alert address in `terraform.tfvars`.**
 
-   Terraform does not adopt a subscription it did not create. Both of these were
-   made through the API during the 18 September incident, so without the import
-   the apply creates a *second* pair and every alarm emails you twice.
+```
+alert_email = "<the address you confirmed on 18 September>"
+```
 
-   ```sh
-   terraform import \
-     'module.observability.aws_sns_topic_subscription.email["informational"]' \
-     '<the ARN for legalworkflows-production-alerts>'
+**Do this before step 4, not after.** `aws_sns_topic_subscription.email` is a
+`for_each` over a map that is empty while `alert_email` is null, so until the
+variable is set the resource address does not exist in the configuration and the
+import fails with an error that does not say why.
 
-   terraform import \
-     'module.observability.aws_sns_topic_subscription.email["urgent"]' \
-     '<the ARN for legalworkflows-production-alerts-urgent>'
-   ```
+**4. Find the two subscription ARNs.**
 
-   The reasoning, and what to do if an import fails, is in
-   [`../../../../infra/modules/observability/README.md`](../../../../infra/modules/observability/README.md)
-   under "Adopting subscriptions that were made by hand".
+```sh
+aws sns list-subscriptions-by-topic \
+  --topic-arn arn:aws:sns:eu-west-2:119462788248:legalworkflows-production-alerts \
+  --query 'Subscriptions[?Protocol==`email`].SubscriptionArn' --output text
 
-5. **Plan, and read it.**
+aws sns list-subscriptions-by-topic \
+  --topic-arn arn:aws:sns:eu-west-2:119462788248:legalworkflows-production-alerts-urgent \
+  --query 'Subscriptions[?Protocol==`email`].SubscriptionArn' --output text
+```
 
-   ```sh
-   terraform plan -out=tfplan
-   ```
+Each prints one ARN ending in a UUID. Both were confirmed from your inbox on
+18 September, so neither should read `PendingConfirmation` — a subscription in
+that state has no ARN and cannot be imported.
 
-   **Check three things before applying:**
+**5. Import both.**
 
-   - It reports **no changes** for the two `aws_sns_topic_subscription.email`
-     resources. If it still wants to *create* them, the import did not take —
-     stop. Applying from here gives you duplicate subscriptions and double
-     emails.
-   - It wants to **update** the two ECS services and the two task roles (Exec
-     off), and the ECR repositories (scanning). Those are the intended changes.
-   - Treat anything it wants to **destroy or replace** as a question, not a
-     step. There is no staging environment; the plan is the rehearsal.
+Terraform does not adopt a subscription it did not create. Both of these were
+made through the API during the 18 September incident, so without the import the
+apply creates a *second* pair and every alarm emails you twice.
 
-6. **Apply.**
+```sh
+terraform import \
+  'module.observability.aws_sns_topic_subscription.email["informational"]' \
+  '<the ARN from the first command above>'
 
-   ```sh
-   terraform apply tfplan
-   ```
+terraform import \
+  'module.observability.aws_sns_topic_subscription.email["urgent"]' \
+  '<the ARN from the second command above>'
+```
 
-7. **Check the site still serves.** The ECS service update rolls both services.
-   `minimumHealthyPercent` is 100, so the serving task is not drained for a
-   replacement that has not become healthy — but confirm anyway:
+`informational` is the plain `-alerts` topic; `urgent` is `-alerts-urgent`.
+Getting them the wrong way round imports each subscription under the other's
+address, and the next plan will want to destroy and recreate both — which is one
+of the things step 6 asks you to look for.
 
-   ```sh
-   curl -s -o /dev/null -w '%{http_code}\n' https://legalworkflows.co.uk/
-   curl -s -o /dev/null -w '%{http_code}\n' https://legalworkflows.co.uk/api/ready
-   ```
+**6. Plan, and read it.**
 
-   Both should be `200`.
+```sh
+terraform plan -out=tfplan
+```
+
+**This plan contains two deliberate destroys.** They are correct. You are
+turning a capability off, and the IAM policies that granted it go with it:
+
+| Change | Resource | Why |
+| --- | --- | --- |
+| **destroy** | `module.secrets.aws_iam_role_policy.backend_task_ecs_exec[0]` | `enable_ecs_exec` is `false`, so its `count` goes 1 → 0 |
+| **destroy** | `module.secrets.aws_iam_role_policy.frontend_task_ecs_exec[0]` | Same |
+| update | the backend `aws_ecs_service` | `enable_execute_command: true → false` |
+| update | the frontend `aws_ecs_service` | Same |
+| **create** | `aws_ecr_registry_scanning_configuration.this` | Registry moves `BASIC` → `ENHANCED` |
+| *no change* | both `aws_sns_topic_subscription.email` entries | The imports in step 5 |
+
+Three things to check before applying:
+
+- The two SNS subscriptions report **no changes**. If the plan wants to
+  *create* them, the import did not take — **stop**. Applying from there gives
+  you duplicate subscriptions and double emails on every alarm.
+- The only destroys are those two IAM role policies. Anything else it wants to
+  destroy or replace is a question, not a step — send it to me.
+- It is not touching the ECS task definitions. Terraform and the deploy
+  pipeline each own different fields of those; a plan that wants to roll them
+  back to an older image means something has drifted.
+
+**7. Apply.**
+
+```sh
+terraform apply tfplan
+```
+
+**8. Verify.** Three commands, and all three should agree:
+
+```sh
+# ECS Exec off on both services — expect: False False
+aws ecs describe-services --cluster legalworkflows-production \
+  --services legalworkflows-production-backend legalworkflows-production-frontend \
+  --query 'services[].enableExecuteCommand' --output text
+
+# Registry scanning — expect: ENHANCED
+aws ecr get-registry-scanning-configuration \
+  --query 'scanningConfiguration.scanType' --output text
+
+# The site still serves — expect: 200 and 200
+curl -s -o /dev/null -w '%{http_code}\n' https://legalworkflows.co.uk/
+curl -s -o /dev/null -w '%{http_code}\n' https://legalworkflows.co.uk/api/ready
+```
+
+The apply rolls both ECS services. `minimumHealthyPercent` is 100, so the
+serving task is never drained for a replacement that has not become healthy —
+but check anyway.
+
+### What this actually turns on
+
+**The image scan gate in `deploy.yml` has never refused anything, and cannot
+until this apply runs.**
+
+The gate counts findings under `.imageScanFindings.enhancedFindings[]` with
+`fixAvailable == "YES"`. Enhanced findings only exist under enhanced scanning,
+and the registry is still `BASIC`. Basic findings live under a different key
+(`.findings[]`) and carry no `fixAvailable` field at all, so the `[]?` in the
+gate's jq yields an empty list, `BLOCKING` computes to `0`, and the step prints
+"no fixable high or critical findings" and passes.
+
+Checked against the running image rather than inferred. The live backend image
+in ECR reports:
+
+```
+severityCounts: {"CRITICAL": 5, "HIGH": 24, "MEDIUM": 17, "LOW": 2}
+basic findings:    48
+enhanced findings:  0
+```
+
+Forty-eight findings, twenty-nine of them high or critical, and a gate that
+reported the image clean. That is not a bug in the gate — the design is
+deliberate and the reasoning is in `deploy.yml`'s comment: basic scanning cannot
+say whether a fix exists, a Debian base ships with CVEs Debian will not fix, and
+a gate that can never pass is not a gate. Enhanced scanning is what supplies
+`fixAvailable`, so the gate can refuse what is actionable and let through what
+nobody can act on.
+
+**So expect the next deploy after this apply to behave differently**, and
+possibly to go red. If it does, that is the gate working for the first time, and
+the finding it names will have a fix available. Do not route around it — send it
+to me.
+
+Two smaller consequences of the same change:
+
+- Inspector bills per image scanned, and continuous scanning re-scans when a
+  relevant CVE is published. This enables scanning for the **whole registry**,
+  which is shared with the matter-management platform, not just this project's
+  repositories. `infra/scanning.tf` explains why the wildcard rule has to be
+  there: under `ENHANCED`, a repository matching no filter has scanning off
+  entirely rather than downgraded.
+- The first scan after enabling can lag a few minutes. `deploy.yml` polls for
+  15 minutes and says so in its error text, so a re-run is safe.
 
 ### Tell me
 
-- That the apply completed, and whether the plan contained anything you did not
-  expect.
-- If the plan wanted to create the subscriptions rather than leaving them
-  alone — that is worth stopping on, and I will look at it before you apply.
-
----
+- That the apply completed, and whether the plan held anything beyond the six
+  rows in the table above.
+- If the plan wanted to **create** the SNS subscriptions rather than leave them
+  alone — stop there and tell me before applying.
+- What the next deploy's "Build and scan" jobs say. That is the first honest
+  reading anyone has had of what is in these images.
 
 ## Task 2 — Fork the workflow catalogue
 

@@ -90,7 +90,18 @@ them, is [`human-tasks/next-steps.md`](human-tasks/next-steps.md).
 
 - ECS Exec disabled on both services and both task roles (security review
   finding 2) — until applied, the running services still accept an exec session.
-- ECR enhanced scanning.
+- ECR enhanced scanning. **Until this is applied the release's image scan gate
+  passes every image.** The gate counts findings under
+  `.imageScanFindings.enhancedFindings[]` with `fixAvailable == "YES"`, and
+  enhanced findings exist only under enhanced scanning; the registry is still
+  `BASIC`, whose findings live under `.findings[]` and carry no `fixAvailable`
+  at all. The `[]?` yields empty, `BLOCKING` computes to `0`, and the step
+  prints "no fixable high or critical findings". Checked against the running
+  image on 18 September 2026: `legalworkflows-production-backend:main` reports
+  5 critical and 24 high across 48 basic findings, 0 enhanced — and the gate
+  called it clean. The design is right and documented in `deploy.yml`; it is
+  the registry setting it depends on that was never applied. Expect the first
+  deploy after the apply to be the first real reading of these images.
 - `workflows_repository`, if it is to be set to `""` (see 2014 below).
 - `alert_email`, now that an address exists. **Import the two existing
   subscriptions first**, or the apply creates a second pair and every alarm
