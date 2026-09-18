@@ -50,7 +50,7 @@ Issue Id,Status,Status note
 2049,In progress,"Rolled up from 3 children: 2 done, 1 in progress."
 2050,Done,From the delivery plan row that cites it.
 2051,Done,From the delivery plan row that cites it.
-2052,In progress,"Drilled 18 September 2026: a broken deploy (unpullable image) was NOT rolled back by the ECS circuit breaker - it stalled IN_PROGRESS for 17 minutes and was restored by hand, so the ""without manual intervention"" criterion is not met. Availability held throughout (minimumHealthyPercent 100, 33/33 probes 200). The deploy workflow catches it instead. The runtime-failure case is still untested. See docs/runbooks/deploy-rolled-back.md."
+2052,Done,"Drilled twice against production 18 September 2026. A runtime failure (real image, container runs but never listens on 3001) was caught by the ALB health check and rolled back by the ECS circuit breaker unaided after 3 failures - the acceptance criterion, met. A placement failure (unpullable image) is NOT caught by the breaker and stalls instead; the deploy workflow's wait services-stable catches that. Site 200 on all 60 probes. See docs/runbooks/deploy-rolled-back.md."
 2053,Done,Rolled up from 1 child: 1 done.
 2054,Done,From the delivery plan row that cites it.
 2055,Done,Rolled up from 3 children: 3 done.
