@@ -211,8 +211,10 @@ but check anyway.
 
 ### What this actually turns on
 
-**The image scan gate in `deploy.yml` has never refused anything, and cannot
-until this apply runs.**
+**The image scan gate in `deploy.yml` cannot refuse anything until this apply
+runs.** (In its current form. An earlier form of it did refuse an image —
+`backend/Dockerfile` records it rejecting the full LibreOffice suite at 31
+findings, which is why only Writer is installed.)
 
 The gate counts findings under `.imageScanFindings.enhancedFindings[]` with
 `fixAvailable == "YES"`. Enhanced findings only exist under enhanced scanning,
