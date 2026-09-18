@@ -103,7 +103,42 @@ aws ecs update-service --cluster legalworkflows-production \
   --task-definition legalworkflows-production-backend:<last good revision>
 ```
 
-**Still untested:** whether the breaker fires for a *runtime* failure — an
-image that pulls, starts, and then fails its health checks. That is the case
-the breaker is designed for, and the drill above does not tell us either way.
-Worth a second drill before anyone relies on it.
+### The runtime case, drilled the same day, and it works
+
+The obvious question the drill above leaves open is whether the breaker fires
+at all. It does. Drilled again at 11:51 on 18 September 2026, this time with a
+*runtime* failure: the real image, which pulls and starts normally, with the
+entry point replaced by `sleep 3600` so the container runs but never listens on
+port 3001.
+
+| Time (UTC) | What happened |
+| --- | --- |
+| 11:51 | Service updated to the broken revision; `PRIMARY`, `IN_PROGRESS` |
+| 11:52 | Task starts and is **registered as a target** |
+| 11:54:50 | `(port 3001) is unhealthy in (target-group ...)`; task stopped. Failure 1 |
+| 12:00:28 | Second task, same outcome. Failure 2 |
+| 12:05:57 | Third task, same outcome. Failure 3 |
+| 12:06:34 | `deployment failed: tasks failed to start`, then `rolling back to deployment ...` |
+| 12:06 onwards | Service back on the good revision, unaided |
+
+`rolloutStateReason` on the failed deployment reads *"ECS deployment circuit
+breaker: tasks failed to start"*, and on the new primary *"ECS deployment
+circuit breaker: rolling back to deploymentId ..."*. Nobody touched it. That is
+ticket 2052's acceptance criterion, met.
+
+The site answered 200 on all 60 probes across the fifteen minutes, because
+`minimumHealthyPercent` is 100 and the good task was never drained.
+
+**So the distinction that matters is where the failure happens**, and it is not
+the one you would guess from the configuration:
+
+| Failure | Task registers as a target? | Breaker fires? | What catches it |
+| --- | --- | --- | --- |
+| Image cannot be pulled | No, never placed | **No** — deployment stalls | `wait services-stable` in `deploy.yml` |
+| Container runs but fails its health check | Yes | **Yes**, after 3 failures, about 15 minutes | The breaker, unaided |
+
+A release that fails the way most releases fail — bad code, a missing
+variable, a process that dies or never listens — is the second row, and it
+rolls itself back. A release that cannot pull its image at all is the first
+row, and it needs the pipeline. Both are covered; only one is covered by the
+breaker.

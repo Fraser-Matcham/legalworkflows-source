@@ -156,7 +156,7 @@ not the API's.
 with no unresolved incident. That is a matter of elapsed time, not
 configuration. Alerting itself is now proven working.
 
-### The deployment circuit breaker did not roll back a broken deploy
+### RESOLVED 18 September 2026 — the circuit breaker works, for the failures that reach it
 
 Ticket 2052, drilled on 18 September 2026 with the operator's authorisation.
 The backend was deliberately rolled onto a revision whose image tag does not
@@ -183,10 +183,26 @@ The timeline and the manual-restore command are in
 [`../../runbooks/deploy-rolled-back.md`](../../runbooks/deploy-rolled-back.md)
 under "Note for the record".
 
-**Still open:** whether the breaker fires for a runtime failure, where the
-image pulls and starts but fails its health checks. That is the case it is
-designed for and this drill says nothing about it. A second drill would answer
-it, and should be run when no release is in flight.
+**Answered the same day.** A second drill at 11:51 used the real image with the
+entry point replaced by `sleep 3600`, so the container pulls, starts, registers
+as a target, and never listens on port 3001. Three health-check failures at
+11:54, 12:00 and 12:05, and at 12:06 the breaker failed the deployment and
+rolled back to the good revision unaided. `rolloutStateReason` reads "ECS
+deployment circuit breaker: rolling back to deploymentId ...". The site answered
+200 on all 60 probes across both drills.
+
+So 2052's acceptance criterion is met for the failure mode that matters. The
+distinction is where the failure happens:
+
+| Failure | Breaker fires? | What catches it |
+| --- | --- | --- |
+| Image cannot be pulled | No — the deployment stalls | `wait services-stable` in `deploy.yml` |
+| Container runs but fails its health check | Yes, after 3 failures, about 15 minutes | The breaker, unaided |
+
+A release that fails the way releases usually fail — bad code, a missing
+variable, a process that never listens — rolls itself back. One that cannot pull
+its image at all does not, and the pipeline catches that instead. Both are
+covered. Only one is covered by the breaker, and it is worth knowing which.
 
 ---
 
