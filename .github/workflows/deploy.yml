@@ -634,6 +634,13 @@ jobs:
   backend:
     name: Deploy the backend
     needs: [config, gate, migrate]
+    # Explicit because `migrate` runs past a skipped `build-dbtools`, and the
+    # implicit `success()` is false once anything upstream in the graph was
+    # skipped — even though every job named here succeeded. Without this the
+    # job skips, the two below it skip, and the run still reports success:
+    # three deploys went green in a row having deployed nothing.
+    # scripts/check-release-pipeline.mjs holds the line.
+    if: ${{ !cancelled() && needs.config.result == 'success' && needs.gate.result == 'success' && needs.migrate.result == 'success' }}
     runs-on: ubuntu-latest
       # `ecs wait services-stable` bounds itself at 10 minutes, `tasks-stopped`
       # at 10, and the /api/ready poll at 3.
@@ -779,6 +786,9 @@ jobs:
   frontend:
     name: Deploy the frontend
     needs: [config, gate, backend]
+    # As `backend` above: the skipped `build-dbtools` is still an ancestor
+    # here, so this job has to state its own requirement too.
+    if: ${{ !cancelled() && needs.config.result == 'success' && needs.gate.result == 'success' && needs.backend.result == 'success' }}
     runs-on: ubuntu-latest
       # As the backend job above.
     timeout-minutes: 30
@@ -836,6 +846,9 @@ jobs:
   summary:
     name: Record the release
     needs: [config, gate, backend, frontend]
+    # As the two above. The release record is what rollback.yml reads the
+    # revisions from, so a silently skipped summary costs the way back.
+    if: ${{ !cancelled() && needs.config.result == 'success' && needs.gate.result == 'success' && needs.backend.result == 'success' && needs.frontend.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

@@ -118,6 +118,25 @@ jobs:
 
       - run: npm run boundary
 
+  release-pipeline:
+    name: Release pipeline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      # A green deploy that deployed nothing is worse than a red one, because
+      # nobody looks. That is what a skipped job inherited from an optional
+      # dependency produces, and it took a 503 on the live site to notice.
+      # The self-test first, so a checker that has stopped detecting the
+      # pattern cannot pass as a clean pipeline.
+      - run: npm run pipeline:self-test
+
+      - run: npm run pipeline
+
   platform-keys:
     name: API key tooling
     runs-on: ubuntu-latest

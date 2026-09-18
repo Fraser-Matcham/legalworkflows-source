@@ -12,22 +12,67 @@ added the same day after the platform pull requests.
 
 ## Blocked on the operator, and blocking everything downstream
 
-### The deployment is broken on an invalid Supabase credential
+### The site is down: the operator secret has the wrong key name
 
-Deploy runs 12 and 13 both died at the catalogue sync with:
+Checked against the live account on 18 September 2026. `legalworkflows.co.uk`
+returns **503** on `/`, `/api/ready` and `/api/health`. Both ECS services have
+`desiredCount` 1 and `runningCount` 0, and both deployment circuit breakers
+read `FAILED`.
+
+The backend's stopped tasks say exactly why:
 
 ```
-Mike workflow sync failed { message: 'Invalid API key',
-  hint: 'Double check your Supabase `anon` or `service_role` API key.' }
+ResourceInitializationError: unable to pull secrets or registry auth:
+execution resource retrieval failed: unable to retrieve secret from asm:
+retrieved secret from Secrets Manager did not contain json key SUPABASE_SECRET_KEY
 ```
 
-`SUPABASE_SECRET_KEY` in `<prefix>/backend/operator` is wrong or stale. The
-remedy is section 2 of
-[`../../runbooks/database-unreachable.md`](../../runbooks/database-unreachable.md).
+`legalworkflows-production/backend/operator` is a JSON object holding the keys
+`service_role` and `ANTHROPIC_API_KEY`. The task definition asks it for
+`SUPABASE_SECRET_KEY`, which is not there — the value appears to be present
+under the wrong name. Nothing reached Supabase; the execution role could not
+assemble the task's environment, which is the case
+[`../../runbooks/database-unreachable.md`](../../runbooks/database-unreachable.md)
+section 2 describes under "The secret must stay a JSON object". `ANTHROPIC_API_KEY`
+in the same object is three characters long, so it is a placeholder too. A
+separate secret named `service_role`, holding one key of the same name, also
+exists and nothing references it.
 
-It would not have stopped at the sync: the service reads the same secret from
-the same task definition, and `/ready` includes a database probe, so the
-readiness gate a step later would have failed too.
+The earlier reading of this — "the key is wrong or stale", from the catalogue
+sync's `Invalid API key` on deploy runs 12 and 13 — was the right suspect for
+the wrong reason. The key is not rejected; it is absent.
+
+The frontend is down for a second, independent reason: its service still runs
+task definition revision 1, whose image is the Terraform placeholder tag
+`:bootstrap`, and that tag does not exist in ECR
+(`CannotPullContainerError: ... not found`). The deploy job that replaces it
+with a real image has never completed, because it comes after the backend job
+in the pipeline. One successful deploy fixes it; no separate action is needed.
+
+**Everything in Stage 4 from row 4.8 onward waits on this.** Rows 4.8/4.9 (load
+test), 4.10, 4.13 (the smoke test exists but has never met a deployment) and
+4.14 all need a stack that serves.
+
+### Three deploys reported success while deploying nothing
+
+Fixed in this change; recorded because the failure mode is the reason the
+outage above went unnoticed.
+
+Adding `build-dbtools` to `deploy.yml` for stage 5 gave it
+`if: vars.PLATFORM_ENABLED == 'true'`, so it skips until the platform is
+enabled. `migrate` was written to run past that skip and does. But "Deploy the
+backend", "Deploy the frontend" and "Record the release" carried no condition
+of their own, and GitHub's implicit `success()` is false once anything upstream
+in the graph was skipped — even though every job they name succeeded. All three
+skipped, on every push to `main` from run 21 onward, and each run still reported
+success, because a skipped job is not a failed one.
+
+Runs 21, 22 and 23 are green and deployed nothing. Run 20 is the last one whose
+backend job actually ran, and it failed at the catalogue sync.
+
+The three jobs now state their own requirements, and
+`scripts/check-release-pipeline.mjs` (CI job "Release pipeline") fails the build
+on any job that inherits a skip from an optional dependency.
 
 **Everything in Stage 4 from row 4.8 onward waits on this.** Rows 4.8/4.9 (load
 test), 4.10, 4.13 (the smoke test exists but has never met a deployment) and

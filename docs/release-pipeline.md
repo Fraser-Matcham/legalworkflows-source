@@ -186,3 +186,27 @@ convention; `infra/modules/deploy/README.md` has the reasoning.
   content-hashed and everything else is uncached, so nothing needs it.
 - **Retry.** A failed step is a failed release; the summary and the
   runbooks say what to look at.
+
+## Every deploy job states its own condition
+
+`build-dbtools` is optional: it carries `if: vars.PLATFORM_ENABLED == 'true'`
+and skips until the platform is enabled. Any job downstream of an optional one
+must carry its own job-level `if`, naming what it actually requires:
+
+```yaml
+if: ${{ !cancelled() && needs.migrate.result == 'success' }}
+```
+
+Without it the job inherits GitHub's implicit `success()`, and that is false
+once **anything upstream in the graph** was skipped — not just the jobs it
+names. The job skips, everything after it skips, and the run still reports
+success, because a skipped job is not a failed one.
+
+This is not theoretical. When `build-dbtools` was added, the three jobs that
+do the deploying had no conditions, and three consecutive pushes to `main` went
+green having deployed nothing while the live site served 503.
+
+`scripts/check-release-pipeline.mjs` fails the build on it, as the CI job
+"Release pipeline". Run it locally with `npm run pipeline`. It asks only that
+a job downstream of an optional one decides for itself; propagating the skip on
+purpose is a legitimate answer, as long as the job says so.
