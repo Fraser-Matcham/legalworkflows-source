@@ -41,8 +41,8 @@
         "katex": "^0.18.7",
         "lucide-react": "^1.45.0",
         "luckyexcel": "^1.0.1",
-        "mammoth": "^1.11.0",
-        "marked": "^18.0.12",
+        "mammoth": "^1.12.3",
+        "marked": "^18.0.13",
         "next": "^16.3.5",
         "nextjs-toploader": "^3.9.17",
         "pdfjs-dist": "4.10.38",
@@ -56,7 +56,7 @@
         "remark-gfm-configurable": "^1.0.0",
         "remark-math": "^6.0.0",
         "resend": "^6.28.0",
-        "tailwind-merge": "^3.4.0",
+        "tailwind-merge": "^3.7.0",
         "tiptap-markdown": "^0.9.0"
     },
     "devDependencies": {
