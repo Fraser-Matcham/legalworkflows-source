@@ -413,33 +413,11 @@ jobs:
 
           echo "all findings by severity: $(jq -c '.imageScanFindings.findingSeverityCounts // {}' /tmp/scan.json)"
 
-          jq -r '
-            [ .imageScanFindings.enhancedFindings[]?
-              | select(.severity == "CRITICAL" or .severity == "HIGH") ]
-            | group_by(.fixAvailable // "UNKNOWN")[]
-            | "  fixAvailable=\(.[0].fixAvailable // "UNKNOWN"): \(length)"
-          ' /tmp/scan.json || true
-
-          jq -r '
-            [ .imageScanFindings.enhancedFindings[]?
-              | select(.severity == "CRITICAL" or .severity == "HIGH")
-              | select(.fixAvailable == "YES") ]
-            | .[]
-            | "  FIXABLE \(.severity) \(.packageVulnerabilityDetails.vulnerabilityId // .title // "?") in \(
-                [.packageVulnerabilityDetails.vulnerablePackages[]?.name] | unique | join(", ") // "?")"
-          ' /tmp/scan.json || true
-
-          BLOCKING=$(jq '
-            [ .imageScanFindings.enhancedFindings[]?
-              | select(.severity == "CRITICAL" or .severity == "HIGH")
-              | select(.fixAvailable == "YES") ] | length
-          ' /tmp/scan.json)
-
-          if [ "$BLOCKING" != "0" ]; then
-            echo "::error::$BLOCKING fixable high or critical findings in the $REPO image. Each has a fix available, so each is actionable — see the FIXABLE lines above, and ECR → $REPO → $TAG → scan results."
-            exit 1
-          fi
-          echo "no fixable high or critical findings"
+          # scripts/check-image-scan.mjs holds the judgement: which findings are
+          # actionable here, which are vendored inside the base image and carry a
+          # dated allowlist entry, and — the case that hid the gate being inert —
+          # whether this is an ENHANCED scan at all.
+          node scripts/check-image-scan.mjs --scan /tmp/scan.json --image "$REPO:$TAG"
 
   # ---------------------------------------------------------------------------
   # Stage 5 (ticket 2113): the database-tools image — psql, pg_dump and
@@ -508,16 +486,7 @@ jobs:
           aws ecr describe-image-scan-findings --repository-name "$REPO" \
             --image-id imageTag="$TAG" --output json > /tmp/scan.json
           echo "all findings by severity: $(jq -c '.imageScanFindings.findingSeverityCounts // {}' /tmp/scan.json)"
-          BLOCKING=$(jq '
-            [ .imageScanFindings.enhancedFindings[]?
-              | select(.severity == "CRITICAL" or .severity == "HIGH")
-              | select(.fixAvailable == "YES") ] | length
-          ' /tmp/scan.json)
-          if [ "$BLOCKING" != "0" ]; then
-            echo "::error::$BLOCKING fixable high or critical findings in the $REPO image. See ECR → $REPO → $TAG → scan results."
-            exit 1
-          fi
-          echo "no fixable high or critical findings"
+          node scripts/check-image-scan.mjs --scan /tmp/scan.json --image "$REPO:$TAG"
 
   # ---------------------------------------------------------------------------
   migrate:

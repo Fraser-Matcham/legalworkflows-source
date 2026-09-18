@@ -11,8 +11,8 @@ between "running" and "finished".
 | --- | --- | --- | --- |
 | ~~1~~ | ~~Run the queued `terraform apply`~~ — **done 18 September 2026** | — | — |
 | 2 | Fork the workflow catalogue | 15 min | 2014, 2015, 2016 |
-| 3 | Get an Anthropic key and put it in two places | 20 min | 2020, and the product's central feature |
-| 4 | Make me a test account on the live stack | 5 min | 2044 |
+| 3 | Get an Anthropic key and put it in two places — **[DEFERRED]** by the operator, 18 September 2026 | 20 min | 2020, and the product's central feature |
+| ~~4~~ | ~~A test account on the live stack~~ — **done 18 September 2026** | — | — |
 | 5 | Two optional drills | 2 h | 2095, 2098 |
 | 6 | Let the monitoring window elapse | nothing | 2107 |
 
@@ -211,8 +211,10 @@ but check anyway.
 
 ### What this actually turns on
 
-**The image scan gate in `deploy.yml` has never refused anything, and cannot
-until this apply runs.**
+**The image scan gate in `deploy.yml` cannot refuse anything until this apply
+runs.** (In its current form. An earlier form of it did refuse an image —
+`backend/Dockerfile` records it rejecting the full LibreOffice suite at 31
+findings, which is why only Writer is installed.)
 
 The gate counts findings under `.imageScanFindings.enhancedFindings[]` with
 `fixAvailable == "YES"`. Enhanced findings only exist under enhanced scanning,
@@ -319,7 +321,18 @@ repositories of this project.
 
 ---
 
-## Task 3 — Get an Anthropic key, and put it in two places
+## Task 3 — Get an Anthropic key, and put it in two places ⏸
+
+> **[DEFERRED]** by the operator on 18 September 2026. Recorded as a decision,
+> not an omission, so it stays visible rather than quietly becoming permanent.
+>
+> What stays true while it is deferred: ticket 2020 is open, the four LLM e2e
+> specs continue to self-skip so e2e's green covers 27 specs and not 31, and any
+> request reaching the model provider fails at request time. `/api/ready` keeps
+> answering 200 throughout, because readiness probes the database and storage
+> and deliberately does not probe the provider — so nothing about the service
+> looks wrong from outside. Nothing degrades further by waiting.
+
 
 **Why:** there is no model provider key anywhere, and the product's central
 feature is asking a question and getting a streamed answer.
@@ -417,7 +430,21 @@ Then I can close 2020 properly rather than as "green because it did not run".
 
 ---
 
-## Task 4 — Make me a test account on the live stack
+## Task 4 — Make me a test account on the live stack ✅
+
+> **Done 18 September 2026**, and by the better route: the operator ran the
+> round trip themselves, so no production login was created for me to hold.
+>
+> A document uploaded through the product downloaded again with its contents
+> intact. Confirmed server-side rather than from the UI — two objects landed in
+> `legalworkflows-production-documents` at 14:02 and 14:03, a `.docx` and its
+> converted `.pdf`, at real sizes and encrypted under the documents KMS key.
+>
+> The configuration half checked out too: `R2_REGION` is `eu-west-2` and the
+> bucket's own region is `eu-west-2`, which is what `storageRegion.ts` resolves
+> the signing region from. A mismatch is the fault the ticket exists to catch,
+> and it reads like a permissions error rather than a region error.
+
 
 **Why:** ticket 2044 is the signed-URL round trip against real S3. The code half
 is done and tested — `backend/src/lib/storageRegion.ts` resolves the signing

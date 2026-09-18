@@ -42,7 +42,7 @@ Issue Id,Status,Status note
 2041,Superseded,"Auth provider, email and MFA configuration move to GoTrue: tickets 2116-2119."
 2042,In progress,"Rolled up from 2 children: 1 done, 1 in progress."
 2043,Done,From the delivery plan row that cites it.
-2044,In progress,Code half done and tested (storageRegion.ts). Live check needs the deployed stack.
+2044,Done,"Signed-URL round trip proven against the live stack on 18 September 2026. A document uploaded through the product downloaded again with its contents intact, and the objects were confirmed in legalworkflows-production-documents (KMS-encrypted, real sizes) rather than taken from the UI. R2_REGION eu-west-2 matches the bucket's own region, which is what storageRegion.ts resolves the signing region from."
 2045,Done,Rolled up from 2 children: 2 done.
 2046,Done,From the delivery plan row that cites it.
 2047,Done,From the delivery plan row that cites it.

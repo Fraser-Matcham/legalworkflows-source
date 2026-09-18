@@ -24,6 +24,22 @@ RUN apt-get update \
   && apt-get upgrade -y \
   && rm -rf /var/lib/apt/lists/*
 
+# The npm that ships inside node:22-slim is the single largest source of
+# findings in this image, and none of them come from anything this repository
+# depends on. The first ENHANCED scan flagged pacote, sigstore, tar,
+# brace-expansion, picomatch and ip-address — twelve fixable high findings —
+# and every one is npm's own bundled copy. The backend's lockfile already
+# carries brace-expansion 5.0.9, picomatch 4.0.7 and ip-address 10.7.0, all at
+# or ahead of the versions Inspector asks for, and does not depend on tar,
+# pacote or sigstore at all. pacote even appears twice at two versions, which
+# is the bundled-inside-npm signature.
+#
+# So the fix is not in package.json. Upgrading npm replaces those copies.
+# Floating, for the reason the base tag floats: this image is rebuilt on every
+# release and pinning here would hold the findings open until someone
+# remembered to bump a number.
+RUN npm install -g npm@latest
+
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci

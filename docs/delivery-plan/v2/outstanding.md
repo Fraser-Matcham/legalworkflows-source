@@ -102,8 +102,15 @@ the imported subscriptions acquiring `confirmation_timeout_in_minutes` and
 and an update in place rather than a replacement, so neither subscription ARN
 moved and neither needed re-confirming.
 
-**The image scan gate is now real, and had never refused anything before
-today.** The gate counts findings under `.imageScanFindings.enhancedFindings[]`
+**The image scan gate is now real.** In the form it had carried since the
+`fixAvailable` rewrite it could not refuse anything — though an *earlier* form
+of it could and did: `backend/Dockerfile` records it refusing the full
+LibreOffice suite at 31 findings, which is why only Writer is installed. An
+earlier draft of this page said flatly that the gate had never refused an
+image. That was too strong, and the Dockerfile had the counter-example in a
+comment the whole time.
+
+The gate counts findings under `.imageScanFindings.enhancedFindings[]`
 with `fixAvailable == "YES"`. Enhanced findings exist only under enhanced
 scanning; the registry was `BASIC`, whose findings live under `.findings[]` and
 carry no `fixAvailable` at all. The `[]?` yielded an empty list, `BLOCKING`
@@ -115,8 +122,39 @@ every release. Checked against the running image before the apply:
 The design was never the fault; `deploy.yml` explains why the gate needs
 `fixAvailable`, and a zero-high-or-critical gate against a Debian base is
 unpassable rather than strict. What was missing was the registry setting it
-depends on. **The next deploy is the first honest reading of these images, and
-may be red.** That would be the gate working.
+depends on.
+
+### The first gated release, and what it found
+
+Deploy run 30 stopped at "Build and scan (backend)" with **25 fixable high or
+critical findings**. The frontend job cancelled with it, and migrate and both
+deploy jobs skipped. Production never moved: the gate refuses an image before
+anything rolls, so the service stayed on `:20` and kept serving. The catalogue
+sync never ran either, so ticket 2016 waits for a release that gets past this.
+
+The 25 split two ways, and only one way was actionable:
+
+| Finding | Rows | Actionable here? |
+| --- | --- | --- |
+| `openssl/openssl` 3.5.7, fix in 4.0.2 | 15 | **No.** Statically linked inside the Node binary; no Node 22 image ships OpenSSL 4.x |
+| `go/stdlib` 1.26.4 and `golang.org/x/text` | 8 | **No.** Vendored into a base-image binary this repository does not build |
+| npm's own bundled `tar`, `pacote`, `sigstore`, `brace-expansion`, `picomatch`, `ip-address` | 12 | **Yes**, by upgrading npm |
+
+**None of the twelve are our dependencies.** The backend lockfile already
+carries `brace-expansion` 5.0.9, `picomatch` 4.0.7 and `ip-address` 10.7.0, all
+at or ahead of the versions Inspector wants, and has no `tar`, `pacote` or
+`sigstore` at all. `pacote` appears twice at two versions, which is the
+bundled-inside-npm signature. So the fix is `npm install -g npm@latest` in
+`backend/Dockerfile`, not a dependency bump.
+
+And the first thirteen made the gate unpassable — the same fault the
+`fixAvailable` filter was written to cure, reached by a different route.
+`fixAvailable: YES` means the maintainer published a fix, not that we can
+obtain it. `scripts/image-scan-allowlist.json` now carries those thirteen with
+a written reason and a 90-day expiry each, printed on every run, with an
+expired entry failing the build and an entry matching nothing printed as stale.
+`scripts/check-image-scan.mjs` enforces it, and fails outright on a scan result
+that is BASIC rather than silently passing it.
 
 One thing the apply deliberately did not do: roll either service back to the
 `bootstrap` image tag. Both `aws_ecs_service` resources carry
