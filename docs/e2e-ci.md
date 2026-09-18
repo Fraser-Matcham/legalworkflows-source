@@ -101,7 +101,7 @@ UI path:
 CLI equivalent (repo admin):
 
 ```bash
-gh secret set ANTHROPIC_API_KEY --repo Open-Legal-Products/mike
+gh secret set ANTHROPIC_API_KEY --repo Fraser-Matcham/legalworkflows
 # paste the key at the prompt (or pipe it: --body "$ANTHROPIC_API_KEY")
 ```
 

@@ -85,6 +85,9 @@ is done: see below.
 
 ### `terraform apply` has not been run since three changes landed
 
+The operator's step-by-step for this, and for everything else below that needs
+them, is [`human-tasks/next-steps.md`](human-tasks/next-steps.md).
+
 - ECS Exec disabled on both services and both task roles (security review
   finding 2) — until applied, the running services still accept an exec session.
 - ECR enhanced scanning.
