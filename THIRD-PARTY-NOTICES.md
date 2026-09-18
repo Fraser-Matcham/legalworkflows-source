@@ -2124,7 +2124,7 @@ each one is a question to resolve rather than a gap to ignore.
   - Copyright (c) Meta Platforms, Inc. and affiliates.
 - `util-deprecate@1.0.2` — backend, frontend
   - Copyright (c) 2014 Nathan Rajlich <nathan@tootallnate.net>
-- `uuid@8.3.2` — frontend
+- `uuid@11.1.1` — frontend
   - Copyright (c) 2010-2020 Robert Kieffer and other contributors
 - `vary@1.1.2` — backend, frontend
   - Copyright (c) 2014-2017 Douglas Christopher Wilson

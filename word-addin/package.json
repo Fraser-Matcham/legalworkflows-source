@@ -63,5 +63,8 @@
     "webpack": "^5.110.3",
     "webpack-cli": "^7.2.3",
     "webpack-dev-server": "^6.0.0"
+  },
+  "overrides": {
+    "adm-zip": "^0.6.1"
   }
 }
