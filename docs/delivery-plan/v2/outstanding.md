@@ -89,6 +89,11 @@ is done: see below.
   finding 2) — until applied, the running services still accept an exec session.
 - ECR enhanced scanning.
 - `workflows_repository`, if it is to be set to `""` (see 2014 below).
+- `alert_email`, now that an address exists. **Import the two existing
+  subscriptions first**, or the apply creates a second pair and every alarm
+  emails twice — the procedure is in
+  [`../../../infra/modules/observability/README.md`](../../../infra/modules/observability/README.md)
+  under "Adopting subscriptions that were made by hand".
 
 ---
 
@@ -143,7 +148,7 @@ Closed on 18 September 2026:
 
 | Step | Evidence |
 | --- | --- |
-| Both topics subscribed to `fraser@legalutopia.co.uk` | `ListSubscriptionsByTopic` on each |
+| Both topics subscribed to the operator's address | `ListSubscriptionsByTopic` on each |
 | Operator confirmed both | Both read a subscription ARN rather than `PendingConfirmation` |
 | A test message published to each | Operator confirmed both arrived in the inbox |
 
@@ -151,6 +156,23 @@ The last row is the one that matters and the easy one to skip. SNS accepting a
 publish proves the topic took the message, not that anyone received it. Only
 the mailbox owner can see the other half, so the proof is their confirmation,
 not the API's.
+
+### Declaring it, rather than leaving it in the account
+
+The subscriptions above were made through the API, so they work but are not in
+Terraform state. A rebuild would recreate the topics and the alarms and quietly
+leave them with no subscribers again, which is the same silent failure in a new
+costume.
+
+The module has always supported this: `alert_email` creates a subscription on
+both topics, and the root passes it straight through. It had simply never been
+set, and `terraform.tfvars.example` did not mention it, so nobody setting the
+stack up would have known to. The example now documents it.
+
+What it needs is an import rather than a plain apply, because Terraform does
+not adopt a subscription it did not create — it makes a second one, and every
+alarm then emails twice. The commands are in the module README under "Adopting
+subscriptions that were made by hand", and the apply is the operator's.
 
 **Still open for 2107:** the ticket also asks for a monitoring window to pass
 with no unresolved incident. That is a matter of elapsed time, not

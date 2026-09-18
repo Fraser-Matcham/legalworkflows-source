@@ -23,6 +23,45 @@ confirmation message is clicked — Terraform cannot do that. An SMS
 subscription in a new account is subject to SNS's own SMS sandbox, which
 requires the destination number to be verified in the SNS console first.
 
+## Adopting subscriptions that were made by hand
+
+**Read this before setting `alert_email` on a deployment whose topics already
+have subscribers.** Terraform has no state for a subscription created through
+the console or the API, so an apply does not adopt it — it creates a second
+one. Every alarm then emails twice, and the hand-made subscription stays
+outside Terraform, which is the problem this was meant to solve.
+
+That is the situation this deployment was in on 18 September 2026. Both
+subscriptions were created through the API during the incident, to close the
+gap the same day, and confirmed from the inbox. They work; they are simply not
+declared.
+
+Adopt them once, before or alongside the apply that sets `alert_email`:
+
+```sh
+terraform import \
+  'module.observability.aws_sns_topic_subscription.email["informational"]' \
+  '<subscription ARN for <prefix>-alerts>'
+
+terraform import \
+  'module.observability.aws_sns_topic_subscription.email["urgent"]' \
+  '<subscription ARN for <prefix>-alerts-urgent>'
+```
+
+The ARNs are the full form ending in a UUID, which
+`aws sns list-subscriptions-by-topic --topic-arn <topic>` prints as
+`SubscriptionArn`. A subscription still reading `PendingConfirmation` has no
+ARN and cannot be imported: confirm it first.
+
+Then `terraform plan` should report **no changes** for these two resources. If
+it still wants to create them, the address or the ARN is wrong — stop, rather
+than applying and ending up with duplicates.
+
+After the import the address in `terraform.tfvars` is the source of truth. A
+rebuild recreates the subscriptions from it, and SNS sends fresh confirmation
+links that someone has to click, because a confirmed subscription is not
+something Terraform can conjure.
+
 ## What fires, and why
 
 Every alarm's description ends with the runbook that answers it; the index

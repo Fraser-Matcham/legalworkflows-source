@@ -30,6 +30,25 @@ workflows_ref        = "main"
 # Optional operator secrets to inject once they have been written:
 # backend_extra_secret_keys = ["ERROR_TRACKING_DSN", "MIKE_WORKFLOWS_GITHUB_TOKEN"]
 
+# --- where alerts go (Stage 3, Task 9) -----------------------------------------
+# Set this. The two SNS topics and all sixteen alarms exist from the first
+# apply whether or not it is set, so an unset address does not look broken
+# anywhere: the alarms go OK, ALARM and back, and nobody hears any of it. That
+# is exactly what happened here until 18 September 2026 — the site served 503
+# for a morning and no alert reached a person, because both topics had zero
+# subscriptions.
+#
+# SNS emails a confirmation link when the subscription is created, and the
+# subscription delivers nothing until someone clicks it. Terraform cannot do
+# that step, so `terraform apply` finishing is not the same as alerting
+# working. Confirm it, then prove it with a test publish.
+alert_email = "alerts@example.com"
+
+# Optional, urgent topic only: the "wake me" half of Task 9. E.164 form. A new
+# account is in SNS's SMS sandbox, where the number must be verified in the
+# console first.
+# urgent_sms_number = "+447700900123"
+
 # --- Stage 5: the self-hosted platform (docs/delivery-plan/v2/plan.md) ---------
 # Nothing below is created until platform_enabled is true, and that waits on
 # Stage 5, Task 1 (the running cost). platform_serves_backend is the cutover

@@ -105,7 +105,7 @@ Issue Id,Status,Status note
 2104,In progress,"This repository half done: 3 findings, all fixed. Juralio side and the seam from its end outstanding."
 2105,In progress,"Rolled up from 2 children: 1 in progress, 1 to do."
 2106,Done,"Smoke tested against the live service on 18 September 2026: 6 of 6 checks pass and the source link resolves to the mirror at the running commit. The run found two defects in the smoke test itself, both fixed."
-2107,In progress,"Alerting proven working 18 September 2026: both SNS alert topics had zero subscriptions, so all 16 alarms fired into silence. Subscribed and confirmed to fraser@legalutopia.co.uk, and a test publish to each topic was confirmed received. What remains is the monitoring window itself passing with no unresolved incident, which is elapsed time not configuration."
+2107,In progress,"Alerting proven working 18 September 2026: both SNS alert topics had zero subscriptions, so all 16 alarms fired into silence. Subscribed and confirmed, and a test publish to each topic was confirmed received. The subscriptions are account state, not Terraform: alert_email is now documented in terraform.tfvars.example and the module README carries the import commands that adopt the existing pair instead of duplicating them. Remaining: the monitoring window itself."
 2110,In progress,"Rolled up from 6 children: 1 done, 5 in progress."
 2111,Done,Rolled up from 2 children: 2 done.
 2112,Done,"infra/modules/database, wired behind platform_enabled; plan row 5.1."
