@@ -173,7 +173,7 @@ jobs:
       # merge to main deploy "with no manual step" without letting a red
       # commit through.
       - name: Every other check on this commit is green
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const sha = context.sha;
