@@ -15,6 +15,12 @@ together in `THIRD-PARTY-NOTICES.md`.
 
 Last run: 16 September 2026, against `6dabc5e`.
 
+**Signed off against the running production service on 18 September 2026**, at
+commit `78b795b6`. See "Signed off against production" at the end — ticket 2103
+asks for every item checked against the running application rather than against
+intent, and item 5's manual half could not be discharged until there was a
+deployment to check.
+
 ---
 
 ## 1. `LICENSE` retained — AGPL-3.0 section 4
@@ -94,7 +100,8 @@ and better than rendering a dead link.
 
 **Manual:** that the deployed `/legal` link resolves, and that the mirror at
 that commit is complete, can only be confirmed against the running service.
-Do it at cutover (row 4.13).
+Do it at cutover (row 4.13). **Discharged on 18 September 2026** — see
+"Signed off against production" below.
 
 ## 6. Apache-2.0 licence copy — section 4(a)
 
@@ -217,3 +224,46 @@ directly, record it in the script's header.
 3. Confirm `buffers@0.1.1` is still accepted, or gone.
 4. After cutover, open `/legal` on the deployed site and follow the source
    link. It should land on the mirror at the commit that is running.
+
+---
+
+## Signed off against production
+
+18 September 2026, against `https://legalworkflows.co.uk` serving commit
+`78b795b693a107354ad0e6f1415c5dd2329210a6`. This is the first time any of it
+has been checked against a running deployment rather than against the
+configuration that intends it; the service only began serving that morning.
+
+| What was checked | How | Result |
+| --- | --- | --- |
+| `/legal` is reachable on the live site | `GET /legal` | 200, 16,285 bytes |
+| It offers this build's own source | link extracted from the page | `Fraser-Matcham/legalworkflows-source` at `78b795b6` |
+| The offer names the running commit | compared against the deployed SHA | identical |
+| The offer resolves for a stranger | anonymous `GET`, no credentials, no session | 200 |
+| Upstream is still named | attribution link present on the same page | `open-legal-products/mike` |
+| `LICENSE` is intact | `npm run licence` | "LICENSE is intact, and nothing at the root contradicts it" |
+
+The fourth row is the one that matters most and is easiest to get wrong. A
+source offer that only resolves for someone already signed in to the right
+GitHub account discharges nothing: section 13 owes the source to *the user
+interacting with the service*, who is a stranger. The mirror is public, and
+the check was made without credentials to prove it.
+
+The fifth row is not a formality either. Section 13 is satisfied by the
+mirror; sections 5(a) and 5(b) are satisfied by naming the original. Removing
+the upstream link to "finish the debranding" would trade one breach for
+another, which is why `scripts/check-trademarks.mjs` carries an allowlist
+instead of a blanket ban.
+
+### One defect this found, in the checker rather than the service
+
+`scripts/smoke-test.mjs` check 4 read the page for `https://github.com/...` and
+reported the first match as the offer. On the real page upstream's attribution
+link comes first in the DOM, so the check was passing on the attribution and
+had never once looked at the offer. It would have reported a compliant service
+for a page that offered nothing but upstream — the precise failure it exists to
+catch.
+
+The check now requires a link pinned to a full commit SHA, and `--commit`
+asserts that SHA is the running one. The service was compliant throughout; only
+the evidence for it was worthless.

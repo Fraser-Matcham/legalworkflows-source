@@ -101,11 +101,11 @@ Issue Id,Status,Status note
 2100,In progress,Rolled up from 2 children: 2 in progress.
 2101,In progress,"Rolled up from 3 children: 2 in progress, 1 to do."
 2102,To do,From the delivery plan row that cites it.
-2103,In progress,From the delivery plan row that cites it.
+2103,Done,"Signed off against the running production service on 18 September 2026 at 78b795b6; see docs/licence-compliance.md, ""Signed off against production"". Item 5's manual half is discharged."
 2104,In progress,"This repository half done: 3 findings, all fixed. Juralio side and the seam from its end outstanding."
 2105,In progress,"Rolled up from 2 children: 1 in progress, 1 to do."
-2106,In progress,As 2105.
-2107,To do,From the delivery plan row that cites it.
+2106,Done,"Smoke tested against the live service on 18 September 2026: 6 of 6 checks pass and the source link resolves to the mirror at the running commit. The run found two defects in the smoke test itself, both fixed."
+2107,To do,"Alarms are armed (16, all with actions) but both SNS alert topics have zero subscriptions, so nothing would reach anyone. Needs an address subscribed and confirmed before the window can start."
 2110,In progress,"Rolled up from 6 children: 1 done, 5 in progress."
 2111,Done,Rolled up from 2 children: 2 done.
 2112,Done,"infra/modules/database, wired behind platform_enabled; plan row 5.1."

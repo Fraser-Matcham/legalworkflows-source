@@ -25,6 +25,8 @@
  *   node scripts/smoke-test.mjs --self-test    prove the checks fire
  *   node scripts/smoke-test.mjs --platform ... also check the self-hosted
  *                               auth and REST paths through the edge (stage 5)
+ *   node scripts/smoke-test.mjs --commit <sha> ... require the source offer to
+ *                               name that exact commit
  *
  * --app-url defaults to $APP_URL. --alb-host and --bucket have no default:
  * without them their checks report NOT CHECKED and the run fails, unless
@@ -54,7 +56,7 @@ async function get(url, { method = "GET", redirect = "follow", headers = {} } = 
     return response;
 }
 
-function checks({ appUrl, albHost, bucket, albUrl, bucketUrl, platform = false }) {
+function checks({ appUrl, albHost, bucket, albUrl, bucketUrl, platform = false, expectCommit = null }) {
     const origin = appUrl.replace(/\/+$/, "");
     const insecure = origin.replace(/^https:/, "http:");
     // Built here, injectable by the self-test: a check nothing can exercise
@@ -95,16 +97,46 @@ function checks({ appUrl, albHost, bucket, albUrl, bucketUrl, platform = false }
         },
         {
             name: "the Corresponding Source is offered",
-            why: "AGPL-3.0 section 13 obliges the running service to offer its source to anyone who interacts with it over a network. If /legal does not carry a link, the obligation is unmet the moment the first user arrives.",
+            why: "AGPL-3.0 section 13 obliges the running service to offer the Corresponding Source of the version that is running. A link to the upstream project is attribution under 5(a)/5(b), not an offer — the running code is modified, and upstream's tree is not it.",
             async run() {
                 const res = await get(`${origin}/legal`);
                 if (res.status !== 200) return { ok: false, detail: `/legal → ${res.status}` };
                 const body = await res.text();
-                const link = body.match(/https:\/\/github\.com\/[\w.-]+\/[\w.-]+[^"'<\s]*/);
-                return {
-                    ok: Boolean(link),
-                    detail: link ? `offers ${link[0]}` : "no source link in the page",
-                };
+
+                // The page carries two GitHub links, and only one of them
+                // discharges section 13. The first version of this check took
+                // any `https://github.com/...` match, which put upstream's
+                // attribution link first in the DOM and called the obligation
+                // met. It would have passed a page that offered nothing but
+                // upstream — the exact failure it exists to catch.
+                //
+                // What an offer has to be is the source of *this* build, so
+                // the check requires a link pinned to a full commit sha.
+                // `frontend/src/app/lib/legalNotice.ts` builds it from
+                // NEXT_PUBLIC_SOURCE_URL, which the release writes out at the
+                // deployed commit.
+                const links = [
+                    ...body.matchAll(
+                        /https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/(?:tree|commit)\/([0-9a-f]{40})/g,
+                    ),
+                ];
+                if (links.length === 0) {
+                    const any = body.match(/https:\/\/github\.com\/[\w.-]+\/[\w.-]+[^"'<\s]*/);
+                    return {
+                        ok: false,
+                        detail: any
+                            ? `the only source link, ${any[0]}, names no commit, so it does not identify the running version`
+                            : "no source link in the page",
+                    };
+                }
+                const [link, sha] = [links[0][0], links[0][1]];
+                if (expectCommit && sha !== expectCommit) {
+                    return {
+                        ok: false,
+                        detail: `offers ${sha.slice(0, 12)} but the running build is ${expectCommit.slice(0, 12)}`,
+                    };
+                }
+                return { ok: true, detail: `offers ${link}` };
             },
         },
         // Stage 5: the two paths the backend's SUPABASE_URL resolves to once
@@ -149,14 +181,51 @@ function checks({ appUrl, albHost, bucket, albUrl, bucketUrl, platform = false }
             why: "Two gates protect the origin: the CloudFront prefix list and a secret X-Origin-Verify header. The prefix list admits every CloudFront distribution in the world, so the header is the one that matters — and it has never been observed doing its job.",
             skip: albTarget ? null : "no --alb-host given",
             async run() {
-                const res = await get(albTarget, { redirect: "manual" });
+                // Three outcomes, and two of them are good news.
+                //
+                // The first real run of this check against production failed,
+                // on an origin that was correctly locked down. The load
+                // balancer's security group admits port 443 only from the
+                // managed prefix list com.amazonaws.global.cloudfront.origin-facing,
+                // so a request from anywhere else is dropped at the network
+                // layer: no TCP handshake, no response, just a timeout. The
+                // check demanded a 403 and read that silence as failure.
+                //
+                // A dropped packet is a stronger refusal than a 403, not a
+                // weaker one. The header gate cannot be observed from outside
+                // CloudFront precisely because the network gate fires first,
+                // so demanding a 403 here made a check that can never pass
+                // from where it runs.
+                //
+                // A timeout is unambiguous only because the edge checks above
+                // already proved the service is up. A load balancer that was
+                // simply down would have taken "the backend is ready through
+                // the edge" with it.
+                let res;
+                try {
+                    res = await get(albTarget, { redirect: "manual" });
+                } catch (error) {
+                    const blocked =
+                        error?.name === "TimeoutError" ||
+                        error?.name === "AbortError" ||
+                        /ECONNREFUSED|ECONNRESET|EHOSTUNREACH|ENETUNREACH|UND_ERR/.test(
+                            `${error?.cause?.code ?? ""}${error?.code ?? ""}${error?.message ?? ""}`,
+                        );
+                    if (!blocked) throw error;
+                    return {
+                        ok: true,
+                        detail:
+                            "the origin never answered: the CloudFront prefix list " +
+                            "dropped the request before the X-Origin-Verify gate saw it",
+                    };
+                }
                 // 403 is the listener's own default action when no rule
                 // matches: a fixed-response "Forbidden" (modules/backend/alb.tf).
                 // Checked against the Terraform rather than assumed. Anything
                 // 2xx means the header gate is not gating.
                 return {
                     ok: res.status === 403,
-                    detail: `direct to origin → ${res.status}${res.status === 403 ? "" : " (expected 403)"}`,
+                    detail: `direct to origin → ${res.status}${res.status === 403 ? "" : " (expected 403, or no answer at all)"}`,
                 };
             },
         },
@@ -230,6 +299,8 @@ function report(results, { allowSkipped }) {
     return failed.length === 0 && (allowSkipped || skipped.length === 0);
 }
 
+const SELF_TEST_SHA = "0123456789abcdef0123456789abcdef01234567";
+
 async function selfTest() {
     // A stub that answers the way a correctly configured stack does, so the
     // checks are exercised for real rather than asserted about.
@@ -255,9 +326,20 @@ async function selfTest() {
             res.writeHead(401, { "content-type": "application/json; charset=utf-8" }).end('{"code":"42501","message":"permission denied for table projects"}');
         } else if (url.startsWith("/leaky/rest/v1/projects")) {
             res.writeHead(200, { "content-type": "application/json" }).end('[]');
-        } else if (url === "/legal") {
+        } else if (url === "/attribution-only/legal") {
+            // The shape that must fail: the upstream project named, as 5(a)
+            // and 5(b) require, and nothing offering this build's own source.
             res.writeHead(200, { "content-type": "text/html" })
-                .end('<a href="https://github.com/owner/repo/tree/abc123">Source</a>');
+                .end('<a href="https://github.com/open-legal-products/mike">Upstream</a>');
+        } else if (url === "/legal") {
+            // Upstream's attribution link comes FIRST, as it does on the real
+            // page. A check that takes the first GitHub link it sees reads
+            // that as the offer and passes for the wrong reason.
+            res.writeHead(200, { "content-type": "text/html" })
+                .end(
+                    '<a href="https://github.com/open-legal-products/mike">Upstream</a>' +
+                    `<a href="https://github.com/Owner/repo-source/tree/${SELF_TEST_SHA}">Source</a>`,
+                );
         } else {
             res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end("<html></html>");
         }
@@ -307,10 +389,44 @@ async function selfTest() {
     const platformUnrouted = await run({ appUrl: `${base}/unrouted`, albHost: null, bucket: null, platform: true });
     const platformLeaky = await run({ appUrl: `${base}/leaky`, albHost: null, bucket: null, platform: true });
 
+    // The two failures the first production run of this script exposed, in
+    // the script rather than the stack.
+    //
+    // A port nothing is listening on stands in for the load balancer's
+    // security group dropping the packet: the request dies at the network
+    // layer with no status to read, which is what a correctly locked origin
+    // looks like from outside CloudFront.
+    const closed = createServer();
+    await new Promise((resolve) => closed.listen(0, "127.0.0.1", resolve));
+    const deadPort = closed.address().port;
+    await new Promise((resolve) => closed.close(resolve));
+    const dropped = await run({ appUrl: base, albUrl: `http://127.0.0.1:${deadPort}/api/ready` });
+
+    // A /legal page that names upstream and offers nothing of its own.
+    const attributionOnly = await run({ appUrl: `${base}/attribution-only` });
+
+    // A pinned offer that names a different build than the one running.
+    const staleOffer = await run({
+        appUrl: base,
+        expectCommit: "ffffffffffffffffffffffffffffffffffffffff",
+    });
+
     const cases = [
         ["the application check passes against a serving stub", byName("application is served").state === "PASS"],
         ["the readiness check passes against a ready stub", byName("backend is ready").state === "PASS"],
-        ["the source offer is found when the page carries a link", byName("Corresponding Source").state === "PASS"],
+        ["the source offer is found when the page carries a pinned link", byName("Corresponding Source").state === "PASS"],
+        [
+            "an upstream attribution link alone does NOT satisfy section 13",
+            state(attributionOnly, "Corresponding Source") === "FAIL",
+        ],
+        [
+            "a source offer naming a different build fails",
+            state(staleOffer, "Corresponding Source") === "FAIL",
+        ],
+        [
+            "an origin that drops the packet passes, rather than false-alarming",
+            state(dropped, "load balancer refuses") === "PASS",
+        ],
         ["a missing --alb-host is NOT CHECKED, never a pass", byName("load balancer refuses").state === "SKIP"],
         ["a missing --bucket is NOT CHECKED, never a pass", byName("document bucket").state === "SKIP"],
         ["an http-only stub fails the https-redirect check", byName("redirected to https").state === "FAIL"],
@@ -363,5 +479,6 @@ const results = await run({
     albHost: arg("alb-host", null),
     bucket: arg("bucket", null),
     platform: flag("platform"),
+    expectCommit: arg("commit", null),
 });
 process.exit(report(results, { allowSkipped: flag("allow-skipped") }) ? 0 : 1);
