@@ -40,8 +40,11 @@ deliberately rather than assumed:
 - `terraform plan` rehearses every infrastructure change before it applies.
 - The schema-drift CI check builds both installation paths and compares them,
   so a migration that disagrees with `schema.sql` fails before merge.
-- Supabase's automated backups, with a restore proven once (ticket 2095)
-  rather than assumed.
+- Object storage is replicated and its restore is proven, not assumed
+  (ticket 2095, drilled 18 September 2026 by recovering a deleted document).
+  The database half of that claim did **not** survive the drill: the Supabase
+  Free plan has no accessible backups and none were self-managed, so there is
+  currently nothing to restore. `docs/runbooks/restore.md` opens with it.
 
 Add a staging environment when there are users whose data justifies it.
 

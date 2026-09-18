@@ -12,9 +12,9 @@ Issue Id,Status,Status note
 2011,Done,"Rolled up from 2 children: 1 done, 1 won't do."
 2012,Won't do,From the delivery plan row that cites it.
 2013,Done,From the delivery plan row that cites it.
-2014,To do,Rolled up from 2 children: 2 to do.
-2015,To do,"Licence checked 17 September 2026: the catalogue repository is MIT (outstanding.md). The fork itself needs an account only the operator controls; after it, two tfvars values and an apply."
-2016,To do,Inherited from parent 2014 (to do).
+2014,Done,Rolled up from 2 children: 2 done.
+2015,Done,"Forked to Fraser-Matcham/mike-workflows and pinned at ce62e6a2. workflows_repository and workflows_ref applied; backend task definition :22 carries MIKE_WORKFLOWS_REPOSITORY=Fraser-Matcham/mike-workflows, replacing Open-Legal-Products on :20."
+2016,Done,"Proved by deploy run 37 on 18 September 2026: the catalogue-sync task ran from revision :22 against the fork and exited clean, the service rolled COMPLETED 1/1, and readiness passed through the edge."
 2017,In progress,"Rolled up from 2 children: 1 done, 1 in progress."
 2018,In progress,"Rolled up from 5 children: 3 done, 1 in progress, 1 won't do."
 2019,Done,scorecard.yml absent from .github/workflows/
@@ -93,10 +93,10 @@ Issue Id,Status,Status note
 2092,Done,completed this session
 2093,In progress,Rolled up from 2 children: 2 in progress.
 2094,In progress,"Rolled up from 2 children: 1 done, 1 in progress."
-2095,In progress,From the delivery plan row that cites it.
+2095,In progress,"Drilled 18 September 2026, partial. Documents passed: a document deleted from production was recovered from the backup bucket by version id, size and ETag matching, and live/backup are identical across all 8 objects with every one ReplicationStatus COMPLETED. Database could not be attempted: the Supabase org is on the Free plan, which has no accessible daily backups, and no self-managed dump exists. Stays open until the database has a backup and the application can be run against restored data."
 2096,Done,From the delivery plan row that cites it.
 2097,In progress,"Rolled up from 2 children: 1 in progress, 1 to do."
-2098,In progress,As 2097.
+2098,In progress,"Blocked on Task 3 (2020): without a provider key the SSE scenario measures how fast the service fails. Also needs a LOADTEST_AUTH_TOKEN and a decision on which stack to point at, since every iteration writes a real chat row and spends real tokens."
 2099,To do,From the delivery plan row that cites it.
 2100,In progress,Rolled up from 2 children: 2 in progress.
 2101,In progress,"Rolled up from 3 children: 2 in progress, 1 to do."

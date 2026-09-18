@@ -47,9 +47,12 @@ is what step 2's last row is about.
 
 A migration that transformed data wrongly is the one case for a database
 restore to the backup taken before the deploy: [restore.md](restore.md).
-Supabase's daily backup is the point in time you have unless
-point-in-time recovery has been enabled — which is why the deploy should
-run at a quiet hour soon after the daily backup.
+**On the Free plan there is no such backup at all** — see the warning at the
+top of [restore.md](restore.md). Recovering damaged data therefore means
+reconstructing it by hand from the application's audit trail, if it can be
+reconstructed at all. Once the org is on Pro, the daily backup is the point in
+time you have unless point-in-time recovery has been enabled, which is why the
+deploy should run at a quiet hour soon after it.
 
 ## Never
 
