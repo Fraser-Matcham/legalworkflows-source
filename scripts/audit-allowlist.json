@@ -1,6 +1,1 @@
-[
-    {
-        "ghsa": "GHSA-xcpc-8h2w-3j85",
-        "reason": "adm-zip <0.6.0 memory-exhaustion on a crafted ZIP. word-addin declares one direct devDependency in this chain, office-addin-debugging ^6.1.2, used only by `npm run stop` to end a sideload debug session on a developer's machine. It is never bundled by webpack, never part of the shipped task pane, and the only ZIPs it opens are the manifest bundles we produce ourselves. Every office-addin-* package has now shipped a major on adm-zip ^0.6.0, but taking them does not clear the advisory: office-addin-debugging 7 -> office-addin-dev-settings 4 -> @microsoft/m365agentstoolkit-cli 1.1.16 -> @microsoft/teamsfx-core 3.1.3 (the latest) still pins office-addin-manifest ^2.1.6, office-addin-project ^1.0.10 and @microsoft/kiota 1.31.1 exactly, which resolve adm-zip 0.5.16, 0.5.12 and 0.5.18. Verified by bumping to ^7.0.0 against the lockfile: three copies below 0.6.0 survive. So no in-range fix exists and the out-of-range one does not work either. REMOVE WHEN: @microsoft/teamsfx-core ships a release depending on office-addin-manifest >=3 and office-addin-project >=2 — check with `npm view @microsoft/teamsfx-core dependencies`, then bump office-addin-debugging and confirm `npm ls adm-zip` in word-addin shows nothing below 0.6.0."
-    }
-]
+[]
