@@ -10,16 +10,16 @@ between "running" and "finished".
 | # | Task | Time | Blocks |
 | --- | --- | --- | --- |
 | ~~1~~ | ~~Run the queued `terraform apply`~~ — **done 18 September 2026** | — | — |
-| 2 | Fork the workflow catalogue | 15 min | 2014, 2015, 2016 |
+| ~~2~~ | ~~Fork the workflow catalogue~~ — **done 18 September 2026**, proved by deploy run 37 | — | — |
 | 3 | Get an Anthropic key and put it in two places — **[DEFERRED]** by the operator, 18 September 2026 | 20 min | 2020, and the product's central feature |
 | ~~4~~ | ~~A test account on the live stack~~ — **done 18 September 2026** | — | — |
 | 5 | Two optional drills | 2 h | 2095, 2098 |
 | 6 | Let the monitoring window elapse | nothing | 2107 |
 
-**Task 1 is done** (18 September 2026) — its steps are kept below because the
-sign-in, import and plan-reading sequence is the same for the next apply, which
-Task 2 needs. **Start at Task 2.** Tasks 2 and 3 are independent of each other and of Task 1 — do them in
-whichever order suits. Tasks 4, 5 and 6 can wait.
+**Tasks 1, 2 and 4 are done** (18 September 2026). Task 1's steps are kept
+below because the sign-in, import and plan-reading sequence is the same for any
+future apply. **Only Task 3 is still yours**, and it is paused by choice —
+Tasks 5 and 6 are optional and can wait.
 
 Stage 5, the self-hosted platform, is a separate and larger sequence with its
 own runbook: [`stage-5-platform.md`](stage-5-platform.md). Nothing in it is a
@@ -265,7 +265,7 @@ Two smaller consequences of the same change:
 - What the next deploy's "Build and scan" jobs say. That is the first honest
   reading anyone has had of what is in these images.
 
-## Task 2 — Fork the workflow catalogue
+## Task 2 — Fork the workflow catalogue ✅
 
 **Why:** `workflows_repository` still points at
 `Open-Legal-Products/mike-workflows`, which is upstream's. The product's
@@ -313,11 +313,27 @@ repositories of this project.
    runs `npm run sync:workflows` as a one-off task before the service rolls, and
    its exit code decides whether the deploy continues.
 
-### Tell me
+### Done — 18 September 2026
 
-- The fork's `owner/name` and the SHA you pinned.
-- That the deploy after it went green, including its catalogue-sync step. That
-  closes 2016 as well as 2014.
+Forked to **`Fraser-Matcham/mike-workflows`**, pinned at
+`ce62e6a2d3f47e1d3567a4f2edc61898cfe9e78a`, applied, and proved by deploy
+run 37 at `0a9d7d08`:
+
+| | Before (`:20`) | After (`:22`, live) |
+| --- | --- | --- |
+| `MIKE_WORKFLOWS_REPOSITORY` | `Open-Legal-Products/mike-workflows` | `Fraser-Matcham/mike-workflows` |
+| `MIKE_WORKFLOWS_REF` | `main` | `ce62e6a2…` |
+
+The catalogue-sync task ran from the new revision and exited clean, the
+service rolled `COMPLETED` 1/1, and readiness passed through the edge.
+Closes **2014**, **2015** and **2016**.
+
+The release did not go green on the first attempt. Four runs were spent on
+faults in the image scan gate — a gate that could not pass, a half-fixed
+image, a permission failure hidden behind a shell redirect, and a paginated
+status read. All five are recorded in
+[`outstanding.md`](../outstanding.md); none of them were this task's doing,
+and production served on `:20` throughout.
 
 ---
 

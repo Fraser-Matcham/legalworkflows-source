@@ -94,7 +94,7 @@ afterwards rather than taken from the plan.
 | ECS Exec disabled (security review finding 2) | `enableExecuteCommand: false` on both services, and **zero** inline policies on either task role — `ecs-exec` was the only one, and its `count` went to zero with the variable |
 | ECR enhanced scanning | Registry `scanType: ENHANCED`, with both rules: `CONTINUOUS_SCAN` filtered to `legalworkflows-production`, `SCAN_ON_PUSH` on `*` so the shared registry keeps coverage |
 | `alert_email`, with the two subscriptions imported first | Exactly **one** email subscription per topic, at the same ARNs as before — no duplicate pair, which was the failure the import existed to prevent |
-| `workflows_repository` | **Still outstanding** — needs the fork first (2014, below) |
+| `workflows_repository` | **Done since**, in a second apply — the fork exists and `:22` carries it (2014, below) |
 
 The plan was `1 to add, 4 to change, 2 to destroy`. Two of those changes were
 the imported subscriptions acquiring `confirmation_timeout_in_minutes` and
@@ -256,6 +256,45 @@ blocking OpenSSL findings from the frontend's 32 — the exact shape of a short
 read that would otherwise pass — is refused with `only 28 of 32 findings were
 read`.
 
+### Run 37: the release the five faults were in the way of
+
+Deploy run 37, 18 September 2026 at `0a9d7d08`, is the first release to
+complete every stage of the pipeline. It also closes 2014, 2015 and 2016.
+
+| Stage | Result |
+| --- | --- |
+| Backend scan | **5 seconds.** 78 findings, tally `{HIGH:39, MEDIUM:26, LOW:3, UNTRIAGED:3, CRITICAL:7}`, 17 relevant, all 17 allowlisted, no blocking findings |
+| Frontend scan | 20 seconds, clean |
+| Migrations | applied |
+| Catalogue sync | ran from the new revision against the fork, 65 seconds, exit clean |
+| Backend service | `:20` → `:22`, `COMPLETED` 1/1 |
+| Frontend service | `:7` → `:8`, `COMPLETED` 1/1 |
+| Edge | `/` and `/api/ready` both 200 |
+
+The gate's output in CI matched, line for line, what running
+`scripts/check-image-scan.mjs` against the live ECR findings had predicted an
+hour earlier: same tally, same 17 allowlisted entries, same four stale ones.
+
+**The catalogue is no longer upstream's.** From the task definitions:
+
+| | `:20` | `:22` (live) |
+| --- | --- | --- |
+| `MIKE_WORKFLOWS_REPOSITORY` | `Open-Legal-Products/mike-workflows` | `Fraser-Matcham/mike-workflows` |
+| `MIKE_WORKFLOWS_REF` | `main` | `ce62e6a2d3f47e1d3567a4f2edc61898cfe9e78a` |
+
+Pinned to a SHA rather than `main`, so an edit to the catalogue cannot change
+product content between releases.
+
+Runs 34, 35 and 36 were cancelled deliberately. Each predated the pagination
+fix and would have spent thirty minutes polling a scan that was already
+`ACTIVE`, holding the `production-deploy` concurrency group — which has
+`cancel-in-progress: false` — against the run that carried the fix. Run 36 was
+Dependabot's, merged ten minutes ahead of the fix and already at the scan step.
+
+Production served on `:20` throughout all five faults and all four failed
+runs. The gate refuses an image before anything rolls, which is the property
+that made a fortnight of broken releases survivable.
+
 ---
 
 ## Found by the first production smoke test
@@ -397,17 +436,20 @@ covered. Only one is covered by the breaker, and it is worth knowing which.
 > AC: *"The catalogue syncs from a repository you control; upstream renaming or
 > privatising theirs has no effect."*
 
-`workflows_repository` still points at `Open-Legal-Products/mike-workflows`.
-AGENTS.md fork rule 2 asks for a fork you own — the variable name is
-configuration, the value is ownership.
+**Closed 18 September 2026**, with 2015 and 2016, by deploy run 37 at
+`0a9d7d08`. `MIKE_WORKFLOWS_REPOSITORY` on the live backend revision `:22` is
+`Fraser-Matcham/mike-workflows`, pinned at
+`ce62e6a2d3f47e1d3567a4f2edc61898cfe9e78a`; revision `:20` had
+`Open-Legal-Products/mike-workflows` at `main`. The release's catalogue-sync
+task ran from the new revision against the fork and exited clean, which is
+2016's acceptance criterion. The account below records how it stood before.
 
-This is **not** an availability problem today: the e2e workflow's "Sync Mike
-workflow catalog" step passes on every pull request, which means that
-repository is publicly readable without a token. It is a supply-chain problem —
-the ticket's own framing — and it stays open until the catalogue is yours.
-
-Needs a fork created under an account you control, which is outside what this
-repository's tooling can do.
+It was never an availability problem: the e2e workflow's "Sync Mike workflow
+catalog" step passed on every pull request, so that repository was publicly
+readable without a token. It was a supply-chain problem — the ticket's own
+framing — and the fork is what answers it. Creating a repository under an
+account the operator owns was outside what this repository's tooling can do,
+which is why it sat in the human-task runbook rather than being automated.
 
 **The licence question the ticket raises is answered.** Checked on
 17 September 2026 against `Open-Legal-Products/mike-workflows` at `ce62e6a`
@@ -420,12 +462,9 @@ fork, which forking does by construction. It is a separate repository from
 the AGPL application, so the AGPL does not reach it and it does not reach
 the AGPL.
 
-Once the fork exists, the remaining steps are configuration: set
-`workflows_repository` in `infra/terraform.tfvars` to the fork (and
-`workflows_ref` to a commit SHA for a reproducible release), apply, and the
-next release's catalogue sync reads from it (ticket 2016 is that release
-passing its sync step against an empty catalogue and the five defaults
-resolving in the product). The catalogue carries 23 assistant workflows and
+What remained after the fork was configuration, and that is what was done:
+`workflows_repository` and `workflows_ref` set in `infra/terraform.tfvars`,
+applied, and the next release's catalogue sync read from the fork. The catalogue carries 23 assistant workflows and
 the tabular-review packs; pinning the SHA is what stops an upstream edit
 changing product content between releases.
 
