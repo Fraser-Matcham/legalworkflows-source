@@ -13,7 +13,7 @@ between "running" and "finished".
 | ~~2~~ | ~~Fork the workflow catalogue~~ — **done 18 September 2026**, proved by deploy run 37 | — | — |
 | 3 | Get an Anthropic key and put it in two places — **[DEFERRED]** by the operator, 18 September 2026 | 20 min | 2020, and the product's central feature |
 | ~~4~~ | ~~A test account on the live stack~~ — **done 18 September 2026** | — | — |
-| 5 | Two optional drills | 2 h | 2095, 2098 |
+| 5 | Two drills — **restore drill run; it found there is no database backup, and needs a decision from you** | 10 min to decide | 2095, 2098 |
 | 6 | Let the monitoring window elapse | nothing | 2107 |
 
 **Tasks 1, 2 and 4 are done** (18 September 2026). Task 1's steps are kept
@@ -488,22 +488,61 @@ downloads again. If it downloads, 2044 passes. Tell me and I will record it.
 
 ---
 
-## Task 5 — Two drills, when you want them
+## Task 5 — Two drills ⚠
 
-Both need your authorisation because both touch production. Neither is urgent,
-and you have already declined them once — this is here so they are not
-forgotten, not to press.
+The restore drill has now been run and found a real gap — read 2095 below; it
+ends in a decision only you can make. The load test has not, and cannot until
+Task 3 is done.
 
-### 2095 — The restore drill
+### 2095 — The restore drill — **run 18 September 2026. One half passed; the other found a hole.**
 
-**Why:** backups are configured and verified as configured — the document bucket
-is versioned and continuously replicated into a write-locked backup bucket with
-35-day retention, and Supabase takes daily database backups. What has never been
-done is restoring from them. A backup that has not been restored from is a
-hypothesis.
+The hypothesis was that backups were configured and therefore fine. Half of it
+survived contact.
 
-The procedure is [`../../../runbooks/restore.md`](../../../runbooks/restore.md).
-**Time:** about an hour.
+**Documents: proved.** A document uploaded at 14:02 and deleted at 14:05 is
+404 in the live bucket and intact in the backup — 19,275 bytes, ETag matching
+the listing exactly, readable by version id. Live and backup hold the same 8
+objects with every ETag matching and every object `ReplicationStatus:
+COMPLETED`. The "write-locked" claim is accurate: the backup bucket's policy
+denies writes to every principal but the replication role.
+
+**Database: there is nothing to restore.**
+
+> Supabase backs up Pro, Team and Enterprise projects daily. **This
+> organisation is on the Free plan.** The Backups page has nothing on it, and
+> restore-into-a-new-project is not offered either. Nothing self-managed
+> replaced it: no scheduled dump, no database credential in Secrets Manager,
+> no EventBridge rule.
+
+Four documents asserted the daily backups existed. They have been corrected,
+and `docs/runbooks/restore.md` now opens with the warning.
+
+**What this means today:** lose the database and it is gone. At the moment
+that is 1 user, 1 project, 1 document and 0 chats, plus 141 catalogue rows
+that rebuild from your fork on any deploy — so the cost today is near zero.
+It stops being near zero the day a client puts real matters in it.
+
+#### The decision, and it is yours
+
+| | What it buys | What it costs |
+| --- | --- | --- |
+| **Upgrade the Supabase org to Pro** | 7 days of daily backups, restore from the dashboard, PITR available as an add-on. Nothing to build or maintain | Supabase's published Pro price per month, per org |
+| **Schedule a `pg_dump`** into the existing backup bucket | A dump on whatever schedule you set, kept beside the documents under the same 35-day retention, no plan change | You give me a database credential to put in Secrets Manager; I build and test the job |
+
+The upgrade is the smaller action and the one I would take first — it is the
+difference between having a backup and not, today, with nothing to build.
+The dump is worth doing as well once there are clients, because it is off-site
+from Supabase entirely.
+
+Tell me which and I will do my half.
+
+**2095 stays open** either way. Its criterion is the application running
+against restored data, and that needs a database to restore plus a working
+Docker daemon — the environment I ran from has neither.
+
+The procedure and the full drill record are in
+[`../../../runbooks/restore.md`](../../../runbooks/restore.md).
+**Time spent:** about 25 minutes, all investigation.
 
 ### 2098 — The load test
 

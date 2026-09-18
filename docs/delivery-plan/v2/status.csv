@@ -93,10 +93,10 @@ Issue Id,Status,Status note
 2092,Done,completed this session
 2093,In progress,Rolled up from 2 children: 2 in progress.
 2094,In progress,"Rolled up from 2 children: 1 done, 1 in progress."
-2095,In progress,From the delivery plan row that cites it.
+2095,In progress,"Drilled 18 September 2026, partial. Documents passed: a document deleted from production was recovered from the backup bucket by version id, size and ETag matching, and live/backup are identical across all 8 objects with every one ReplicationStatus COMPLETED. Database could not be attempted: the Supabase org is on the Free plan, which has no accessible daily backups, and no self-managed dump exists. Stays open until the database has a backup and the application can be run against restored data."
 2096,Done,From the delivery plan row that cites it.
 2097,In progress,"Rolled up from 2 children: 1 in progress, 1 to do."
-2098,In progress,As 2097.
+2098,In progress,"Blocked on Task 3 (2020): without a provider key the SSE scenario measures how fast the service fails. Also needs a LOADTEST_AUTH_TOKEN and a decision on which stack to point at, since every iteration writes a real chat row and spends real tokens."
 2099,To do,From the delivery plan row that cites it.
 2100,In progress,Rolled up from 2 children: 2 in progress.
 2101,In progress,"Rolled up from 3 children: 2 in progress, 1 to do."

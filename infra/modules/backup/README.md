@@ -6,10 +6,14 @@ bucket is replicated, as it is written, into a second bucket that only the
 replication role can write to, under its own key, and kept there for
 `retention_days` (35) after it is deleted or overwritten in the live bucket.
 
-The database half is Supabase's own daily backups, which the plan already
-includes; the restore procedure for both is `docs/runbooks/restore.md`, and
-the drill that proves it is a Stage 3 "done when" item once the footprint is
-applied.
+The database half was assumed to be Supabase's own daily backups. The
+18 September 2026 restore drill found that assumption false: this organisation
+is on the Supabase **Free** plan, which gets no accessible daily backups, and
+nothing self-managed replaced them. See the warning at the top of
+`docs/runbooks/restore.md`. **This module covers documents only**, and does so
+demonstrably — the drill restored a genuinely deleted document from it. The
+database remains unbacked until the operator upgrades the plan or schedules a
+dump.
 
 ## How a delete behaves, end to end
 
