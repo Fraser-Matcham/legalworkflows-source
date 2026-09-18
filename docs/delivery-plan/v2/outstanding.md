@@ -12,12 +12,18 @@ added the same day after the platform pull requests.
 
 ## Blocked on the operator, and blocking everything downstream
 
-### The site is down: the operator secret has the wrong key name
+### RESOLVED 18 September 2026 — the site was down on a wrong key name
 
-Checked against the live account on 18 September 2026. `legalworkflows.co.uk`
-returns **503** on `/`, `/api/ready` and `/api/health`. Both ECS services have
-`desiredCount` 1 and `runningCount` 0, and both deployment circuit breakers
-read `FAILED`.
+**Fixed.** The key was renamed in Secrets Manager at 09:58 and deploy run 24
+rolled both services; `/`, `/api/ready` and `/api/health` all return 200, and
+both services sit at `runningCount` 1 with a `COMPLETED` rollout. The account
+evidence below is kept because the diagnosis took two wrong turns before it
+landed, and the shape of it is worth not repeating.
+
+Checked against the live account on 18 September 2026, before the fix.
+`legalworkflows.co.uk` returned **503** on `/`, `/api/ready` and `/api/health`.
+Both ECS services had `desiredCount` 1 and `runningCount` 0, and both
+deployment circuit breakers read `FAILED`.
 
 The backend's stopped tasks say exactly why:
 
@@ -42,16 +48,13 @@ The earlier reading of this — "the key is wrong or stale", from the catalogue
 sync's `Invalid API key` on deploy runs 12 and 13 — was the right suspect for
 the wrong reason. The key is not rejected; it is absent.
 
-The frontend is down for a second, independent reason: its service still runs
-task definition revision 1, whose image is the Terraform placeholder tag
-`:bootstrap`, and that tag does not exist in ECR
+The frontend was down for a second, independent reason: its service still ran
+task definition revision 1, whose image was the Terraform placeholder tag
+`:bootstrap`, which does not exist in ECR
 (`CannotPullContainerError: ... not found`). The deploy job that replaces it
-with a real image has never completed, because it comes after the backend job
-in the pipeline. One successful deploy fixes it; no separate action is needed.
-
-**Everything in Stage 4 from row 4.8 onward waits on this.** Rows 4.8/4.9 (load
-test), 4.10, 4.13 (the smoke test exists but has never met a deployment) and
-4.14 all need a stack that serves.
+with a real image had never completed, because it comes after the backend job
+in the pipeline. Deploy run 24 registered revision 2 on a real image and rolled
+it; no separate action was needed.
 
 ### Three deploys reported success while deploying nothing
 
@@ -72,11 +75,13 @@ backend job actually ran, and it failed at the catalogue sync.
 
 The three jobs now state their own requirements, and
 `scripts/check-release-pipeline.mjs` (CI job "Release pipeline") fails the build
-on any job that inherits a skip from an optional dependency.
+on any job that inherits a skip from an optional dependency. Deploy run 24 is
+the proof: all three jobs ran, and the catalogue sync passed.
 
-**Everything in Stage 4 from row 4.8 onward waits on this.** Rows 4.8/4.9 (load
-test), 4.10, 4.13 (the smoke test exists but has never met a deployment) and
-4.14 all need a stack that serves.
+**Stage 4 from row 4.8 onward was blocked on the two faults above and is not
+any more.** Rows 4.8/4.9 (load test), 4.10 and 4.14, and tickets 2044, 2052,
+2095, 2098 and 2102, all needed a stack that serves and now have one. Row 4.13
+is done: see below.
 
 ### `terraform apply` has not been run since three changes landed
 
@@ -84,6 +89,58 @@ test), 4.10, 4.13 (the smoke test exists but has never met a deployment) and
   finding 2) — until applied, the running services still accept an exec session.
 - ECR enhanced scanning.
 - `workflows_repository`, if it is to be set to `""` (see 2014 below).
+
+---
+
+## Found by the first production smoke test
+
+Plan row 4.13 and ticket 2106. The smoke test had never met a deployment; the
+first run against one found two defects, both in the test.
+
+### The origin check could never have passed
+
+It demanded a `403` from a direct request to the load balancer, to prove the
+`X-Origin-Verify` header gate refuses anything that did not come through
+CloudFront. But the load balancer's security group admits port 443 only from
+the managed prefix list `com.amazonaws.global.cloudfront.origin-facing`
+(`pl-93a247fa`, confirmed against the account). A request from anywhere else is
+dropped at the network layer: no handshake, no status, just a timeout.
+
+So the check failed on an origin that was locked down harder than it asked for,
+and would have gone on failing every production run. The header gate cannot be
+observed from outside CloudFront, because the network gate fires first. A
+network-level drop is now a pass, with a detail line saying which gate did the
+refusing. A `2xx` is still a failure.
+
+### The Corresponding Source check was reading the wrong link
+
+Recorded in [`../../licence-compliance.md`](../../licence-compliance.md) under
+"Signed off against production". It matched the first `https://github.com/...`
+on `/legal`, which is upstream's attribution link, so it had never inspected
+the actual offer. It now requires a link pinned to a full commit SHA, and
+`--commit` asserts that SHA is the running build.
+
+The service itself was compliant throughout. The evidence for it was not.
+
+Both fixes carry self-test cases, so neither can regress quietly.
+
+### Alerting is armed but nobody is subscribed
+
+Ticket 2107 wants "alerting proven working" and it is not. Sixteen CloudWatch
+alarms exist, all with actions enabled and an action attached, covering 5xx
+rates, latency, CPU, memory, unhealthy targets, running-task count and the
+readiness probe. Fourteen read `OK`; the two that do not are the autoscaling
+low-CPU alarms, which read that way on an idle service by design.
+
+The gap is downstream of them. The alarms publish to
+`legalworkflows-production-alerts` and `legalworkflows-production-alerts-urgent`,
+and **neither topic has a single subscription**. The only subscription in the
+account is an unrelated SES feedback address. Every alarm above would fire into
+a topic with no listeners.
+
+This needs an operator: an address to subscribe, and a human to click the
+confirmation link SNS sends. Until then the monitoring window cannot start,
+because nothing would reach anyone if it went wrong.
 
 ---
 
