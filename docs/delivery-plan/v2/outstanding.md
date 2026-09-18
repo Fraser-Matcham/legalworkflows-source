@@ -164,6 +164,39 @@ backend `:20`, frontend `:7`, both `COMPLETED` and 1/1. A `bootstrap` tag that
 does not exist in ECR is what took the site down on 18 September, and it is a
 placement failure, which the circuit breaker does not catch.
 
+### Four more, found by reading the scans instead of waiting for the gate
+
+Run 34 was the first release whose deploy role could actually read a scan
+result. Rather than watch it, the scans for the images already sitting in ECR
+were read directly and `scripts/check-image-scan.mjs` run against them
+locally — which is how these four were found before the run reached them.
+
+The backend passes at 17 of 17 relevant findings allowlisted. The frontend
+carried **four `openssl/openssl` findings that were not on the allowlist**:
+CVE-2026-75803 (critical), CVE-2026-54874, CVE-2026-63072 and CVE-2026-63076.
+
+They are the same OpenSSL 3.5.7 vendored inside the Node binary as the five
+already allowlisted, with the same unobtainable fix in 4.0.2. What differs is
+only how Inspector reports them:
+
+| | Debian `openssl` also implicated? | `fixAvailable` | Gate sees |
+| --- | --- | --- | --- |
+| Backend | Yes, 3.0.20, `fixedInVersion: NotAvailable` | `PARTIAL` | not relevant |
+| Frontend | No — `apt-get upgrade` took it out of range | `YES` | blocking |
+
+So the backend was passing these four partly because *its* Debian OpenSSL is
+unfixable, and the frontend was failing them because it had been patched more
+thoroughly. That is a genuine oddity in ticket 2050's `fixAvailable` rule, and
+worth knowing about; it is not a reason to withhold the fix from the frontend.
+All four are now allowlisted with the reason stating both readings.
+
+The stale line changed with them. One allowlist serves two images that do not
+carry the same packages — the backend keeps npm and reports its bundled
+dependencies, the frontend deletes it and reports none — so an entry unmatched
+on one image is routinely live on the other. The line used to end "remove the
+entry", which on the frontend's run would have advised deleting twelve entries
+the backend depends on. It now reads "not reported on this image".
+
 ---
 
 ## Found by the first production smoke test
