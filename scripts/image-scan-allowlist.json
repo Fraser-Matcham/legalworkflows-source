@@ -98,6 +98,34 @@
       "reason": "Vendored into the same base-image Go binary as the go/stdlib findings above, and unreachable for the same reason: this repository has no Go module to bump.",
       "added": "2026-09-18",
       "expires": "2026-12-17"
+    },
+    {
+      "cve": "CVE-2026-14257",
+      "package": "brace-expansion",
+      "reason": "npm's own bundled dependency, at /usr/local/lib/node_modules/npm/node_modules/. backend/Dockerfile already installs npm@latest and this is the version it ships \u2014 there is no npm release carrying the fix yet, so no bump here can reach it. The backend image cannot simply drop npm the way frontend/Dockerfile does: the release pipeline runs `npm run sync:workflows` inside this container as a one-off task before the service rolls, and the entry point is `npm start`. Changing both to direct node invocations would remove this class outright and is the right follow-up; it touches the release path, so it is not being done while a deploy is blocked. Clears on its own when npm ships the fixed brace-expansion. Installed 5.0.7; fix in 5.0.8.",
+      "added": "2026-09-18",
+      "expires": "2026-12-17"
+    },
+    {
+      "cve": "CVE-2026-69152",
+      "package": "brace-expansion",
+      "reason": "npm's own bundled dependency, at /usr/local/lib/node_modules/npm/node_modules/. backend/Dockerfile already installs npm@latest and this is the version it ships \u2014 there is no npm release carrying the fix yet, so no bump here can reach it. The backend image cannot simply drop npm the way frontend/Dockerfile does: the release pipeline runs `npm run sync:workflows` inside this container as a one-off task before the service rolls, and the entry point is `npm start`. Changing both to direct node invocations would remove this class outright and is the right follow-up; it touches the release path, so it is not being done while a deploy is blocked. Clears on its own when npm ships the fixed brace-expansion. Installed 5.0.7; fix in 5.0.9.",
+      "added": "2026-09-18",
+      "expires": "2026-12-17"
+    },
+    {
+      "cve": "CVE-2026-69192",
+      "package": "ip-address",
+      "reason": "npm's own bundled dependency, at /usr/local/lib/node_modules/npm/node_modules/. backend/Dockerfile already installs npm@latest and this is the version it ships \u2014 there is no npm release carrying the fix yet, so no bump here can reach it. The backend image cannot simply drop npm the way frontend/Dockerfile does: the release pipeline runs `npm run sync:workflows` inside this container as a one-off task before the service rolls, and the entry point is `npm start`. Changing both to direct node invocations would remove this class outright and is the right follow-up; it touches the release path, so it is not being done while a deploy is blocked. Clears on its own when npm ships the fixed ip-address. Installed 10.2.0; fix in 10.3.1.",
+      "added": "2026-09-18",
+      "expires": "2026-12-17"
+    },
+    {
+      "cve": "CVE-2026-73566",
+      "package": "tar",
+      "reason": "npm's own bundled dependency, at /usr/local/lib/node_modules/npm/node_modules/. backend/Dockerfile already installs npm@latest and this is the version it ships \u2014 there is no npm release carrying the fix yet, so no bump here can reach it. The backend image cannot simply drop npm the way frontend/Dockerfile does: the release pipeline runs `npm run sync:workflows` inside this container as a one-off task before the service rolls, and the entry point is `npm start`. Changing both to direct node invocations would remove this class outright and is the right follow-up; it touches the release path, so it is not being done while a deploy is blocked. Clears on its own when npm ships the fixed tar. Installed 7.5.19; fix in 7.5.21.",
+      "added": "2026-09-18",
+      "expires": "2026-12-17"
     }
   ]
 }

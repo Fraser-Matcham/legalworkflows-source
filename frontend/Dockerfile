@@ -34,6 +34,30 @@ RUN npm run build
 FROM node:22-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+
+# Two things the first ENHANCED scan of this image found, both fixed here
+# rather than excused.
+#
+# The upgrade picks up security patches published since the base image was
+# built — three fixable pcre2 findings on the first gated scan, all waiting on
+# a Debian point release the base tag had not yet picked up.
+#
+# Removing npm is the unusual half, and it is only safe because of how this
+# stage runs: `CMD ["node", "server.js"]` against Next's standalone output.
+# Nothing here invokes npm — not the entry point, and not the release
+# pipeline, which runs no task against the frontend container. npm is simply
+# along for the ride from the base image, and it brought twelve fixable high
+# findings with it: its bundled tar, brace-expansion, ip-address, pacote,
+# sigstore and picomatch. Upgrading npm, as backend/Dockerfile does, would
+# reduce those to four. Deleting it removes all twelve, and the image gets
+# smaller.
+#
+# If anything here ever needs npm again, this is the line that broke it.
+RUN apt-get update \
+  && apt-get upgrade -y \
+  && rm -rf /var/lib/apt/lists/* \
+  && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
+
 # Run unprivileged. The base image ships a `node` user for exactly this.
 RUN chown -R node:node /app
 USER node
