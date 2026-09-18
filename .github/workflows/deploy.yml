@@ -411,9 +411,25 @@ jobs:
           # A scan that genuinely has not started is ScanNotFound, and only that
           # is treated as "wait". Everything else stops now, printing what AWS
           # actually said.
+          #
+          # --no-paginate is the second half of the same lesson. This response
+          # pages once the image has more than a page of findings, and the CLI
+          # applies --query to each page and concatenates. The first page has
+          # imageScanStatus; the second does not, so it yields None. Run 34
+          # printed the result 56 times:
+          #
+          #     scan status: ACTIVE
+          #     None — waiting
+          #
+          # $status was the two-line string "ACTIVE\nNone". It matched no branch
+          # below, the loop read that as "not yet", and the job spent its whole
+          # deadline on an image whose scan had been ACTIVE before it started.
+          # Hence one call, first page only — and an unrecognised status now
+          # fails loudly rather than waiting.
           while :; do
             if out=$(aws ecr describe-image-scan-findings \
               --repository-name "$REPO" --image-id imageTag="$TAG" \
+              --no-paginate \
               --query 'imageScanStatus.status' --output text 2>&1); then
               status="$out"
             else
@@ -426,8 +442,15 @@ jobs:
             fi
             case "$status" in
               ACTIVE|COMPLETE) break ;;
+              PENDING|IN_PROGRESS) : ;;
               FAILED|UNSUPPORTED_IMAGE)
                 echo "::error::Inspector reported $status for $REPO:$TAG. An unsupported base image cannot be gated on; see infra/scanning.tf."
+                exit 1 ;;
+              *)
+                # A status this loop does not recognise is not a reason to keep
+                # waiting. Treating it as "not yet" is what burned a whole
+                # deadline against a scan that had been ACTIVE from the start.
+                echo "::error::Unrecognised scan status for $REPO:$TAG. AWS returned: [$status]"
                 exit 1 ;;
             esac
             if [ "$(date +%s)" -ge "$deadline" ]; then
@@ -504,6 +527,7 @@ jobs:
           while :; do
             if out=$(aws ecr describe-image-scan-findings \
               --repository-name "$REPO" --image-id imageTag="$TAG" \
+              --no-paginate \
               --query 'imageScanStatus.status' --output text 2>&1); then
               status="$out"
             else
@@ -516,8 +540,11 @@ jobs:
             fi
             case "$status" in
               ACTIVE|COMPLETE) break ;;
+              PENDING|IN_PROGRESS) : ;;
               FAILED|UNSUPPORTED_IMAGE)
                 echo "::error::Inspector reported $status for $REPO:$TAG."; exit 1 ;;
+              *)
+                echo "::error::Unrecognised scan status for $REPO:$TAG. AWS returned: [$status]"; exit 1 ;;
             esac
             if [ "$(date +%s)" -ge "$deadline" ]; then
               echo "::error::Inspector had not scanned $REPO:$TAG after 30 minutes (last status: $status)."; exit 1

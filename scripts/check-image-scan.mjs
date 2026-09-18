@@ -71,6 +71,27 @@ export function vulnerabilityIdOf(finding) {
  * because it looks clean. Enhanced findings live in their own array; basic
  * scanning populates a different one and carries no fixAvailable field.
  */
+/**
+ * Inspector reports a severity tally alongside the findings. It is the only
+ * thing in the response that says how many findings there are supposed to be,
+ * so it is the only way to tell a clean image from a truncated read.
+ *
+ * This matters because the failure is silent in the dangerous direction: a
+ * short read looks like a cleaner image, and the gate passes it. The same
+ * shape of fault — findings that were never there to be judged — already let
+ * an image with 5 critical and 24 high through this gate once.
+ *
+ * Returns null when the tally is absent, which is not itself a failure.
+ */
+export function expectedFindingCount(scan) {
+    const counts = scan?.imageScanFindings?.findingSeverityCounts;
+    if (!counts || typeof counts !== "object") return null;
+    const values = Object.values(counts);
+    if (values.length === 0) return 0;
+    if (!values.every((v) => Number.isInteger(v) && v >= 0)) return null;
+    return values.reduce((a, b) => a + b, 0);
+}
+
 export function detectScanMode(scan) {
     const findings = scan?.imageScanFindings ?? {};
     const enhanced = findings.enhancedFindings;
@@ -125,7 +146,14 @@ export function classify(scan, allowlist, today) {
     }
 
     const stale = allowlist.filter((_, i) => !used.has(i));
-    return { mode, relevant, blocking, excused, expired, stale };
+
+    const expected = expectedFindingCount(scan);
+    const truncated =
+        mode === "enhanced" && expected !== null && findings.length < expected
+            ? { read: findings.length, expected }
+            : null;
+
+    return { mode, relevant, blocking, excused, expired, stale, truncated };
 }
 
 function loadAllowlist(path = ALLOWLIST) {
@@ -138,7 +166,25 @@ function today() {
 }
 
 function report(image, result) {
-    const { mode, relevant, blocking, excused, expired, stale } = result;
+    const { mode, relevant, blocking, excused, expired, stale, truncated } = result;
+
+    if (truncated) {
+        console.error(
+            [
+                `::error::${image}: only ${truncated.read} of ${truncated.expected} findings were read.`,
+                "",
+                "findingSeverityCounts says this scan has more findings than the",
+                "result carries, so the ones missing were never judged. A short",
+                "read looks like a cleaner image, which is the direction that",
+                "passes something it should not.",
+                "",
+                "The usual cause is a paginated read that stopped at the first",
+                "page. The scan step must let the CLI page through the findings",
+                "in full — it is only the status poll that uses --no-paginate.",
+            ].join("\n"),
+        );
+        return 1;
+    }
 
     if (mode === "basic") {
         console.error(
@@ -209,6 +255,10 @@ function selfTest() {
         packageVulnerabilityDetails: { vulnerabilityId: cve, vulnerablePackages: [{ name: pkg }] },
     });
 
+    const counted = (findings, findingSeverityCounts) => ({
+        imageScanFindings: { enhancedFindings: findings, findingSeverityCounts },
+    });
+
     const entry = { cve: "CVE-1", package: "openssl/openssl", reason: "vendored", expires: "2026-12-17" };
 
     const checks = [
@@ -251,6 +301,33 @@ function selfTest() {
         [
             "an enhanced scan with no findings is not mistaken for BASIC",
             detectScanMode({ imageScanFindings: { enhancedFindings: [] } }).mode === "enhanced",
+        ],
+        [
+            "a findings list short of the severity tally is refused",
+            classify(counted([finding("CVE-9", "tar")], { HIGH: 40 }), [], "2026-09-18").truncated !== null,
+        ],
+        [
+            "and says how many of how many it read",
+            (() => {
+                const t = classify(counted([finding("CVE-9", "tar")], { HIGH: 40 }), [], "2026-09-18").truncated;
+                return t.read === 1 && t.expected === 40;
+            })(),
+        ],
+        [
+            "a complete findings list is not called truncated",
+            classify(counted([finding("CVE-9", "tar")], { HIGH: 1 }), [], "2026-09-18").truncated === null,
+        ],
+        [
+            "a genuinely clean image is not called truncated",
+            classify(counted([], {}), [], "2026-09-18").truncated === null,
+        ],
+        [
+            "a scan with no severity tally at all is not called truncated",
+            classify(scan([finding("CVE-9", "tar")]), [], "2026-09-18").truncated === null,
+        ],
+        [
+            "more findings than the tally is not treated as truncation",
+            classify(counted([finding("CVE-9", "tar")], { HIGH: 0 }), [], "2026-09-18").truncated === null,
         ],
     ];
 
