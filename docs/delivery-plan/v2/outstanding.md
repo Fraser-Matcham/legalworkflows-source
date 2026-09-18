@@ -197,6 +197,65 @@ on one image is routinely live on the other. The line used to end "remove the
 entry", which on the frontend's run would have advised deleting twelve entries
 the backend depends on. It now reads "not reported on this image".
 
+### The fifth fault: the poll could not read a status it had permission to read
+
+Run 34 got past the permission problem and then hung anyway. Both scan steps
+polled for nine minutes on images whose scans had been `ACTIVE` before the job
+started, and would have spent the full thirty before reporting a timeout that
+was not one. Run 35 was queued behind it on the `production-deploy` concurrency
+group and carried the same code, so both were cancelled rather than left to
+burn an hour between them.
+
+CloudTrail settled what it was not. In the twenty minutes covering the hang:
+**every call from the deploy role succeeded, with no error code at all** —
+`DescribeImageScanFindings`, `ListFindings` and `ListCoverage` alike. The
+permissions work. What the trace showed instead was the shape of the fault:
+each poll iteration made *two* calls, one plain and one carrying a `nextToken`.
+
+The response pages. The poll asked for one small field out of it:
+
+```
+--query 'imageScanStatus.status' --output text
+```
+
+The AWS CLI applies `--query` to *each page* and concatenates. The first page
+carries `imageScanStatus`; the second does not, so it yields `None`. Run 34's
+log shows the result exactly, 56 times:
+
+```
+scan status: ACTIVE
+None — waiting
+```
+
+`$status` was the two-line string `ACTIVE\nNone`. It matched no branch of the
+`case`, and an unmatched status fell through to "wait". Two changes, because
+the bug needed both:
+
+- `--no-paginate` on the status poll. One call, first page, raw response. The
+  full read further down keeps paging, because it genuinely needs every
+  finding.
+- An unrecognised status now **fails, printing the value in brackets**, rather
+  than being treated as "not yet". This is the same lesson as the
+  `2>/dev/null` one directly above: the loop's silence about a state it did
+  not understand is what turned a five-second answer into a thirty-minute
+  timeout, twice.
+
+### And the hole that would have hidden a short read
+
+The same pagination has a nastier form. If the *findings* read had stopped at
+its first page instead of the status read, the gate would have judged a subset
+and passed the image — because a short read looks like a cleaner image. That is
+the third time this project has met a failure that is silent in the direction
+that ships.
+
+`findingSeverityCounts` is the only field that says how many findings a scan is
+supposed to have, and it is exact: 39+26+3+3+7 = 78 on the backend, 17+8+2+5 =
+32 on the frontend, matching the arrays precisely. The gate now compares the
+two and refuses a findings list shorter than the tally. Dropping just the four
+blocking OpenSSL findings from the frontend's 32 — the exact shape of a short
+read that would otherwise pass — is refused with `only 28 of 32 findings were
+read`.
+
 ---
 
 ## Found by the first production smoke test
