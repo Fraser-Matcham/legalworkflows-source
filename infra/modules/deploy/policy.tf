@@ -44,6 +44,27 @@ data "aws_iam_policy_document" "deploy" {
     resources = var.ecr_repository_arns
   }
 
+  # Enhanced scanning is Amazon Inspector wearing an ECR badge.
+  # `ecr:DescribeImageScanFindings` is allowed above and simulates as allowed,
+  # and the call is still refused: under ENHANCED the ECR API reads the findings
+  # out of Inspector, and that read is authorised against inspector2, not ecr.
+  #
+  # This was not obvious, because it was invisible. The release's scan step hid
+  # the failure behind `2>/dev/null || echo PENDING` and waited out its timeout
+  # instead, three releases in a row, while CloudTrail recorded twenty of twenty
+  # DescribeImageScanFindings calls as AccessDenied. The workflow no longer
+  # swallows the error; this is the permission it was failing on.
+  #
+  # ListFindings does not take a resource, so this cannot be scoped to the
+  # project's repositories the way the ECR statement is. It is read-only, and it
+  # is the narrowest action that serves the gate.
+  statement {
+    sid       = "InspectorReadFindings"
+    effect    = "Allow"
+    actions   = ["inspector2:ListFindings"]
+    resources = ["*"]
+  }
+
   # Task definition APIs do not support resource-level permissions.
   statement {
     sid    = "EcsTaskDefinitions"

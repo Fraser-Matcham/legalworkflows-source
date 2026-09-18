@@ -400,10 +400,30 @@ jobs:
           # rare occasion Inspector really is stuck; the cost of waiting less
           # is a red release that means nothing.
           deadline=$(( $(date +%s) + 1800 ))
+          # `2>/dev/null || echo PENDING` used to be here, and it cost three
+          # releases. It turned an AccessDenied into something indistinguishable
+          # from a scan that had not finished, so the job waited out its whole
+          # budget and failed with "Inspector had not scanned" — three times,
+          # while every one of its calls was being refused. CloudTrail showed
+          # twenty of twenty DescribeImageScanFindings calls denied. An error
+          # that cannot be seen is worse than one that stops the build.
+          #
+          # A scan that genuinely has not started is ScanNotFound, and only that
+          # is treated as "wait". Everything else stops now, printing what AWS
+          # actually said.
           while :; do
-            status=$(aws ecr describe-image-scan-findings \
+            if out=$(aws ecr describe-image-scan-findings \
               --repository-name "$REPO" --image-id imageTag="$TAG" \
-              --query 'imageScanStatus.status' --output text 2>/dev/null || echo PENDING)
+              --query 'imageScanStatus.status' --output text 2>&1); then
+              status="$out"
+            else
+              case "$out" in
+                *ScanNotFound*|*ImageNotFound*) status=PENDING ;;
+                *)
+                  echo "::error::Could not read the scan for $REPO:$TAG — $out"
+                  exit 1 ;;
+              esac
+            fi
             case "$status" in
               ACTIVE|COMPLETE) break ;;
               FAILED|UNSUPPORTED_IMAGE)
@@ -480,10 +500,20 @@ jobs:
           TAG="${{ needs.gate.outputs.sha }}"
           # Thirty minutes, as the service scan above: see its comment.
           deadline=$(( $(date +%s) + 1800 ))
+          # As the service scan above: a hidden error is worse than a loud one.
           while :; do
-            status=$(aws ecr describe-image-scan-findings \
+            if out=$(aws ecr describe-image-scan-findings \
               --repository-name "$REPO" --image-id imageTag="$TAG" \
-              --query 'imageScanStatus.status' --output text 2>/dev/null || echo PENDING)
+              --query 'imageScanStatus.status' --output text 2>&1); then
+              status="$out"
+            else
+              case "$out" in
+                *ScanNotFound*|*ImageNotFound*) status=PENDING ;;
+                *)
+                  echo "::error::Could not read the scan for $REPO:$TAG — $out"
+                  exit 1 ;;
+              esac
+            fi
             case "$status" in
               ACTIVE|COMPLETE) break ;;
               FAILED|UNSUPPORTED_IMAGE)
