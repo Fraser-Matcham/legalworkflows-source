@@ -26,8 +26,13 @@
  * The allowlist is the trademarks allowlist's design, for the same reason:
  * a decision to accept a finding should be visible on every run and should
  * expire, rather than quietly becoming permanent. Every entry prints. An
- * expired entry fails the build. An entry matching nothing prints as stale so
- * it gets removed.
+ * expired entry fails the build. An entry matching nothing on the image being
+ * judged prints as stale.
+ *
+ * Stale is a note, not a failure, because one allowlist serves two images that
+ * do not carry the same packages: the backend keeps npm and so reports npm's
+ * bundled dependencies, while the frontend deletes it and reports none of them.
+ * An entry is only genuinely dead once no image reports it.
  *
  * It also closes the hole that hid all of this. The gate reads
  * `enhancedFindings`, which only exists under ENHANCED registry scanning.
@@ -162,7 +167,7 @@ function report(image, result) {
     }
 
     for (const item of stale) {
-        console.log(`  [STALE] ${item.cve} (${item.package}) is allowlisted but no longer reported — remove the entry`);
+        console.log(`  [STALE] ${item.cve} (${item.package}) is allowlisted but not reported on this image`);
     }
 
     for (const item of expired) {
