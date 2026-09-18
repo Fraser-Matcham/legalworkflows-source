@@ -83,31 +83,48 @@ any more.** Rows 4.8/4.9 (load test), 4.10 and 4.14, and tickets 2044, 2052,
 2095, 2098 and 2102, all needed a stack that serves and now have one. Row 4.13
 is done: see below.
 
-### `terraform apply` has not been run since three changes landed
+### RESOLVED 18 September 2026 — the queued apply is applied
 
-The operator's step-by-step for this, and for everything else below that needs
-them, is [`human-tasks/next-steps.md`](human-tasks/next-steps.md).
+Three of the four changes that had been sitting in `infra/` unapplied are now
+live. The operator ran it; each result below was read back from the account
+afterwards rather than taken from the plan.
 
-- ECS Exec disabled on both services and both task roles (security review
-  finding 2) — until applied, the running services still accept an exec session.
-- ECR enhanced scanning. **Until this is applied the release's image scan gate
-  passes every image.** The gate counts findings under
-  `.imageScanFindings.enhancedFindings[]` with `fixAvailable == "YES"`, and
-  enhanced findings exist only under enhanced scanning; the registry is still
-  `BASIC`, whose findings live under `.findings[]` and carry no `fixAvailable`
-  at all. The `[]?` yields empty, `BLOCKING` computes to `0`, and the step
-  prints "no fixable high or critical findings". Checked against the running
-  image on 18 September 2026: `legalworkflows-production-backend:main` reports
-  5 critical and 24 high across 48 basic findings, 0 enhanced — and the gate
-  called it clean. The design is right and documented in `deploy.yml`; it is
-  the registry setting it depends on that was never applied. Expect the first
-  deploy after the apply to be the first real reading of these images.
-- `workflows_repository`, if it is to be set to `""` (see 2014 below).
-- `alert_email`, now that an address exists. **Import the two existing
-  subscriptions first**, or the apply creates a second pair and every alarm
-  emails twice — the procedure is in
-  [`../../../infra/modules/observability/README.md`](../../../infra/modules/observability/README.md)
-  under "Adopting subscriptions that were made by hand".
+| Change | Verified |
+| --- | --- |
+| ECS Exec disabled (security review finding 2) | `enableExecuteCommand: false` on both services, and **zero** inline policies on either task role — `ecs-exec` was the only one, and its `count` went to zero with the variable |
+| ECR enhanced scanning | Registry `scanType: ENHANCED`, with both rules: `CONTINUOUS_SCAN` filtered to `legalworkflows-production`, `SCAN_ON_PUSH` on `*` so the shared registry keeps coverage |
+| `alert_email`, with the two subscriptions imported first | Exactly **one** email subscription per topic, at the same ARNs as before — no duplicate pair, which was the failure the import existed to prevent |
+| `workflows_repository` | **Still outstanding** — needs the fork first (2014, below) |
+
+The plan was `1 to add, 4 to change, 2 to destroy`. Two of those changes were
+the imported subscriptions acquiring `confirmation_timeout_in_minutes` and
+`endpoint_auto_confirms` — Terraform-side bookkeeping that makes no SNS call,
+and an update in place rather than a replacement, so neither subscription ARN
+moved and neither needed re-confirming.
+
+**The image scan gate is now real, and had never refused anything before
+today.** The gate counts findings under `.imageScanFindings.enhancedFindings[]`
+with `fixAvailable == "YES"`. Enhanced findings exist only under enhanced
+scanning; the registry was `BASIC`, whose findings live under `.findings[]` and
+carry no `fixAvailable` at all. The `[]?` yielded an empty list, `BLOCKING`
+computed to `0`, and the step printed "no fixable high or critical findings" on
+every release. Checked against the running image before the apply:
+`legalworkflows-production-backend:main` reported 5 critical and 24 high across
+48 basic findings, 0 enhanced — and the gate called it clean.
+
+The design was never the fault; `deploy.yml` explains why the gate needs
+`fixAvailable`, and a zero-high-or-critical gate against a Debian base is
+unpassable rather than strict. What was missing was the registry setting it
+depends on. **The next deploy is the first honest reading of these images, and
+may be red.** That would be the gate working.
+
+One thing the apply deliberately did not do: roll either service back to the
+`bootstrap` image tag. Both `aws_ecs_service` resources carry
+`ignore_changes = [task_definition, desired_count]`, so the redeployment that
+the Exec change triggered reused the revisions the pipeline had deployed —
+backend `:20`, frontend `:7`, both `COMPLETED` and 1/1. A `bootstrap` tag that
+does not exist in ECR is what took the site down on 18 September, and it is a
+placement failure, which the circuit breaker does not catch.
 
 ---
 

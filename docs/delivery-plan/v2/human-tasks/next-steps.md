@@ -9,16 +9,16 @@ between "running" and "finished".
 
 | # | Task | Time | Blocks |
 | --- | --- | --- | --- |
-| 1 | Run the queued `terraform apply` | 30 min | two security gaps, alerting durability |
+| ~~1~~ | ~~Run the queued `terraform apply`~~ — **done 18 September 2026** | — | — |
 | 2 | Fork the workflow catalogue | 15 min | 2014, 2015, 2016 |
 | 3 | Get an Anthropic key and put it in two places | 20 min | 2020, and the product's central feature |
 | 4 | Make me a test account on the live stack | 5 min | 2044 |
 | 5 | Two optional drills | 2 h | 2095, 2098 |
 | 6 | Let the monitoring window elapse | nothing | 2107 |
 
-**Task 1 first.** It carries two security gaps that are live until it is
-applied — one of them is that the release's image scan gate has never actually
-refused anything. Tasks 2 and 3 are independent of each other and of Task 1 — do them in
+**Task 1 is done** (18 September 2026) — its steps are kept below because the
+sign-in, import and plan-reading sequence is the same for the next apply, which
+Task 2 needs. **Start at Task 2.** Tasks 2 and 3 are independent of each other and of Task 1 — do them in
 whichever order suits. Tasks 4, 5 and 6 can wait.
 
 Stage 5, the self-hosted platform, is a separate and larger sequence with its
@@ -28,7 +28,26 @@ it is a decision before it is a task.
 
 ---
 
-## Task 1 — Run the apply that four changes are waiting on
+## Task 1 — Run the apply that four changes are waiting on ✅
+
+> **Done 18 September 2026.** Three of the four landed: ECS Exec off on both
+> services and both task roles, ECR enhanced scanning, and `alert_email` with
+> both subscriptions imported rather than duplicated. The fourth,
+> `workflows_repository`, needs the fork from Task 2 first.
+>
+> Verified against the account afterwards: `enableExecuteCommand: false` on
+> both services, zero inline policies on either task role, registry
+> `scanType: ENHANCED` with both rules, exactly one email subscription per
+> topic at the original ARNs, both services 1/1 with `COMPLETED` rollouts on
+> the deployed revisions (backend `:20`, frontend `:7` — not `bootstrap`), and
+> the site answering 200 on `/` and `/api/ready`.
+>
+> **The image scan gate is live for the first time.** Read "What this actually
+> turns on" below before the next deploy: it may go red, and that would be the
+> gate working.
+>
+> The steps below are kept for the next apply — Task 2 needs one.
+
 
 **Why:** four merged changes are sitting in `infra/` unapplied, and two of them
 are live security gaps:

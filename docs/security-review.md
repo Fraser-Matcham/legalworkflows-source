@@ -80,8 +80,11 @@ the application logs. Nothing in `docs/` documents a procedure that uses ECS
 Exec, and no automation holds `ecs:ExecuteCommand`, so removing it costs
 nothing. Turning it on for a diagnosis is one variable and an apply.
 
-**Takes effect on `terraform apply`.** Until then the running services still
-have it.
+**Applied 18 September 2026.** Both services read
+`enableExecuteCommand: false`, and both task roles have no inline policies at
+all — the `ecs-exec` policy was the only one on each, and its `count` went to
+zero with the variable. Verified against the account after the apply, not
+inferred from the plan.
 
 ### 3. Login MFA stopped being enforced without saying so — fixed
 
