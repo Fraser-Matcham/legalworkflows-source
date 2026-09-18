@@ -79,8 +79,33 @@ The frontend gets two build arguments: `NEXT_PUBLIC_APP_URL` (the public
 origin; Next inlines it into the browser bundle, so it cannot be set later)
 and `NEXT_PUBLIC_SOURCE_URL`, the mirror at exactly this commit — which is
 what `/legal` links to (ticket 2076). ECR scans on push; the job waits for
-the result and refuses the image on any HIGH or CRITICAL finding, the same
-posture the npm advisory gate takes with dependencies (ticket 2050).
+the result and `scripts/check-image-scan.mjs` decides, the same posture the
+npm advisory gate takes with dependencies (ticket 2050).
+
+What it refuses is a high or critical finding **someone can act on here**. That
+qualifier was learned twice. Refusing every high or critical made the gate
+unpassable against a Debian base, so it was narrowed to Inspector's
+`fixAvailable`. The first release actually gated by enhanced scanning found the
+other half: `fixAvailable: YES` means the maintainer published a fix, not that
+we can obtain it. Fifteen of that image's twenty-five findings were OpenSSL
+statically linked inside the Node binary, fixed in OpenSSL 4.0.2, which no
+Node 22 image ships. Unpassable again, by a new route.
+
+So a finding vendored inside the base image's own binaries can carry an entry in
+`scripts/image-scan-allowlist.json` — a written reason and an expiry date, both
+printed on every run, with an expired entry failing the build and an entry
+matching nothing printed as stale. It is the trademarks allowlist's design, for
+the same reason: an accepted risk should stay visible rather than quietly become
+permanent. A package this repository installs is never allowlisted; it is
+bumped, and the twelve npm-bundled findings in that same image were fixed by
+upgrading npm in `backend/Dockerfile` rather than excused.
+
+The checker also refuses to grade a scan it cannot read. `enhancedFindings`
+exists only under ENHANCED registry scanning, and while the registry was BASIC
+the gate read that array, found nothing, and passed every image — including one
+carrying 5 critical and 24 high. A result with no `enhancedFindings` array but a
+populated basic `findings` array is now a hard failure. `npm run
+image-scan:self-test` covers that case and the allowlist's expiry.
 
 **Migrate.** `docs/deployment.md`'s rule, automated: apply, in filename
 order, only the files newer than the last one applied, and keep that filename

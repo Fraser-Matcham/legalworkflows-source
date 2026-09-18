@@ -137,6 +137,14 @@ jobs:
 
       - run: npm run pipeline
 
+      # The release's image scan gate decides whether a CVE stops a deploy, and
+      # its failure mode is silence: while the registry was BASIC it read an
+      # array that only ENHANCED scanning populates, found nothing, and passed
+      # every image — including one carrying 5 critical and 24 high. The
+      # self-test covers that case explicitly, along with the allowlist's
+      # expiry, so neither can regress into a gate that approves everything.
+      - run: npm run image-scan:self-test
+
   platform-keys:
     name: API key tooling
     runs-on: ubuntu-latest

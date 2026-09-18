@@ -28,6 +28,7 @@
     "brand-assets:check": "node scripts/generate-brand-assets.mjs --check",
     "platform-keys": "node scripts/platform-keys.mjs",
     "platform-keys:self-test": "node scripts/platform-keys.mjs --self-test",
+    "image-scan:self-test": "node scripts/check-image-scan.mjs --self-test",
     "pipeline": "node scripts/check-release-pipeline.mjs",
     "pipeline:self-test": "node scripts/check-release-pipeline.mjs --self-test"
   },
