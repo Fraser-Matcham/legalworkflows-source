@@ -389,7 +389,17 @@ jobs:
           # basic-scanning status. Enhanced scanning reports ACTIVE once
           # Inspector has findings for the image and keeps it there while it
           # re-scans, so that waiter would never return. Poll for either.
-          deadline=$(( $(date +%s) + 900 ))
+          #
+          # Thirty minutes, not fifteen. Run 32 spent the whole of a
+          # fifteen-minute budget on PENDING and failed the release, and
+          # Inspector returned a clean result for that exact image a minute
+          # later — so the deploy was stopped by the gate's patience running
+          # out rather than by anything in the image. A first Inspector scan of
+          # a large image is minutes of work, and the backend carries
+          # LibreOffice. The cost of waiting longer is a slower failure on the
+          # rare occasion Inspector really is stuck; the cost of waiting less
+          # is a red release that means nothing.
+          deadline=$(( $(date +%s) + 1800 ))
           while :; do
             status=$(aws ecr describe-image-scan-findings \
               --repository-name "$REPO" --image-id imageTag="$TAG" \
@@ -401,7 +411,7 @@ jobs:
                 exit 1 ;;
             esac
             if [ "$(date +%s)" -ge "$deadline" ]; then
-              echo "::error::Inspector had not scanned $REPO:$TAG after 15 minutes (last status: $status). Enhanced scanning can lag for a few minutes after it is first enabled; re-running this job is safe."
+              echo "::error::Inspector had not scanned $REPO:$TAG after 30 minutes (last status: $status). A first scan of a large image can lag; re-running this job is safe, and the result is usually cached by then."
               exit 1
             fi
             echo "scan status: $status — waiting"
@@ -468,7 +478,8 @@ jobs:
           set -euo pipefail
           REPO="$NAME_PREFIX-dbtools"
           TAG="${{ needs.gate.outputs.sha }}"
-          deadline=$(( $(date +%s) + 900 ))
+          # Thirty minutes, as the service scan above: see its comment.
+          deadline=$(( $(date +%s) + 1800 ))
           while :; do
             status=$(aws ecr describe-image-scan-findings \
               --repository-name "$REPO" --image-id imageTag="$TAG" \
@@ -479,7 +490,7 @@ jobs:
                 echo "::error::Inspector reported $status for $REPO:$TAG."; exit 1 ;;
             esac
             if [ "$(date +%s)" -ge "$deadline" ]; then
-              echo "::error::Inspector had not scanned $REPO:$TAG after 15 minutes (last status: $status)."; exit 1
+              echo "::error::Inspector had not scanned $REPO:$TAG after 30 minutes (last status: $status)."; exit 1
             fi
             echo "scan status: $status — waiting"; sleep 15
           done
