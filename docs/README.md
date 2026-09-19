@@ -22,6 +22,8 @@
   protection, required checks, and what still needs an organisation owner
 - [Upstream sync](upstream-sync.md) — the routine for taking upstream fixes and
   the lockfile conflict convention
+- [ISMS drafts](isms/README.md) — Statement of Applicability and Article 30
+  records for this origin. Not a certificate.
 
 The fork rules that constrain every change here are at the top of
 [AGENTS.md](../AGENTS.md).
