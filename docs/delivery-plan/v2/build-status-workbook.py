@@ -51,13 +51,13 @@ LEGEND = [
     ("In progress", "Partly delivered: an epic or story whose children are not all done, or work waiting on a step only the operator can take."),
     ("To do", "Not started. Mostly stage 5 (run the platform on AWS) and the operator-side prerequisites."),
     ("Deferred", "Scoped and understood, deliberately held until after first production traffic."),
-    ("Superseded", "Replaced by the stage 5 move off Supabase; the work no longer applies."),
+    ("Superseded", "Replaced by a later decision: stage 5 (off Supabase) or architecture decision 7 (fold-in, not a Juralio HTTP seam)."),
     ("Won't do", "Decided against, with the reason recorded in the plan."),
 ]
 PROVENANCE = [
     "Rolled up the Epic -> Story -> Sub-task hierarchy: a parent is Done only when every child is Done, and In progress when at least one child is.",
     "Sub-task statuses come from the completion markers in docs/delivery-plan/v2/plan.md, one row per ticket.",
-    "The twelve tickets with no marker are resolved explicitly by the plan's ticket disposition table (2023 won't do; 2029-2031 done; 2038-2041 superseded by stage 5; 2066-2069 deferred).",
+    "The twelve tickets with no marker are resolved explicitly by the plan's ticket disposition table (2023 won't do; 2029-2031 done; 2038-2041 superseded by stage 5; 2066-2069 cancelled by architecture decision 7).",
     "Tickets 2110-2126 are the new stage 5 scope: move off Supabase onto RDS PostgreSQL with self-hosted PostgREST and GoTrue.",
 ]
 

@@ -155,8 +155,8 @@ legalworkflows ships as a standalone product with this UI.
 Consequences:
 
 - 2053 and 2054 close as *decided: keep and complete*.
-- The Juralio HTTP seam (2066–2070) leaves the critical path and becomes a
-  later, separate consumer track. The API is still treated as a contract.
+- The Juralio HTTP seam (2066–2069) is cancelled (architecture decision 7).
+  Ticket 2070 (boundary CI) stays. The API is still treated as a contract.
 - The frontend acquires a production quality bar it did not have before:
   its own environment, its own build, its own deploy, and its own CI gate.
 

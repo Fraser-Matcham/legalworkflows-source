@@ -13,6 +13,14 @@ Modifications include extraction into a standalone service, rebranding, build
 and dependency changes, CI configuration, and the changes recorded in this
 repository's commit history.
 
+Matter-management product behaviour (matters, workstreams, tasks, posts, and
+related case-file features) is prior art from the Apache-2.0 Juralio / Legal
+Matter Management repositories. Those works are a specification only. Their
+source is not copied into this tree and must not be: AGPL-3.0 section 5(c)
+would then apply to the combination as a whole, and that cannot be undone.
+Features are reimplemented here. See architecture decision 7 in
+docs/delivery-plan/v2/architecture.md.
+
 
 Licence
 -------

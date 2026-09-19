@@ -13,6 +13,7 @@ Decided 10 September 2026. Supersedes the infrastructure assumptions in
 | 4 | Database and identity | **Supabase, retained** (see below) |
 | 5 | Public origin | **`https://legalworkflows.co.uk`**, the bare domain |
 | 6 | Auth email delivery | **AWS SES**, not Resend |
+| 7 | Matter Management | **In-process fold-in** of features into this origin. The Juralio HTTP seam (2066–2069) is cancelled; 2070 (boundary CI) stays. ISMS production scope is this origin only. |
 
 ### 1. AWS with Terraform
 
@@ -26,8 +27,9 @@ production footprint can be destroyed and rebuilt from the repository.
 
 legalworkflows ships as a standalone product with its own UI. Backlog tickets
 2053 and 2054 close as *decided: keep and complete*. The Juralio HTTP seam
-(2066–2070) becomes a later, separate track — the API is still treated as a
-contract, but Juralio is not on the critical path to going live.
+(2066–2069) is **not** a later track: it is cancelled. Matter-management
+capabilities are reimplemented in this codebase (decision 7). The HTTP API
+remains a contract for this origin's own frontend and add-in.
 
 ### 3. Production only
 
@@ -131,6 +133,33 @@ credentials are Terraform's responsibility (the `email` module below), created
 once Route 53 holds the zone (Stage 3, Task 7); the operator's part is the one
 step Terraform cannot do on their behalf — filing the production-access
 request itself.
+
+### 7. Fold-in, not a second production (19 September 2026)
+
+Accepted. Matter-management product capabilities (matters, workstreams, tasks,
+posts, and the later map / templates / notify / AI / costs slices) are
+rebuilt **inside this repository**, behind this origin
+(`https://legalworkflows.co.uk`). They are not reached by calling a separate
+Juralio / Legal Matter Management service over HTTP, and they are not a
+Grails sidecar.
+
+The HTTP seam tickets **2066–2069** (Juralio proxy, re-declared types,
+identity mapping) are cancelled. **2065** remains the epic that named the
+licence boundary; **2070** (boundary CI: `npm run boundary`) already shipped
+and stays. That CI still forbids combining this AGPL-3.0 tree with the
+Apache-2.0 Matter Management source — reimplement, do not import. Combining
+the source trees would relicense Juralio under AGPL-3.0 section 5(c) and
+cannot be undone.
+
+**ISMS production scope is this origin only.** Do not apply
+`legal-matter-management-infrastructure/environments/prod`. `lmm-dev` is a
+living specification, not a second production and not a second Art. 28
+processor. There is no migrator from it.
+
+The engineering plan (waves, PR-sized tasks, agent lanes) lives on
+https://github.com/Fraser-Matcham/legalworkflows/pull/116 until it is on
+`main`. This decision is the record a reviewer can use without reading that
+plan: the seam is cancelled; production is this origin only.
 
 ## The target architecture
 

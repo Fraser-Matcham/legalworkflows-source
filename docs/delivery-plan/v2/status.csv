@@ -63,12 +63,12 @@ Issue Id,Status,Status note
 2062,Done,Rolled up from 2 children: 2 done.
 2063,Done,From the delivery plan row that cites it.
 2064,Done,completed this session
-2065,In progress,"Rolled up from 2 children: 1 done, 1 deferred."
-2066,Deferred,Rolled up from 3 children: 3 deferred.
-2067,Deferred,As 2066.
-2068,Deferred,As 2066.
-2069,Deferred,As 2066.
-2070,Done,Rolled up from 1 child: 1 done.
+2065,Superseded,"Epic kept as the licence-boundary record. Child 2070 (boundary CI) shipped and stays Done. HTTP seam children 2066–2069 cancelled — architecture decision 7."
+2066,Superseded,HTTP client seam in Juralio cancelled. Reimplement matter features in this origin (architecture decision 7).
+2067,Superseded,As 2066.
+2068,Superseded,As 2066.
+2069,Superseded,As 2066.
+2070,Done,"Boundary CI shipped (`npm run boundary`). Seam itself superseded: fold-in (architecture decision 7). Keep the CI."
 2071,Done,completed this session
 2072,Done,Rolled up from 2 children: 2 done.
 2073,Done,Rolled up from 3 children: 3 done.

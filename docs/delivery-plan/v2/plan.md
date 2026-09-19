@@ -321,7 +321,7 @@ Changes to the register in `docs/delivery-plan/backlog.csv`:
 | 2023 | open | **obsolete** — the add-in is not deferred |
 | 2038–2041 | provision Supabase | folded into stage 2's runbook |
 | 2053, 2054 | undecided | **closed: keep and complete** |
-| 2066–2070 | Juralio seam, critical path | **deferred** to a later track |
+| 2066–2069 | Juralio seam, critical path | **cancelled** — fold-in (architecture decision 7). 2070 (boundary CI) stays **done** |
 | 2039 | staging + production | **production only** for now |
 
 ## Copyright and licence
