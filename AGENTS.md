@@ -3,15 +3,15 @@
 ## Fork Rules
 
 This repository is a private extraction of the AGPL-3.0 upstream
-`open-legal-products/mike`, run as a standalone HTTP service that the Juralio
-matter-management platform consumes. Four rules constrain every change made
-here. They come before everything else in this file, and they override the
-general guidance below wherever the two disagree. They exist to keep upstream
-security fixes cheap to take and to keep the licence boundary intact.
+`open-legal-products/mike`. Four rules constrain every change made here. They
+come before everything else in this file, and they override the general
+guidance below wherever the two disagree. They exist to keep upstream security
+fixes cheap to take and to keep the licence boundary intact.
 
-### 1. The boundary to Juralio is HTTP, and only HTTP
+### 1. No source combination with Apache-2.0 Juralio code — reimplement, do not import
 
-Juralio reaches this service over HTTP and by no other means. Never introduce,
+Do not combine this tree with Apache-2.0 Juralio / Legal Matter Management
+source. Matter-management features are reimplemented here. Never introduce,
 in either direction:
 
 - an `import` or `require` that crosses the two repositories;

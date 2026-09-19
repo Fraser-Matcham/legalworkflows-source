@@ -1,10 +1,11 @@
 # Delivery plan
 
 Taking this AGPL-3.0 fork into a private, production-ready service. The
-original plan had Juralio consume this service over HTTP; the proposed
-relationship is now a **certification-first fold-in** of matter-management
-features into this codebase — control plane and firm identity before
-paying firms store live files. See [`matter-fold-in.md`](matter-fold-in.md).
+original plan had Juralio consume this service over HTTP; the relationship
+is now a **certification-first fold-in** of matter-management features
+into this codebase — control plane and firm identity before paying firms
+store live files. See [`matter-fold-in.md`](matter-fold-in.md) and
+architecture decision 7.
 
 - [`matter-fold-in.md`](matter-fold-in.md) — certification-first
   engineering plan to rebuild Matter Management capabilities inside
@@ -56,7 +57,7 @@ Juralio delivery plan (1001–1160) without collision.
 | 1 | 1–4 | Extraction | Private repo live with upstream tracking, build unblocked | 10 | 26 |
 | 2 | 5–8 | Extraction | CI made a real gate; upstream brand removed | 14 | 32 |
 | 3 | 9–12 | Infrastructure | Supabase, storage, secrets, staging deployment | 11 | 42 |
-| 4 | 13–16 | Infrastructure | Security gaps closed; Juralio integration seam live | 10 | 53 |
+| 4 | 13–16 | Infrastructure | Security gaps closed; licence-boundary CI kept (no Juralio HTTP seam) | 10 | 53 |
 | 5 | 17–20 | Production ready | Licence compliance, observability, tests over the untested core | 13 | 53 |
 | 6 | 21–24 | Production ready | Operational readiness and launch | 9 | 40 |
 | 7 | 25–28 | Self-hosted platform | Postgres, PostgREST and GoTrue moved onto AWS; Supabase retired | 10 | 50 |
@@ -77,7 +78,7 @@ boundaries.
 | 2037 | 3 | Infrastructure foundation |
 | 2048 | 3 | Deployment pipeline |
 | 2055 | 4 | Security remediation |
-| 2065 | 4 | Integration with the Juralio platform |
+| 2065 | 4 | Licence boundary with Matter Management (HTTP seam cancelled) |
 | 2072 | 5 | Licence compliance |
 | 2081 | 5 | Observability |
 | 2088 | 5 | Backend test safety net |
@@ -109,30 +110,32 @@ MIT-licensed, so there is no copyleft consequence to forking it.
 **Provision before Sprint 2 ends, or Phase 2 slips.** Supabase projects,
 S3-compatible buckets and domains are needed from Sprint 3.
 
-**Sequence against the Juralio plan.** Sprint 4's integration epic needs
-Juralio's API deployed and reachable — that is Sprint 4 of 6 in the Juralio
-plan. Run the two plans in sequence, or build against a mocked seam.
+**The Juralio HTTP seam is cancelled.** Architecture decision 7 rebuilds
+matter features in this origin. Tickets 2066–2069 are superseded; 2070
+(boundary CI) stays. Do not sequence this plan against a Juralio API
+deploy, and do not apply Matter Management production.
 
 ## Scope decisions already taken
 
-- **Service boundary.** The Mike-derived code stays a separate service; Juralio
-  calls it over HTTP. No imports, submodules, shared builds or copied files in
-  either direction — a licensing boundary as much as an architectural one.
+- **Service boundary.** No source combination with Apache-2.0 Juralio /
+  Legal Matter Management code — reimplement, do not import. No imports,
+  submodules, shared builds or copied files in either direction — a licensing
+  boundary as much as an architectural one. See architecture decision 7.
 - **Debranding depth.** User-visible strings and assets only. See the
   do-not-rename table in [`AGENTS.md`](../../AGENTS.md).
 - **Upstream tracking retained.** `upstream-main` stays pristine and is merged
   from on a cadence, so upstream security fixes stay cheap to take. This is why
   changes are additive and in new files wherever possible.
 - **Word add-in** is carried and rebranded, but not deployed in these 24 weeks.
-- **The inherited frontend is retained.** `mikeApi.ts` documents the API
-  contract and the Playwright suite drives real flows through it. Recommended
-  disposition is an internal operations console, not a customer surface.
+- **This frontend is the product.** `mikeApi.ts` documents the API
+  contract and the Playwright suite drives real flows through it
+  (architecture decision 2).
 - **Backend coverage** is raised on the largest untested files only —
   `tabular.ts`, `user.ts`, `documentOps.ts`, `toolDispatcher.ts` — not toward a
   percentage. The repo's ratchet convention applies: floors only move up.
 - **Not included.** Redis (jobs fall back to a Postgres-backed queue
-  automatically), a customer-facing UI for this service (Juralio is the UI), and
-  any upstream contribution workflow.
+  automatically) and any upstream contribution workflow. This frontend
+  is the customer surface (architecture decision 2).
 
 ## Licence position
 
