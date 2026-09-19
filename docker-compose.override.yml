@@ -1,0 +1,36 @@
+# Local Compose override, auto-merged by `docker compose` on top of
+# docker-compose.yml. Added additively so the inherited compose file stays
+# pristine for upstream merges (see AGENTS.md fork rule 3).
+#
+# It corrects two things that stop the documented `docker compose up --build`
+# from succeeding on this branch:
+#
+# 1. Build context. frontend/Dockerfile was rewritten to build from the
+#    `frontend/` directory alone (it no longer type-imports from backend/src;
+#    scripts/check-frontend-boundary.mjs enforces that). docker-compose.yml
+#    still passes `context: .`, so the build copies the repository-root
+#    package.json, which has no `build` script, and `npm run build` fails with
+#    "Missing script: build". Pointing the context at ./frontend copies the
+#    frontend package.json instead.
+#
+# 2. Public app URL. frontend/Dockerfile defaults NEXT_PUBLIC_APP_URL to an
+#    empty string. src/app/layout.tsx does `new URL(process.env
+#    .NEXT_PUBLIC_APP_URL ?? "http://localhost:3000")`; `??` keeps the empty
+#    string, so `new URL("")` throws "Invalid URL" during page-data collection.
+#    Supplying the local value as a build arg makes metadataBase resolve.
+
+services:
+  # The backend image deletes npm (backend/Dockerfile hardening), but the
+  # inherited compose file still starts this one-shot with `npm run
+  # sync:workflows`, so it dies with "Cannot find module '/app/npm'". The
+  # package script is just `node dist/jobs/syncWorkflows.js` (the same command
+  # .github/workflows/deploy.yml uses), so call node directly.
+  workflow-sync:
+    command: ["node", "dist/jobs/syncWorkflows.js"]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_APP_URL: http://localhost:3000
