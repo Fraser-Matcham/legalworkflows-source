@@ -1,8 +1,32 @@
 # Delivery plan
 
-Taking this AGPL-3.0 fork into a private, production-ready service that the
-Juralio matter-management platform consumes over HTTP.
+Taking this AGPL-3.0 fork into a private, production-ready service. The
+original plan had Juralio consume this service over HTTP; the proposed
+relationship is now a **certification-first fold-in** of matter-management
+features into this codebase — control plane and firm identity before
+paying firms store live files. See [`matter-fold-in.md`](matter-fold-in.md).
 
+- [`matter-fold-in.md`](matter-fold-in.md) — certification-first
+  engineering plan to rebuild Matter Management capabilities inside
+  legalworkflows (one product, one codebase). Control plane and firm
+  identity before paying-firm matter data. Supersedes backlog 2066–2069.
+  Ticket 2070 (boundary CI) already shipped and stays.
+- [`matter-fold-in-architecture.md`](matter-fold-in-architecture.md) —
+  target topology, process model, codebase layout, and the core-repo
+  improvements required to host the fold-in (Stage 5, non-root image,
+  GoTrue Microsoft provider, `db_jobs` fan-out), plus the pre-execution
+  factors the phases would miss (org-inheritance leak, flag, upstream
+  sync, 60s/50mb, `service_role_all`). No second runtime.
+- [`matter-fold-in-compliance.md`](matter-fold-in-compliance.md) —
+  control baseline and Statement of Applicability mapping (ISO 27001,
+  ISO 27701, UK GDPR, SRA, Cyber Essentials Plus) plus launch
+  checklists for that plan.
+- [`matter-fold-in-tasks.md`](matter-fold-in-tasks.md) — priority
+  waves and PR-sized tasks (IDs 2200+) to execute the fold-in. Each
+  task is one pull request or one operator action.
+- [`matter-fold-in-lanes.md`](matter-fold-in-lanes.md) — agent lane
+  ownership and exclusions. Required brief before launching a
+  parallel agent. Source of truth for who may edit which path.
 - [`backlog.csv`](backlog.csv) — the full backlog, Jira-importable.
 - [`v2/delivery-status.xlsx`](v2/delivery-status.xlsx) — the same backlog with
   the current status of every ticket, summarised by phase, sprint, component

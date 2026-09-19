@@ -4,6 +4,20 @@
 
 - [Delivery plan](delivery-plan/README.md) — phases, sprints, blockers, and the
   [review](delivery-plan/plan-review.md) of the plan against this tree
+- [Matter Management fold-in](delivery-plan/matter-fold-in.md) —
+  certification-first plan to rebuild Juralio's matter, workstream,
+  task, and costs features inside this repository (control plane
+  before live matter data; no HTTP seam)
+- [Fold-in architecture](delivery-plan/matter-fold-in-architecture.md) —
+  topology, process model, codebase layout, and core-repo improvements
+  required to host matters on this origin
+- [Fold-in compliance](delivery-plan/matter-fold-in-compliance.md) —
+  control baseline, SoA mapping, and launch checklists (ISO 27001,
+  UK GDPR, SRA, Cyber Essentials Plus) for the unified legal product
+- [Fold-in execution](delivery-plan/matter-fold-in-tasks.md) —
+  priority waves and PR-sized tasks to ship the fold-in
+- [Fold-in agent lanes](delivery-plan/matter-fold-in-lanes.md) —
+  exclusive file ownership and exclusions for parallel agents
 - [Private repository setup](private-repo-setup.md) — remote topology, branch
   protection, required checks, and what still needs an organisation owner
 - [Upstream sync](upstream-sync.md) — the routine for taking upstream fixes and
